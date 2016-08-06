@@ -1,4 +1,4 @@
-﻿// Test.cs
+﻿// AnaximanderAppender.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -23,14 +23,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using NUnit.Framework;
 using System;
+using log4net.Appender;
+using log4net.Core;
 
-namespace UnitTests {
-	[TestFixture()]
-	public class Test {
-		[Test()]
-		public void TestCase() {
+namespace Console {
+	public class AnaximanderAppender : AnsiColorTerminalAppender {
+		private ConsoleBase m_console = null;
+
+		public ConsoleBase Console {
+			get { return m_console; }
+			set { m_console = value; }
+		}
+
+		override protected void Append(LoggingEvent loggingEvent) {
+			if (m_console != null)
+				m_console.LockOutput();
+
+			string loggingMessage = RenderLoggingEvent(loggingEvent);
+
+			try {
+				if (m_console != null) {
+					string level = "normal";
+
+					if (loggingEvent.Level == Level.Error) {
+						level = "error";
+					}
+					else if (loggingEvent.Level == Level.Warn) {
+						level = "warn";
+					}
+
+					m_console.Output(loggingMessage, level);
+				}
+				else {
+					if (!loggingMessage.EndsWith("\n")) {
+						System.Console.WriteLine(loggingMessage);
+					}
+					else {
+						System.Console.Write(loggingMessage);
+					}
+				}
+			}
+			catch (Exception e) {
+				System.Console.WriteLine($"Couldn't write out log message: {e}");
+			}
+			finally {
+				if (m_console != null) {
+					m_console.UnlockOutput();
+				}
+			}
 		}
 	}
 }

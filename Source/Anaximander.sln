@@ -5,20 +5,33 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Anaximander", "Anaximander\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{D3444D44-239D-4568-857F-14603FEC8177}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bin", "bin", "{A0E051A9-1859-4BA4-A720-1255ED58582E}"
+	ProjectSection(SolutionItems) = preProject
+		..\bin\Anaximander.exe.config = ..\bin\Anaximander.exe.config
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console", "Console\Console.csproj", "{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x86 = Debug|x86
-		Release|x86 = Release|x86
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x86.ActiveCfg = Debug|x86
-		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x86.Build.0 = Debug|x86
-		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Release|x86.ActiveCfg = Release|x86
-		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Release|x86.Build.0 = Release|x86
-		{D3444D44-239D-4568-857F-14603FEC8177}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{D3444D44-239D-4568-857F-14603FEC8177}.Debug|x86.Build.0 = Debug|Any CPU
-		{D3444D44-239D-4568-857F-14603FEC8177}.Release|x86.ActiveCfg = Release|Any CPU
-		{D3444D44-239D-4568-857F-14603FEC8177}.Release|x86.Build.0 = Release|Any CPU
+		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x64.ActiveCfg = Debug|x64
+		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x64.Build.0 = Debug|x64
+		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Release|x64.ActiveCfg = Release|x64
+		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Release|x64.Build.0 = Release|x64
+		{D3444D44-239D-4568-857F-14603FEC8177}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D3444D44-239D-4568-857F-14603FEC8177}.Debug|x64.Build.0 = Debug|Any CPU
+		{D3444D44-239D-4568-857F-14603FEC8177}.Release|x64.ActiveCfg = Release|Any CPU
+		{D3444D44-239D-4568-857F-14603FEC8177}.Release|x64.Build.0 = Release|Any CPU
+		{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}.Debug|x64.Build.0 = Debug|Any CPU
+		{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}.Release|x64.ActiveCfg = Release|Any CPU
+		{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}.Release|x64.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
@@ -130,7 +143,7 @@ Global
 		$18.Name = Static Readonly Fields
 		$18.AffectedEntity = ReadonlyField
 		$18.VisibilityMask = Protected, Public
-		$18.NamingStyle = PascalCase
+		$18.NamingStyle = AllUpper
 		$18.IncludeInstanceMembers = False
 		$18.IncludeStaticEntities = True
 		$6.NamingRule = $19
@@ -144,21 +157,21 @@ Global
 		$20.Name = ReadOnly Fields
 		$20.AffectedEntity = ReadonlyField
 		$20.VisibilityMask = Protected, Public
-		$20.NamingStyle = PascalCase
+		$20.NamingStyle = AllUpper
 		$20.IncludeInstanceMembers = True
 		$20.IncludeStaticEntities = False
 		$6.NamingRule = $21
 		$21.Name = Constant Fields
 		$21.AffectedEntity = ConstantField
 		$21.VisibilityMask = Protected, Public
-		$21.NamingStyle = PascalCase
+		$21.NamingStyle = AllUpper
 		$21.IncludeInstanceMembers = True
 		$21.IncludeStaticEntities = True
 		$6.NamingRule = $22
 		$22.Name = Properties
 		$22.AffectedEntity = Property
 		$22.VisibilityMask = Protected, Public
-		$22.NamingStyle = PascalCase
+		$22.NamingStyle = CamelCase
 		$22.IncludeInstanceMembers = True
 		$22.IncludeStaticEntities = True
 		$6.NamingRule = $23
@@ -179,7 +192,7 @@ Global
 		$25.Name = Parameters
 		$25.AffectedEntity = Parameter
 		$25.VisibilityMask = VisibilityMask
-		$25.NamingStyle = CamelCase
+		$25.NamingStyle = AllLower
 		$25.IncludeInstanceMembers = True
 		$25.IncludeStaticEntities = True
 		$6.NamingRule = $26
@@ -191,6 +204,28 @@ Global
 		$26.NamingStyle = PascalCase
 		$26.IncludeInstanceMembers = True
 		$26.IncludeStaticEntities = True
+		$0.TextStylePolicy = $28
+		$28.inheritsSet = null
+		$28.scope = application/config+xml
+		$0.XmlFormattingPolicy = $29
+		$29.inheritsSet = null
+		$29.scope = application/config+xml
+		$0.TextStylePolicy = $30
+		$30.FileWidth = 120
+		$30.TabWidth = 2
+		$30.IndentWidth = 2
+		$30.NoTabsAfterNonTabs = True
+		$30.EolMarker = Unix
+		$30.inheritsSet = Mono
+		$30.inheritsScope = text/plain
+		$30.scope = application/xml
+		$0.XmlFormattingPolicy = $31
+		$31.inheritsSet = Mono
+		$31.inheritsScope = application/xml
+		$31.scope = application/xml
+		$0.DotNetNamingPolicy = $32
+		$32.DirectoryNamespaceAssociation = None
+		$32.ResourceNamePolicy = FileFormatDefault
 		outputpath = ..\..\Anaximander\build\bin
 	EndGlobalSection
 EndGlobal
