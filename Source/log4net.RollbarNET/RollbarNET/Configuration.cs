@@ -4,6 +4,7 @@
 
 using System.Configuration;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace RollbarNET {
 	public class Configuration {
@@ -30,8 +31,7 @@ namespace RollbarNET {
 		/// <summary>
 		/// Default parameters that should be scrubbed from requests
 		/// </summary>
-		public static string[] DefaultScrubParams =
-			new[] {
+		public static string[] DefaultScrubParams = {
 				"password", "password_confirmation", "confirm_password",
 				"secret", "secret_token",
 				"creditcard", "credit_card", "credit_card_number", "card_number", "ccnum", "cc_number"
@@ -62,7 +62,7 @@ namespace RollbarNET {
 		/// Version of the application that is running (see https://rollbar.com/blog/post/2013/09/17/resolving-rollbar-items-in-versions)
 		/// 
 		/// Setting: Rollbar.CodeVersion
-		/// Default: <see cref="RollbarSharp.Configuration.DefaultCodeVersion"/>
+		/// Default: <see cref="RollbarNET.Configuration.DefaultCodeVersion"/>
 		/// </summary>
 		public string CodeVersion;
 
@@ -129,7 +129,14 @@ namespace RollbarNET {
 			AccessToken = accessToken;
 			CodeVersion = DefaultCodeVersion;
 			Environment = DefaultEnvironment;
-			Platform = System.Environment.OSVersion.ToString();
+			try {
+				var filereader = File.OpenText(@"/proc/version"); // For Ubuntu there's a map of kernel to version here: https://en.wikipedia.org/wiki/List_of_Ubuntu_releases#Table_of_versions
+				Platform = filereader.ReadToEnd();
+				filereader.Close();
+			}
+			catch { // Not a Unix/Linux environment, or just not using proc.
+				Platform = System.Environment.OSVersion.ToString();
+			}
 			Framework = ".NET " + System.Environment.Version;
 			Language = DefaultLanguage;
 			ScrubParams = DefaultScrubParams;
