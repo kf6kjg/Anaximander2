@@ -32,10 +32,10 @@ namespace RollbarNET {
 		/// Default parameters that should be scrubbed from requests
 		/// </summary>
 		public static string[] DefaultScrubParams = {
-				"password", "password_confirmation", "confirm_password",
-				"secret", "secret_token",
-				"creditcard", "credit_card", "credit_card_number", "card_number", "ccnum", "cc_number"
-			};
+			"password", "password_confirmation", "confirm_password",
+			"secret", "secret_token",
+			"creditcard", "credit_card", "credit_card_number", "card_number", "ccnum", "cc_number"
+		};
 
 		/// <summary>
 		/// Encoding to use when communicating with the Rollbar endpoint (default: utf-8)
