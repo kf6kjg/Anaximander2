@@ -43,6 +43,9 @@
       <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -61,6 +64,10 @@
     <ProjectReference Include="..\Console\Console.csproj">
       <Project>{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}</Project>
       <Name>Console</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\log4net.RollbarNET\log4net.RollbarNET.csproj">
+      <Project>{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}</Project>
+      <Name>log4net.RollbarNET</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

@@ -55,8 +55,7 @@ namespace Anaximander {
 				LOG.Info($"[MAIN]: Configured log4net using \"{logConfigFile}\" as configuration file.");
 			}
 
-
-			LOG.Info("TODO");
+			LOG.Error("Testing.");
 
 			while (true) {
 			}
@@ -75,8 +74,6 @@ namespace Anaximander {
 			}
 
 			isHandlingException = true;
-			// TODO: Add config option to allow users to turn off error reporting
-			// TODO: Post error report (disabled for now)
 
 			string msg = String.Empty;
 			

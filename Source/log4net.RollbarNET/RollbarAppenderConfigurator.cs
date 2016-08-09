@@ -1,10 +1,9 @@
-﻿// Test.cs
+﻿// RollbarAppenderConfigurator.cs
 //
-// Author:
-//       Ricky Curtice <ricky@rwcproductions.com>
-//
-// Copyright (c) 2016 Richard Curtice
-//
+// Copyright (c) 2014 Morten Teinum
+// Copied from https://github.com/mteinum/log4net.Rollbar  as of commit 194b000152de2eac2bdd046f9ed7d3e94fe69f9c
+// Further changes (c) 2016 Richard Curtice under the same license.
+// 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -23,13 +22,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using NUnit.Framework;
+using System;
+using log4net.Config;
 
-namespace UnitTests {
-	[TestFixture()]
-	public class Test {
-		[Test()]
-		public void TestCase() {
+namespace log4net_RollbarNET {
+	public static class RollbarAppenderConfigurator {
+		/// <summary>
+		/// Initializes the log4net system using the <see cref="RollbarAppender"/>
+		/// </summary>
+		/// <param name="accessToken">the post_server_item key</param>
+		/// <param name="configureAppender"></param>
+		public static void Configure(string accessToken = null, Action<RollbarAppender> configureAppender = null) {
+			var appender = new RollbarAppender { AccessToken = accessToken };
+
+			if (configureAppender != null) {
+				configureAppender(appender);
+			}
+
+			appender.ActivateOptions();
+
+			BasicConfigurator.Configure(appender);
 		}
 	}
 }

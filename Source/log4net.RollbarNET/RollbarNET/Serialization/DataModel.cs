@@ -1,0 +1,110 @@
+﻿// Licensed under the Apache License Version 2.0
+// See https://github.com/mroach/RollbarSharp/raw/e2e3d4a42b8c73a92826739c75ca0c98eed0ba48/LICENSE.txt
+// Copied from https://github.com/mroach/RollbarSharp as of commit 7d5551393cae7fc43eeec2f37db32326fc5b2bed
+
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+namespace RollbarNET.Serialization {
+	[JsonObject(MemberSerialization.OptIn)]
+	public class DataModel {
+		/// <summary>
+		/// Application code version: https://rollbar.com/blog/post/2013/09/17/resolving-rollbar-items-in-versions
+		/// </summary>
+		[JsonProperty("code_version")]
+		public string CodeVersion { get; set; }
+
+		/// <summary>
+		/// Running environment. E.g. production, staging, development
+		/// </summary>
+		[JsonProperty("environment")]
+		public string Environment { get; set; }
+
+		[JsonProperty("body")]
+		public BodyModel Body { get; set; }
+
+		/// <summary>
+		/// UNIX timestamp of the error event
+		/// </summary>
+		[JsonProperty("timestamp")]
+		public ulong Timestamp { get; set; }
+
+		/// <summary>
+		/// Severity. One of: critical, error, warning, info, debug
+		/// </summary>
+		[JsonProperty("level")]
+		public string Level { get; set; }
+
+		/// <summary>
+		/// Code platform. E.g. browser, flash, heroku, google-app-engine
+		/// </summary>
+		[JsonProperty("platform")]
+		public string Platform { get; set; }
+
+		/// <summary>
+		/// Code language. Will be defaulted to "csharp"
+		/// </summary>
+		[JsonProperty("language")]
+		public string Language { get; set; }
+
+		/// <summary>
+		/// Name of the code's framework. Will be defaulted to ".net"
+		/// </summary>
+		[JsonProperty("framework")]
+		public string Framework { get; set; }
+
+		[JsonProperty("request")]
+		public RequestModel Request { get; set; }
+
+		[JsonProperty("person")]
+		public PersonModel Person { get; set; }
+
+		[JsonProperty("server")]
+		public ServerModel Server { get; set; }
+
+		/// <summary>
+		/// Arbitrary JSON object describing the client environment.
+		/// </summary>
+		[JsonProperty("client")]
+		public object Client { get; set; }
+
+		/// <summary>
+		/// An object containing arbitrary custom data
+		/// </summary>
+		[JsonProperty("custom")]
+		public IDictionary<string, object> Custom { get; set; }
+
+		/// <summary>
+		/// Optional identifier for which part of your application this event came from.
+		/// Items can be searched by context (prefix search)
+		/// For example, in an MVC app, this could be "controller#action".
+		/// In a single-page javascript app, it could be the name of the current screen or route.
+		/// </summary>
+		[JsonProperty("context")]
+		public string Context { get; set; }
+
+		[JsonProperty("notifier")]
+		public NotifierModel Notifier { get; set; }
+
+		/// <summary>
+		/// A string up to 40 characters long that identifies the "fingerprint" of this item.
+		/// Items with the same fingerprint are grouped together in Rollbar.
+		/// Rollbar will automatically compute a fingerprint, but you can pass one explicitly if you want to override it.
+		/// </summary>
+		[JsonProperty("fingerprint")]
+		public string Fingerprint { get; set; }
+
+		/// <summary>
+		/// A string up to 255 characters that will be used as the item title in the Rollbar UI.
+		/// Rollbar will automatically compute a title, but you can pass one explicitly if you want to override it.
+		/// </summary>
+		[JsonProperty("title")]
+		public string Title { get; set; }
+
+		public DataModel(string level, BodyModel body) {
+			Level = level;
+			Body = body;
+			Custom = new Dictionary<string, object>();
+		}
+	}
+}
