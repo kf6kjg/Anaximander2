@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console", "Console\Console.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "log4net.RollbarNET", "log4net.RollbarNET\log4net.RollbarNET.csproj", "{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RollbarCrashReporter", "RollbarCrashReporter\RollbarCrashReporter.csproj", "{E083B367-9134-4CF5-9F9B-69E5EAF202FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -32,6 +34,10 @@ Global
 		{D3444D44-239D-4568-857F-14603FEC8177}.Debug|x64.Build.0 = Debug|Any CPU
 		{D3444D44-239D-4568-857F-14603FEC8177}.Release|x64.ActiveCfg = Release|Any CPU
 		{D3444D44-239D-4568-857F-14603FEC8177}.Release|x64.Build.0 = Release|Any CPU
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x64.ActiveCfg = Debug|x64
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x64.Build.0 = Debug|x64
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Release|x64.ActiveCfg = Release|x64
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Release|x64.Build.0 = Release|x64
 		{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}.Debug|x64.Build.0 = Debug|Any CPU
 		{FB5166ED-F19A-4FB9-86CA-DAA2779EB977}.Release|x64.ActiveCfg = Release|Any CPU

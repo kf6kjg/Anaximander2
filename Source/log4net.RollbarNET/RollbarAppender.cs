@@ -33,15 +33,6 @@ using RollbarNET.Serialization;
 
 namespace log4net_RollbarNET {
 	public class RollbarAppender : AppenderSkeleton {
-		/// <summary>
-		/// Signature for the handler fired when the request is complete
-		/// </summary>
-		/// <param name="source"></param>
-		/// <param name="args"></param>
-		public delegate void RequestCompletedEventHandler(object source,RequestCompletedEventArgs args);
-
-		public delegate void RequestSendingEventHandler(object source,RequestStartingEventArgs args);
-
 		private RollbarNET.Configuration _configuration;
 
 		public string AccessToken { get; set; }
@@ -78,6 +69,7 @@ namespace log4net_RollbarNET {
 			_configuration.GitSha = GetConfigSetting(GitSha, "Rollbar.GitSha");
 			_configuration.Language = GetConfigSetting(Language, "Rollbar.CodeLanguage", _configuration.Language);
 			_configuration.Platform = GetConfigSetting(Platform, "Rollbar.Platform", _configuration.Platform);
+			Asynchronous = Boolean.Parse(GetConfigSetting(Platform, "Rollbar.Asynchronous", Asynchronous.ToString()));
 
 			var scrubParams = GetConfigSetting(ScrubParams, "Rollbar.ScrubParams");
 			_configuration.ScrubParams = scrubParams == null ? RollbarNET.Configuration.DefaultScrubParams : scrubParams.Split(',');
@@ -92,7 +84,7 @@ namespace log4net_RollbarNET {
 		/// </summary>
 		/// <param name="loggingEvent">The event to report</param>
 		protected override void Append(LoggingEvent loggingEvent) {
-			var client = new RollbarNET.RollbarClient(_configuration);
+			var client = new RollbarClient(_configuration);
 
 			Task task = null;
 			if (loggingEvent.Level >= Level.Critical) {
@@ -125,7 +117,7 @@ namespace log4net_RollbarNET {
 		private static Task Send(
 			LoggingEvent loggingEvent,
 			Func<string, IDictionary<string, object>, Action<DataModel>, string, Task> sendMessage,
-			Func<System.Exception, string, Action<DataModel>, string, Task> sendException) {
+			Func<Exception, string, Action<DataModel>, string, Task> sendException) {
 			if (loggingEvent.ExceptionObject == null) {
 				return sendMessage(loggingEvent.RenderedMessage, null, null, null);
 			}

@@ -259,7 +259,7 @@ namespace RollbarNET {
 				else {
 					OnRequestCompleted(ex.Response, userParam);
 				}
-                
+
 				return;
 			}
 			catch (Exception ex) {
