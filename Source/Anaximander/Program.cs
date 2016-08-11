@@ -36,6 +36,8 @@ namespace Anaximander {
 
 		private static readonly string ExecutableDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", String.Empty));
 
+		private static readonly string DEFAULT_INI_FILE = "Anaximander.ini";
+
 		public static void Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
 			// Analysis disable once RedundantDelegateCreation // The "new" is required.
@@ -56,9 +58,54 @@ namespace Anaximander {
 				LOG.Info($"[MAIN]: Configured log4net using \"{logConfigFile}\" as configuration file.");
 			}
 
-			LOG.Error("Testing.");
+			// Configure nIni aliases and localles
+			System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US", true);
+
+			configSource.Alias.AddAlias("On", true);
+			configSource.Alias.AddAlias("Off", false);
+			configSource.Alias.AddAlias("True", true);
+			configSource.Alias.AddAlias("False", false);
+			configSource.Alias.AddAlias("Yes", true);
+			configSource.Alias.AddAlias("No", false);
+
+			configSource.AddSwitch("Startup", "inifile");
+
+			// Read in the ini file
+			ReadConfigurationFromINI(configSource);
 
 			while (true) {
+			}
+		}
+
+		private static void ReadConfigurationFromINI(IConfigSource configSource) {
+			IConfig startupConfig = configSource.Configs["Startup"];
+			string iniFileName = startupConfig.GetString("inifile", DEFAULT_INI_FILE);
+
+			bool found_at_given_path = false;
+
+			try {
+				LOG.Info($"[MAIN] Attempting to read configuration file {Path.GetFullPath(iniFileName)}");
+				startupConfig.ConfigSource.Merge(new IniConfigSource(iniFileName));
+				LOG.Info($"[MAIN] Success reading configuration file.");
+				found_at_given_path = true;
+			}
+			catch {
+				LOG.Warn($"[MAIN] Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
+			}
+
+			if (!found_at_given_path) {
+				// Combine with true path to binary and try again.
+				iniFileName = Path.Combine(ExecutableDirectory, iniFileName);
+
+				try {
+					LOG.Info($"[MAIN] Attempting to read configuration file from installation path {Path.GetFullPath(iniFileName)}");
+					startupConfig.ConfigSource.Merge(new IniConfigSource(iniFileName));
+					LOG.Info($"[MAIN] Success reading configuration file.");
+				}
+				catch {
+					LOG.Fatal($"[MAIN] Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
+					throw;
+				}
 			}
 		}
 
