@@ -28,16 +28,17 @@ using System.Reflection;
 using log4net;
 using log4net.Config;
 using Nini.Config;
+using System.IO;
 
 namespace Anaximander {
 	class Application {
-		/// <summary>
-		/// Text Console Logger
-		/// </summary>
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		private static readonly string ExecutableDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", String.Empty));
 
 		public static void Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
+			// Analysis disable once RedundantDelegateCreation // The "new" is required.
 			AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
 
 			// Add the arguments supplied when running the application to the configuration
@@ -51,7 +52,7 @@ namespace Anaximander {
 				LOG.Info("[MAIN]: Configured log4net using ./Anaximander.exe.config as the default.");
 			}
 			else {
-				XmlConfigurator.Configure(new System.IO.FileInfo(logConfigFile));
+				XmlConfigurator.Configure(new FileInfo(logConfigFile));
 				LOG.Info($"[MAIN]: Configured log4net using \"{logConfigFile}\" as configuration file.");
 			}
 
@@ -73,42 +74,55 @@ namespace Anaximander {
 				return;
 			}
 
-			isHandlingException = true;
+			try {
+				isHandlingException = true;
 
-			string msg = String.Empty;
-			
-			var ex = (Exception)e.ExceptionObject;
-			if (ex.InnerException != null) {
-				msg = $"InnerException: {ex.InnerException}\n";
-			}
+				string msg = String.Empty;
 
-
-			LOG.Error($"[APPLICATION]: APPLICATION EXCEPTION DETECTED: {e}\n" +
-				"\n" +
-				$"Exception: {e.ExceptionObject}\n" +
-				msg +
-				$"\nApplication is terminating: {e.IsTerminating}\n"
-			);
-			/*
-			if (m_saveCrashDumps) {
-				// Log exception to disk
-				try {
-					if (!Directory.Exists(m_crashDir)) {
-						Directory.CreateDirectory(m_crashDir);
-					}
-					string log = Util.GetUniqueFilename(ex.GetType() + ".txt");
-					using (StreamWriter m_crashLog = new StreamWriter(Path.Combine(m_crashDir, log))) {
-						m_crashLog.WriteLine(msg);
-					}
-
-					File.Copy("Halcyon.ini", Path.Combine(m_crashDir, log + "_Halcyon.ini"), true);
+				var ex = (Exception)e.ExceptionObject;
+				if (ex.InnerException != null) {
+					msg = $"InnerException: {ex.InnerException}\n";
 				}
-				catch (Exception e2) {
-					m_log.ErrorFormat("[CRASH LOGGER CRASHED]: {0}", e2);
+
+				msg = $"[APPLICATION]: APPLICATION EXCEPTION DETECTED: {e}\n" +
+					"\n" +
+					$"Exception: {e.ExceptionObject}\n" +
+					msg +
+					$"\nApplication is terminating: {e.IsTerminating}\n";
+
+				LOG.Fatal(msg);
+
+				if (e.IsTerminating) {
+					// Since we are crashing, there's no way that log4net.RollbarNET will be able to send the message to Rollbar directly.
+					// So have a separate program go do that work while this one finishes dying.
+
+					var raw_msg =  System.Text.Encoding.Default.GetBytes(msg);
+
+					var err_reporter = new System.Diagnostics.Process();
+					err_reporter.EnableRaisingEvents = false;
+					err_reporter.StartInfo.FileName = Path.Combine(ExecutableDirectory, "RollbarCrashReporter.exe");
+					err_reporter.StartInfo.WorkingDirectory = ExecutableDirectory;
+					err_reporter.StartInfo.Arguments = raw_msg.Length.ToString(); // Let it know ahead of time how many characters are expected.
+					err_reporter.StartInfo.RedirectStandardInput = true;
+					err_reporter.StartInfo.RedirectStandardOutput = false;
+					err_reporter.StartInfo.RedirectStandardError = false;
+					err_reporter.StartInfo.UseShellExecute = false;
+					if (err_reporter.Start()) {
+						err_reporter.StandardInput.BaseStream.Write(raw_msg, 0, raw_msg.Length);
+					}
 				}
 			}
-*/
-			isHandlingException = false;
+			catch (Exception ex) {
+				LOG.Error("[MAIN] Exception launching CrashReporter.", ex);
+			}
+			finally {
+				isHandlingException = false;
+
+				if (e.IsTerminating) {
+					// Preempt to not show a pile of puke if console was disabled.
+					Environment.Exit(1);
+				}
+			}
 		}
 	}
 }
