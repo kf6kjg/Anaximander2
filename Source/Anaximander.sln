@@ -16,12 +16,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "log4net.RollbarNET", "log4n
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RollbarCrashReporter", "RollbarCrashReporter\RollbarCrashReporter.csproj", "{E083B367-9134-4CF5-9F9B-69E5EAF202FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetReader", "AssetReader\AssetReader.csproj", "{2EEF5095-2220-4A49-BFF1-4022C62FD762}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Debug|x64.Build.0 = Debug|Any CPU
+		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Release|x64.ActiveCfg = Release|Any CPU
+		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Release|x64.Build.0 = Release|Any CPU
 		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x64.ActiveCfg = Debug|x64
 		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x64.Build.0 = Debug|x64
 		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Release|x64.ActiveCfg = Release|x64
