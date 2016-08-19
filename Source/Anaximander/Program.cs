@@ -88,10 +88,9 @@ namespace Anaximander {
 			watch.Restart();
 
 
-
 			/* Issues to watch for:
 			 * Region delete - The DBA will need to actually remove the estate record to cause a map tile delete.
-			 *  - This implies that the RDBMap needs to check its list of regions against the DB and remove all that aren't in the DB.
+			 *  - (Done) This implies that the RDBMap needs to check its list of regions against the DB and remove all that aren't in the DB.
 			 * Region move - The list of images in the filesystem will need to be compared with the data structure and any images that are not in the data structure will need to be culled.
 			 *  - Unless the images are actually stored in the filesystem with the regionID as the filename and a conversion table is used (softlinks, redirects, etc).
 			 */

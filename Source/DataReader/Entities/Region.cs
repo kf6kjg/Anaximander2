@@ -22,6 +22,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System.Collections;
 using System.Data;
 using System.IO;
 using System.Net;
@@ -33,41 +34,20 @@ namespace DataReader {
 	public class Region {
 		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private static readonly string SQLReadAllRegions = @"SELECT
-				terrain_texture_1,/*0*/
-				terrain_texture_2,/*1*/
-				terrain_texture_3,/*2*/
-				terrain_texture_4,/*3*/
-				elevation_1_nw,/*4*/
-				elevation_2_nw,/*5*/
-				elevation_1_ne,/*6*/
-				elevation_2_ne,/*7*/
-				elevation_1_sw,/*8*/
-				elevation_2_sw,/*9*/
-				elevation_1_se,/*10*/
-				elevation_2_se,/*11*/
-				water_height/*12*/
-			FROM
-				regionsettings
-			WHERE
-				RegionUUID = ?UUID";
-
 		#region Public Properties and Accessors
 
-		public string RegionID { get; private set; }
+		public string regionId { get { return _info.regionId; } private set { _info.regionId = value; } }
 
-		public string RDBConnectionString { get; private set; }
-
-		public string RegionName { get; private set; } = null;
+		public string regionName { get { return _info.regionName; } private set { _info.regionName = value; } }
 
 		/// <summary>
 		/// Queries the region server simstatus to detect if the region is online and accessable at this moment.
 		/// </summary>
 		/// <value><c>true</c> if this instance is region currently up; otherwise, <c>false</c>.</value>
-		public bool IsRegionCurrentlyUp {
+		public bool isRegionCurrentlyUp {
 			get {
-				if (ServerIP != null) {
-					var wrGETURL = WebRequest.Create($"http://{ServerIP}:{ServerPort}/simstatus/");
+				if (serverIP != null) {
+					var wrGETURL = WebRequest.Create($"http://{serverIP}:{serverPort}/simstatus/");
 					try {
 						// Total time for 1000 passing tests against a server on the Internet: 42352ms, for an avg of 42.352 ms per check.
 						var objStream = wrGETURL.GetResponse().GetResponseStream();
@@ -85,98 +65,84 @@ namespace DataReader {
 			}
 		}
 
-		public int? LocationX { get; private set; } = null;
+		public int? locationX { get { return _info.locationX; } private set { _info.locationX = value; } }
 
-		public int? LocationY { get; private set; } = null;
+		public int? locationY { get { return _info.locationY; } private set { _info.locationY = value; } }
 
-		public int? SizeX { get; private set; } = null;
+		public int? sizeX { get { return _info.sizeX; } private set { _info.sizeX = value; } }
 
-		public int? SizeY { get; private set; } = null;
+		public int? sizeY { get { return _info.sizeY; } private set { _info.sizeY = value; } }
 
-		public string ServerIP { get; private set; } = null;
+		public string serverIP { get { return _info.serverIP; } private set { _info.serverIP = value; } }
 
-		public int? ServerPort { get; private set; } = null;
+		public int? serverPort { get { return _info.serverPort; } private set { _info.serverPort = value; } }
 
 
-		public string TerrainTexture1 { get; private set; } = null;
+		public string terrainTexture1 { get { return _terrainData.terrainTexture1; } private set { _terrainData.terrainTexture1 = value; } }
 
-		public string TerrainTexture2 { get; private set; } = null;
+		public string terrainTexture2 { get { return _terrainData.terrainTexture2; } private set { _terrainData.terrainTexture2 = value; } }
 
-		public string TerrainTexture3 { get; private set; } = null;
+		public string terrainTexture3 { get { return _terrainData.terrainTexture3; } private set { _terrainData.terrainTexture3 = value; } }
 
-		public string TerrainTexture4 { get; private set; } = null;
+		public string terrainTexture4 { get { return _terrainData.terrainTexture4; } private set { _terrainData.terrainTexture4 = value; } }
 
-		public double Elevation1NW { get; private set; } = 0d;
-		public double Elevation2NW { get; private set; } = 0d;
-		public double Elevation1NE { get; private set; } = 0d;
-		public double Elevation2NE { get; private set; } = 0d;
-		public double Elevation1SW { get; private set; } = 0d;
-		public double Elevation2SW { get; private set; } = 0d;
-		public double Elevation1SE { get; private set; } = 0d;
-		public double Elevation2SE { get; private set; } = 0d;
-		public double WaterHeight { get; private set; } = 0d;
+		public double elevation1NW { get { return _terrainData.elevation1NW; } private set { _terrainData.elevation1NW = value; } }
+
+		public double elevation2NW { get { return _terrainData.elevation2NW; } private set { _terrainData.elevation2NW = value; } }
+
+		public double elevation1NE { get { return _terrainData.elevation1NE; } private set { _terrainData.elevation1NE = value; } }
+
+		public double elevation2NE { get { return _terrainData.elevation2NE; } private set { _terrainData.elevation2NE = value; } }
+
+		public double elevation1SW { get { return _terrainData.elevation1SW; } private set { _terrainData.elevation1SW = value; } }
+
+		public double elevation2SW { get { return _terrainData.elevation2SW; } private set { _terrainData.elevation2SW = value; } }
+
+		public double elevation1SE { get { return _terrainData.elevation1SE; } private set { _terrainData.elevation1SE = value; } }
+
+		public double elevation2SE { get { return _terrainData.elevation2SE; } private set { _terrainData.elevation2SE = value; } }
+
+		public double waterHeight { get { return _terrainData.waterHeight; } private set { _terrainData.waterHeight = value; } }
 
 		#endregion
 
 		#region Private Properties
 
+		private RegionInfo _info;
+		private RegionTerrainData _terrainData;
+
 		#endregion
 
 		#region Constructors
+
+		public Region(RegionInfo info, RegionTerrainData terrain_data) {
+			_info = info;
+			_terrainData = terrain_data;
+		}
+
 		public Region(
-			string regionID, string rdbConnectionString, string regionName,
-			int? locX, int? locY,
-			int? sizeX, int? sizeY,
-			string serverIP, int? serverPort
+			string region_id, string rdb_connection_string, string region_name,
+			int? loc_x, int? loc_y,
+			int? size_x, int? size_y,
+			string server_ip, int? server_port
 		) {
-			RegionID = regionID;
-			RDBConnectionString = rdbConnectionString;
-			RegionName = regionName;
+			regionId = region_id;
+			_info.RDBConnectionString = rdb_connection_string;
+			regionName = region_name;
 
-			LocationX = locX;
-			LocationY = locY;
+			locationX = loc_x;
+			locationY = loc_y;
 
-			SizeX = sizeX;
-			SizeY = sizeY;
+			sizeX = size_x;
+			sizeX = size_y;
 
-			ServerIP = serverIP;
-			ServerPort = serverPort;
-
-			if (regionName != null) { // If the region name is null, then so is a lot of other stuff.
-				using (MySqlConnection conn = DBHelpers.GetConnection(rdbConnectionString)) {
-					using (MySqlCommand cmd = conn.CreateCommand()) {
-						cmd.CommandText = SQLReadAllRegions;
-						cmd.Parameters.AddWithValue("UUID", RegionID);
-						IDataReader reader = DBHelpers.ExecuteReader(cmd);
-
-						try {
-							if (reader.Read()) {
-								TerrainTexture1 = reader.GetString(0);
-								TerrainTexture2 = reader.GetString(1);
-								TerrainTexture3 = reader.GetString(2);
-								TerrainTexture4 = reader.GetString(3);
-
-								Elevation1NW = reader.GetDouble(4);
-								Elevation2NW = reader.GetDouble(5);
-								Elevation1NE = reader.GetDouble(6);
-								Elevation2NE = reader.GetDouble(7);
-								Elevation1SW = reader.GetDouble(8);
-								Elevation2SW = reader.GetDouble(9);
-								Elevation1SE = reader.GetDouble(10);
-								Elevation2SE = reader.GetDouble(11);
-
-								WaterHeight = reader.GetDouble(12);
-							}
-						}
-						finally {
-							reader.Close();
-						}
-					}
-				}
-			}
+			serverIP = server_ip;
+			serverPort = server_port;
 		}
 
 		#endregion
+
+
 	}
 }
 
