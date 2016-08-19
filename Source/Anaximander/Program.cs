@@ -29,6 +29,7 @@ using log4net;
 using log4net.Config;
 using Nini.Config;
 using System.IO;
+using DataReader;
 
 namespace Anaximander {
 	class Application {
@@ -42,6 +43,8 @@ namespace Anaximander {
 			// First line, hook the appdomain to the crash reporter
 			// Analysis disable once RedundantDelegateCreation // The "new" is required.
 			AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+
+			var watch = System.Diagnostics.Stopwatch.StartNew();
 
 			// Add the arguments supplied when running the application to the configuration
 			var configSource = new ArgvConfigSource(args);
@@ -72,6 +75,26 @@ namespace Anaximander {
 
 			// Read in the ini file
 			ReadConfigurationFromINI(configSource);
+
+			watch.Stop();
+			LOG.Info($"[MAIN] Read configuration in {watch.ElapsedMilliseconds} ms.");
+			watch.Restart();
+
+			// Load the RDB map
+			var rdb_map = new RDBMap(configSource);
+
+			watch.Stop();
+			LOG.Info($"[MAIN] Loaded region DB in {watch.ElapsedMilliseconds} ms for a total of {rdb_map.GetRegionCount()} regions, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
+			watch.Restart();
+
+
+
+			/* Issues to watch for:
+			 * Region delete - The DBA will need to actually remove the estate record to cause a map tile delete.
+			 *  - This implies that the RDBMap needs to check its list of regions against the DB and remove all that aren't in the DB.
+			 * Region move - The list of images in the filesystem will need to be compared with the data structure and any images that are not in the data structure will need to be culled.
+			 *  - Unless the images are actually stored in the filesystem with the regionID as the filename and a conversion table is used (softlinks, redirects, etc).
+			 */
 
 			while (true) {
 			}

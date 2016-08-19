@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RollbarCrashReporter", "Rol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetReader", "AssetReader\AssetReader.csproj", "{2EEF5095-2220-4A49-BFF1-4022C62FD762}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataReader", "DataReader\DataReader.csproj", "{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -28,6 +30,10 @@ Global
 		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Debug|x64.Build.0 = Debug|Any CPU
 		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Release|x64.ActiveCfg = Release|Any CPU
 		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Release|x64.Build.0 = Release|Any CPU
+		{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}.Debug|x64.Build.0 = Debug|Any CPU
+		{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}.Release|x64.ActiveCfg = Release|Any CPU
+		{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}.Release|x64.Build.0 = Release|Any CPU
 		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x64.ActiveCfg = Debug|x64
 		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Debug|x64.Build.0 = Debug|x64
 		{BAD359C5-1737-448E-BE15-9B60B076A58B}.Release|x64.ActiveCfg = Release|x64

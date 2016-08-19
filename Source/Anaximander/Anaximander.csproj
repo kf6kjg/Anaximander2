@@ -36,9 +36,6 @@
     <Reference Include="Nini">
       <HintPath>..\packages\Trove.Nini.1.1.0.0\lib\net20\Nini.dll</HintPath>
     </Reference>
-    <Reference Include="MySql.Data">
-      <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
-    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
     </Reference>
@@ -49,20 +46,30 @@
     <Reference Include="OpenMetaverseTypes">
       <HintPath>..\packages\OpenMetaverseTypes.0.9.3.3318\lib\net35\OpenMetaverseTypes.dll</HintPath>
     </Reference>
+    <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="HeightmapDrawing\TexturedMapTileRenderer.cs" />
+    <Compile Include="HeightmapDrawing\ITerrainTileRenderer.cs" />
+    <Compile Include="Texture\DirectBitmap.cs" />
+    <Compile Include="Texture\CommonTextures.cs" />
+    <Compile Include="Texture\Texture.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Configuration\" />
     <Folder Include="PrimDrawing\" />
+    <Folder Include="HeightmapDrawing\" />
+    <Folder Include="Texture\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="app.config" />
-    <None Include="Anaximander.ini" />
+    <None Include="Anaximander.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Console\Console.csproj">
@@ -72,6 +79,14 @@
     <ProjectReference Include="..\log4net.RollbarNET\log4net.RollbarNET.csproj">
       <Project>{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}</Project>
       <Name>log4net.RollbarNET</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AssetReader\AssetReader.csproj">
+      <Project>{2EEF5095-2220-4A49-BFF1-4022C62FD762}</Project>
+      <Name>AssetReader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DataReader\DataReader.csproj">
+      <Project>{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}</Project>
+      <Name>DataReader</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
