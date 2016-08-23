@@ -3,12 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D3444D44-239D-4568-857F-14603FEC8177}</ProjectGuid>
+    <ProjectGuid>{2C3738D2-2790-453C-88AC-D75F977E61C7}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>UnitTests</RootNamespace>
-    <AssemblyName>UnitTests</AssemblyName>
+    <RootNamespace>RestApi</RootNamespace>
+    <AssemblyName>RestApi</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <CodePage>65001</CodePage>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,36 +31,25 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\Anaximander\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-      <Package>nunit</Package>
+    <Reference Include="Nini">
+      <HintPath>..\packages\Trove.Nini.1.1.0.0\lib\net20\Nini.dll</HintPath>
     </Reference>
-    <Reference Include="RestSharp">
-      <HintPath>..\packages\RestSharp.105.2.3\lib\net45\RestSharp.dll</HintPath>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Nancy">
       <HintPath>..\packages\Nancy.1.4.3\lib\net40\Nancy.dll</HintPath>
     </Reference>
+    <Reference Include="Nancy.Hosting.Self">
+      <HintPath>..\packages\Nancy.Hosting.Self.1.4.1\lib\net40\Nancy.Hosting.Self.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Test.cs" />
-    <Compile Include="RestAPI\AuthenticationTests.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RestAPI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\Anaximander\Anaximander.csproj">
-      <Project>{BAD359C5-1737-448E-BE15-9B60B076A58B}</Project>
-      <Name>Anaximander</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\RestApi\RestApi.csproj">
-      <Project>{2C3738D2-2790-453C-88AC-D75F977E61C7}</Project>
-      <Name>RestApi</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="RestAPI\" />
   </ItemGroup>
 </Project>

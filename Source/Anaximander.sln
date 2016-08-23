@@ -20,12 +20,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetReader", "AssetReader\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataReader", "DataReader\DataReader.csproj", "{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestApi", "RestApi\RestApi.csproj", "{2C3738D2-2790-453C-88AC-D75F977E61C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C3738D2-2790-453C-88AC-D75F977E61C7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2C3738D2-2790-453C-88AC-D75F977E61C7}.Debug|x64.Build.0 = Debug|Any CPU
+		{2C3738D2-2790-453C-88AC-D75F977E61C7}.Release|x64.ActiveCfg = Release|Any CPU
+		{2C3738D2-2790-453C-88AC-D75F977E61C7}.Release|x64.Build.0 = Release|Any CPU
 		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Debug|x64.Build.0 = Debug|Any CPU
 		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Release|x64.ActiveCfg = Release|Any CPU
