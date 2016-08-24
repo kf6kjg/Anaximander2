@@ -76,6 +76,7 @@ namespace UnitTests {
 			Assert.AreEqual("OK", content);
 		}
 
+		#region Map Rules
 		[Test]
 		public void TestGetMapRulesGlobal() {
 			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
@@ -103,6 +104,7 @@ namespace UnitTests {
 			Assert.AreEqual(false, response.Data?.terrainTexture);
 			Assert.AreEqual(2, response.Data?.minPrimScaleX);
 		}
+		#endregion
 	}
 }
 
