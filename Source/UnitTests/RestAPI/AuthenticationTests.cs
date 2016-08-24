@@ -24,7 +24,7 @@
 // THE SOFTWARE.
 using System;
 using System.Collections;
-using System.Linq;
+using System.Collections.Generic;
 using System.Net;
 using NUnit.Framework;
 using RestSharp;
@@ -38,18 +38,31 @@ namespace UnitTests {
 		private static readonly string _protocol = _useSSL ? "https" : "http";
 
 		private static string _regionUUID;
-		private static IEnumerable MapRulesDelegate(string uuid = null) {
+		private static IDictionary MapRulesDelegate(string uuid = null) {
 			_regionUUID = uuid;
-			return Enumerable.Repeat("abc",1);
+			return new Dictionary<string, object>
+			{
+				["terrainShape"] = true,
+				["terrainTexture"] = false,
+
+				["minPrimScaleX"] = 2,
+				["minPrimScaleY"] = 2,
+				["minPrimScaleZ"] = 2
+			};
 		}
 
 		private static void UpdateRegionDelegate(string uuid) {
 			_regionUUID = uuid;
 		}
 
-		[SetUp]
+		[TestFixtureSetUp]
 		public void Init() {
 			RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, _domain, _port, _useSSL);
+		}
+
+		[TestFixtureTearDown]
+		public void Stop() {
+			RestApi.RestAPI.StopHost();
 		}
 
 		[Test]
@@ -67,11 +80,13 @@ namespace UnitTests {
 		public void TestGetMapRulesGlobal() {
 			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
 			var request = new RestRequest("maprules", Method.GET);
-			IRestResponse response = client.Execute(request);
-			var content = response.Content;
+			var response = client.Execute<RulesModel>(request);
 
 			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
 			Assert.Null(_regionUUID);
+			Assert.AreEqual(true, response.Data?.terrainShape);
+			Assert.AreEqual(false, response.Data?.terrainTexture);
+			Assert.AreEqual(2, response.Data?.minPrimScaleX);
 		}
 
 		[Test]
@@ -80,11 +95,13 @@ namespace UnitTests {
 
 			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
 			var request = new RestRequest($"maprules/{regionUUID}", Method.GET);
-			IRestResponse response = client.Execute(request);
-			var content = response.Content;
+			var response = client.Execute<RulesModel>(request);
 
 			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
 			Assert.AreEqual(regionUUID, _regionUUID);
+			Assert.AreEqual(true, response.Data?.terrainShape);
+			Assert.AreEqual(false, response.Data?.terrainTexture);
+			Assert.AreEqual(2, response.Data?.minPrimScaleX);
 		}
 	}
 }

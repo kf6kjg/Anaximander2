@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Test.cs" />
     <Compile Include="RestAPI\AuthenticationTests.cs" />
+    <Compile Include="RestAPI\DataModels.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

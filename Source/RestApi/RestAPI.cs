@@ -33,7 +33,7 @@ namespace RestApi {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		public delegate void UpdateRegionDelegate(string uuid);
-		public delegate IEnumerable GetMapRulesDelegate(string uuid = null);
+		public delegate IDictionary GetMapRulesDelegate(string uuid = null);
 
 		private static UpdateRegionDelegate _updateRegionDelegate;
 		private static GetMapRulesDelegate _getMapRulesDelegate;
@@ -49,13 +49,45 @@ namespace RestApi {
 			host.Start();
 		}
 
-		public RestAPI() {
-			LOG.Debug("[REST_API] Starting up.");
+		public static void StopHost() {
+			host.Stop();
+		}
 
+		public RestAPI() {
 			Get["/test"] = _ => {
 				LOG.Debug("[REST_API] test called.");
 
 				return (Response) "OK";
+			};
+
+			Post["/updateregion/{uuid}"] = parameters => {
+				//this.RequiresHttps();
+				LOG.Debug($"[REST_API] Update region called for region id {parameters.uuid}.");
+
+				if (_updateRegionDelegate == null) {
+					return (Response) HttpStatusCode.NotFound;
+				}
+
+				// TODO: read the API key and verify.
+
+				// TODO: read in the change data object and pass on to delegate.
+
+				IAsyncResult result = _updateRegionDelegate.BeginInvoke(parameters.uuid, null, null);
+				_updateRegionDelegate.EndInvoke(result);
+
+				return (Response) HttpStatusCode.OK;
+			};
+
+			Get["/maprules/{uuid?}"] = parameters => {
+				LOG.Debug($"[REST_API] Map rules called{parameters["uuid"].Value == null ? "" : $" for region id {parameters["uuid"].Value}"}.");
+
+				if (_getMapRulesDelegate == null) {
+					return (Response) HttpStatusCode.NotFound;
+				}
+
+				IAsyncResult result = _getMapRulesDelegate.BeginInvoke(parameters["uuid"].Value, null, null);
+
+				return _getMapRulesDelegate.EndInvoke(result);
 			};
 		}
 	}
