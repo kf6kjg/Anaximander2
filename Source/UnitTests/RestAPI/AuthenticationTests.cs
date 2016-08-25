@@ -55,9 +55,14 @@ namespace UnitTests {
 			_regionUUID = uuid;
 		}
 
+		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) {
+			_regionUUID = uuid;
+			return apiKey == uuid;
+		}
+
 		[TestFixtureSetUp]
 		public void Init() {
-			RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, _domain, _port, _useSSL);
+			RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, _domain, _port, _useSSL);
 		}
 
 		[TestFixtureTearDown]
@@ -103,6 +108,58 @@ namespace UnitTests {
 			Assert.AreEqual(true, response.Data?.terrainShape);
 			Assert.AreEqual(false, response.Data?.terrainTexture);
 			Assert.AreEqual(2, response.Data?.minPrimScaleX);
+		}
+		#endregion
+
+		#region Update Region
+		[Test]
+		public void TestUpdateRegionGoodKey() {
+			string regionUUID = Guid.NewGuid().ToString();
+
+			string APIKey = regionUUID;
+
+			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
+			var request = new RestRequest($"updateregion/{regionUUID}", Method.POST);
+			request.RequestFormat = DataFormat.Json;
+
+			var body = new
+			{
+				terrainHeight = true
+			};
+
+			request.AddJsonBody(body);
+			request.OnBeforeDeserialization = resp => { resp.ContentType = "application/json"; };
+			request.AddHeader("Authorization", APIKey);
+
+			var response = client.Execute(request);
+
+			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
+			Assert.AreEqual(regionUUID, _regionUUID);
+		}
+
+		[Test]
+		public void TestUpdateRegionBadKey() {
+			string regionUUID = Guid.NewGuid().ToString();
+
+			const string APIKey = "greensleeves";
+
+			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
+			var request = new RestRequest($"updateregion/{regionUUID}", Method.POST);
+			request.RequestFormat = DataFormat.Json;
+
+			var body = new
+			{
+				terrainHeight = true
+			};
+
+			request.AddJsonBody(body);
+			request.OnBeforeDeserialization = resp => { resp.ContentType = "application/json"; };
+			request.AddHeader("Authorization", APIKey);
+
+			var response = client.Execute(request);
+
+			Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode, "Bad Status: \n\n" + response.Content);
+			Assert.AreEqual(regionUUID, _regionUUID);
 		}
 		#endregion
 	}

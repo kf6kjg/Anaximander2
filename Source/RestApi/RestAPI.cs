@@ -24,6 +24,7 @@
 // THE SOFTWARE.
 using System;
 using System.Collections;
+using System.Linq;
 using System.Reflection;
 using log4net;
 using Nancy;
@@ -34,14 +35,17 @@ namespace RestApi {
 
 		public delegate void UpdateRegionDelegate(string uuid);
 		public delegate IDictionary GetMapRulesDelegate(string uuid = null);
+		public delegate bool CheckAPIKeyDelegate(string apiKey, string uuid);
 
 		private static UpdateRegionDelegate _updateRegionDelegate;
 		private static GetMapRulesDelegate _getMapRulesDelegate;
+		private static CheckAPIKeyDelegate _checkAPIKeyDelegate;
 		private static Nancy.Hosting.Self.NancyHost host;
 
-		public static void StartHost(UpdateRegionDelegate update, GetMapRulesDelegate rules, string domain = "localhost", uint port = 6473, bool useSSL = true) {
+		public static void StartHost(UpdateRegionDelegate update, GetMapRulesDelegate rules, CheckAPIKeyDelegate keychecker, string domain = "localhost", uint port = 6473, bool useSSL = true) {
 			_updateRegionDelegate = update;
 			_getMapRulesDelegate = rules;
+			_checkAPIKeyDelegate = keychecker;
 
 			var protocol = useSSL ? "https" : "http";
 
@@ -64,22 +68,27 @@ namespace RestApi {
 				//this.RequiresHttps();
 				LOG.Debug($"[REST_API] Update region called for region id {parameters.uuid}.");
 
-				if (_updateRegionDelegate == null) {
+				if (_updateRegionDelegate == null || _checkAPIKeyDelegate == null) {
 					return (Response) HttpStatusCode.NotFound;
 				}
 
-				// TODO: read the API key and verify.
+				// Read the API key and verify.
+				var authtoken = Request.Headers["Authorization"].FirstOrDefault();
+				if (!_checkAPIKeyDelegate.EndInvoke(_checkAPIKeyDelegate.BeginInvoke(authtoken, parameters.uuid, null, null))) {
+					return (Response) HttpStatusCode.Forbidden;
+				}
 
 				// TODO: read in the change data object and pass on to delegate.
 
-				IAsyncResult result = _updateRegionDelegate.BeginInvoke(parameters.uuid, null, null);
-				_updateRegionDelegate.EndInvoke(result);
+
+
+				_updateRegionDelegate.EndInvoke(_updateRegionDelegate.BeginInvoke(parameters.uuid, null, null));
 
 				return (Response) HttpStatusCode.OK;
 			};
 
 			Get["/maprules/{uuid?}"] = parameters => {
-				LOG.Debug($"[REST_API] Map rules called{parameters["uuid"].Value == null ? "" : $" for region id {parameters["uuid"].Value}"}.");
+				//LOG.Debug($"[REST_API] Map rules called{parameters["uuid"].Value == null ? "" : $" for region id {parameters["uuid"].Value}"}.");
 
 				if (_getMapRulesDelegate == null) {
 					return (Response) HttpStatusCode.NotFound;

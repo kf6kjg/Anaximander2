@@ -88,5 +88,9 @@
       <Project>{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}</Project>
       <Name>DataReader</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RestApi\RestApi.csproj">
+      <Project>{2C3738D2-2790-453C-88AC-D75F977E61C7}</Project>
+      <Name>RestApi</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
