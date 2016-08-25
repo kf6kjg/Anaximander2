@@ -28,12 +28,13 @@ using System.Linq;
 using System.Reflection;
 using log4net;
 using Nancy;
+using Nancy.ModelBinding;
 
 namespace RestApi {
 	public class RestAPI : NancyModule {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public delegate void UpdateRegionDelegate(string uuid);
+		public delegate void UpdateRegionDelegate(string uuid, ChangeInfo changeData);
 		public delegate IDictionary GetMapRulesDelegate(string uuid = null);
 		public delegate bool CheckAPIKeyDelegate(string apiKey, string uuid);
 
@@ -42,12 +43,16 @@ namespace RestApi {
 		private static CheckAPIKeyDelegate _checkAPIKeyDelegate;
 		private static Nancy.Hosting.Self.NancyHost host;
 
+		private static readonly BindingConfig bindingConfig = new BindingConfig();
+
 		public static void StartHost(UpdateRegionDelegate update, GetMapRulesDelegate rules, CheckAPIKeyDelegate keychecker, string domain = "localhost", uint port = 6473, bool useSSL = true) {
 			_updateRegionDelegate = update;
 			_getMapRulesDelegate = rules;
 			_checkAPIKeyDelegate = keychecker;
 
 			var protocol = useSSL ? "https" : "http";
+
+			bindingConfig.BodyOnly = true;
 
 			host = new Nancy.Hosting.Self.NancyHost(new Uri($"{protocol}://{domain}:{port}"));
 			host.Start();
@@ -78,11 +83,10 @@ namespace RestApi {
 					return (Response) HttpStatusCode.Forbidden;
 				}
 
-				// TODO: read in the change data object and pass on to delegate.
+				// Read in the change data object and pass on to delegate.
+				var changeData = this.Bind<ChangeInfo>(bindingConfig);
 
-
-
-				_updateRegionDelegate.EndInvoke(_updateRegionDelegate.BeginInvoke(parameters.uuid, null, null));
+				_updateRegionDelegate.EndInvoke(_updateRegionDelegate.BeginInvoke(parameters.uuid, changeData, null, null));
 
 				return (Response) HttpStatusCode.OK;
 			};

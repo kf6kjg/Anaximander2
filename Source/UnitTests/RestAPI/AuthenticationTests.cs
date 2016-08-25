@@ -51,7 +51,7 @@ namespace UnitTests {
 			};
 		}
 
-		private static void UpdateRegionDelegate(string uuid) {
+		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) {
 			_regionUUID = uuid;
 		}
 
