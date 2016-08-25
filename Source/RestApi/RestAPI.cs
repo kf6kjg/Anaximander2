@@ -85,10 +85,9 @@ namespace RestApi {
 
 				// Read in the change data object and pass on to delegate.
 				var changeData = this.Bind<ChangeInfo>(bindingConfig);
-
 				_updateRegionDelegate.EndInvoke(_updateRegionDelegate.BeginInvoke(parameters.uuid, changeData, null, null));
 
-				return (Response) HttpStatusCode.OK;
+				return (Response) HttpStatusCode.NoContent;
 			};
 
 			Get["/maprules/{uuid?}"] = parameters => {
