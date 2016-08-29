@@ -49,6 +49,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestAPI.cs" />
     <Compile Include="DataModels\ChangeInfo.cs" />
+    <Compile Include="JsonConvertEnum.cs" />
+    <Compile Include="RestAPIBootstrapper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

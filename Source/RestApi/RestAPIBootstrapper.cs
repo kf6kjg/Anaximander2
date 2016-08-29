@@ -23,10 +23,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using Nancy;
 
 namespace RestApi {
-	public class RestAPIBootstrapper {
-		public RestAPIBootstrapper() {
+	// Automagically called by the default bootstrapper.
+	public class RestAPIBootstrapper : DefaultNancyBootstrapper {
+		protected override void ApplicationStartup(Nancy.TinyIoc.TinyIoCContainer container, Nancy.Bootstrapper.IPipelines pipelines) {
+			base.ApplicationStartup(container, pipelines);
+			Nancy.Json.JsonSettings.PrimitiveConverters.Add(new JsonConvertEnum());
 		}
 	}
 }

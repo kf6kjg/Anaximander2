@@ -23,10 +23,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using Nancy.Json;
+using System.Collections.Generic;
 
 namespace RestApi {
-	public class JsonConvertEnum {
-		public JsonConvertEnum() {
+	// Many thanks to http://stackoverflow.com/a/35195669
+	public class JsonConvertEnum : JavaScriptPrimitiveConverter {
+		public override IEnumerable<Type> SupportedTypes {
+			get {
+				yield return typeof(Enum);
+			}
+		}
+
+		public override object Deserialize(object primitiveValue, Type type, JavaScriptSerializer serializer) {
+			return type.IsEnum
+				? Enum.Parse(type, (string)primitiveValue)
+				: null
+			;
+		}
+
+		public override object Serialize(object obj, JavaScriptSerializer serializer) {
+			return obj.GetType().IsEnum
+				? obj.ToString()
+				: null
+			;
 		}
 	}
 }
