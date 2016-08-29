@@ -133,7 +133,7 @@ namespace UnitTests {
 
 			var response = client.Execute(request);
 
-			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
+			Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode, "Bad Status: \n\n" + response.Content);
 			Assert.AreEqual(regionUUID, _regionUUID);
 		}
 
