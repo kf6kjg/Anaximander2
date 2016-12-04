@@ -143,21 +143,17 @@ namespace Anaximander {
 	public class TexturedMapTileRenderer : ITerrainTileRenderer {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private Texture[] _textures = new Texture[4];
+		private readonly Texture[] _textures = new Texture[4];
+		private readonly DataReader.Region _region;
 
 		#region Constructors
 
-		public TexturedMapTileRenderer(Texture texture1, Texture texture2, Texture texture3, Texture texture4) {
-			_textures[0] = texture1;
-			_textures[1] = texture2;
-			_textures[2] = texture3;
-			_textures[3] = texture4;
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Anaximander.TexturedMapTileRenderer"/> class using the common terrain textures.
-		/// </summary>
-		public TexturedMapTileRenderer() : this (CommonTextures.TERRAIN_TEXTURE_1, CommonTextures.TERRAIN_TEXTURE_2, CommonTextures.TERRAIN_TEXTURE_3, CommonTextures.TERRAIN_TEXTURE_4) {
+		public TexturedMapTileRenderer(DataReader.Region region) {
+			_region = region;
+			_textures[0] = new Texture(UUID.Parse(region.terrainTexture1), CommonTextures.TERRAIN_TEXTURE_1.AverageColor); // TODO: needs to happen later: this violates the no-data-reads-on-bootup principle.   Should be resolved by the addition of the texture color cache.
+			_textures[1] = new Texture(UUID.Parse(region.terrainTexture2), CommonTextures.TERRAIN_TEXTURE_2.AverageColor);
+			_textures[2] = new Texture(UUID.Parse(region.terrainTexture3), CommonTextures.TERRAIN_TEXTURE_3.AverageColor);
+			_textures[3] = new Texture(UUID.Parse(region.terrainTexture4), CommonTextures.TERRAIN_TEXTURE_4.AverageColor);
 		}
 
 		#endregion
@@ -168,7 +164,7 @@ namespace Anaximander {
 		// f(0) = 0, f(0.5) = 0.5, f(1) = 1,
 		// f'(x) = 0 at x = 0 and x = 1; f'(0.5) = 1.5,
 		// f''(0.5) = 0, f''(x) != 0 for x != 0.5
-		private static float Scurve(float v) {
+		private static double Scurve(double v) {
 			return (v * v * (3f - 2f * v));
 		}
 
@@ -188,11 +184,48 @@ namespace Anaximander {
 				c1.v * (1f - ratio) + c2.v * ratio);
 		}
 
+		/// <summary>
+		/// Gets the height at the specified location, blending the value depending on the proximity to the pixel center.
+		/// AKA: bilinear filtering.
+		/// </summary>
+		/// <returns>The height in meters.</returns>
+		/// <param name="hm">The heightmap array.</param>
+		/// <param name="x">The x coordinate.</param>
+		/// <param name="y">The y coordinate.</param>
+		private static double getHeight(double[,] hm, double x, double y) {
+			int x_0 = (int)x,  y_0 = (int)y;
+			int x_1 = x_0 + 1, y_1 = y_0 + 1;
+
+			var x_ratio = x - x_0; // The fractional part gives the 0-1 ratio needed.
+			var y_ratio = y - y_0;
+
+			// Unit square interpretation of bilinear filtering.
+			if (x_0 < hm.GetLength(0) - 1 && y_0 < hm.GetLength(1) - 1)
+				return
+					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
+					hm[x_1, y_0] *      x_ratio  * (1 - y_ratio) +
+					hm[x_0, y_1] * (1 - x_ratio) *      y_ratio  +
+					hm[x_1, y_1] *      x_ratio  *      y_ratio
+					;
+			else if (x_0 < hm.GetLength(0) - 1)
+				return
+					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
+					hm[x_1, y_0] *      x_ratio  * (1 - y_ratio)
+					;
+			else if (y_0 < hm.GetLength(1) - 1)
+				return
+					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
+					hm[x_0, y_1] * (1 - x_ratio) *      y_ratio
+					;
+			else
+				return
+					hm[x_0, y_0]
+					;
+		}
 		#endregion
 
 		public void TerrainToBitmap(DirectBitmap mapbmp)
 		{
-			/*
 			int tc = Environment.TickCount;
 			LOG.Info("[TERRAIN]: Generating Maptile Terrain (Textured)");
 
@@ -202,39 +235,37 @@ namespace Anaximander {
 			var hsv3 = new HSV(_textures[2].AverageColor);
 			var hsv4 = new HSV(_textures[3].AverageColor);
 
-			float levelNElow = (float)settings.Elevation1NE;
-			float levelNEhigh = (float)settings.Elevation2NE;
+			var levelNElow = _region.elevation1NE;
+			var levelNEhigh = _region.elevation2NE;
 
-			float levelNWlow = (float)settings.Elevation1NW;
-			float levelNWhigh = (float)settings.Elevation2NW;
+			var levelNWlow = _region.elevation1NW;
+			var levelNWhigh = _region.elevation2NW;
 
-			float levelSElow = (float)settings.Elevation1SE;
-			float levelSEhigh = (float)settings.Elevation2SE;
+			var levelSElow = _region.elevation1SE;
+			var levelSEhigh = _region.elevation2SE;
 
-			float levelSWlow = (float)settings.Elevation1SW;
-			float levelSWhigh = (float)settings.Elevation2SW;
+			var levelSWlow = _region.elevation1SW;
+			var levelSWhigh = _region.elevation2SW;
 
-			float waterHeight = (float)settings.WaterHeight;
-
-			double[,] hm = m_scene.Heightmap.GetDoubles();
+			var waterHeight = _region.waterHeight;
 
 			for (int x = 0; x < mapbmp.Width; x++)
 			{
-				float columnRatio = (float)x / (mapbmp.Width - 1); // 0 - 1, for interpolation
+				var columnRatio = (double)x / (mapbmp.Width - 1); // 0 - 1, for interpolation
 
 				for (int y = 0; y < mapbmp.Height; y++)
 				{
-					float rowRatio = (float)y / (mapbmp.Height - 1); // 0 - 1, for interpolation
+					var rowRatio = (double)y / (mapbmp.Height - 1); // 0 - 1, for interpolation
 
 					// Y flip the cordinates for the bitmap: hf origin is lower left, bm origin is upper left
-					int yr = (mapbmp.Height - 1) - y;
+					var yr = (mapbmp.Height - 1) - y;
 
-					float heightvalue = mapbmp.Width == 256 ?
-						getHeight(hm, (int)(255 * columnRatio), (int)(255 * rowRatio)) :
-						getHeight(hm, 255 * columnRatio, 255 * rowRatio);
+					var heightvalue = mapbmp.Width == 256 ?
+						getHeight(_region.heightmapData, (int)(255 * columnRatio), (int)(255 * rowRatio)) :
+						getHeight(_region.heightmapData, 255 * columnRatio, 255 * rowRatio);
 
-					if (Single.IsInfinity(heightvalue) || Single.IsNaN(heightvalue))
-						heightvalue = 0;
+					if (Double.IsInfinity(heightvalue) || Double.IsNaN(heightvalue))
+						heightvalue = 0d;
 
 					if (heightvalue > waterHeight)
 					{
@@ -244,25 +275,25 @@ namespace Anaximander {
 						//float bigNoise = (float)TerrainUtil.InterpolatedNoise(x / 8.0, y / 8.0) * .5f + .5f; // map to 0.0 - 1.0
 						//float smallNoise = (float)TerrainUtil.InterpolatedNoise(x + 33, y + 43) * .5f + .5f;
 						//float hmod = heightvalue + smallNoise * 3f + S(S(bigNoise)) * 10f;
-						float hmod =
+						var hmod =
 							heightvalue +
-							(float)TerrainUtil.InterpolatedNoise(x + 33, y + 43) * 1.5f + 1.5f + // 0 - 3
-							S(S((float)TerrainUtil.InterpolatedNoise(x / 8.0, y / 8.0) * .5f + .5f)) * 10f; // 0 - 10
+							TerrainUtil.InterpolatedNoise(x + 33, y + 43) * 1.5f + 1.5f + // 0 - 3
+							Scurve(Scurve(TerrainUtil.InterpolatedNoise(x / 8.0, y / 8.0) * .5f + .5f)) * 10f; // 0 - 10
 
 						// find the low/high values for this point (interpolated bilinearily)
 						// (and remember, x=0,y=0 is SW)
-						float low = levelSWlow * (1f - rowRatio) * (1f - columnRatio) +
+						var low = levelSWlow * (1f - rowRatio) * (1f - columnRatio) +
 							levelSElow * (1f - rowRatio) * columnRatio +
 							levelNWlow * rowRatio * (1f - columnRatio) +
 							levelNElow * rowRatio * columnRatio;
-						float high = levelSWhigh * (1f - rowRatio) * (1f - columnRatio) +
+						var high = levelSWhigh * (1f - rowRatio) * (1f - columnRatio) +
 							levelSEhigh * (1f - rowRatio) * columnRatio +
 							levelNWhigh * rowRatio * (1f - columnRatio) +
 							levelNEhigh * rowRatio * columnRatio;
 						if (high < low)
 						{
 							// someone tried to fool us. High value should be higher than low every time
-							float tmp = high;
+							var tmp = high;
 							high = low;
 							low = tmp;
 						}
@@ -276,34 +307,34 @@ namespace Anaximander {
 							// first, rescale h to 0.0 - 1.0
 							hmod = (hmod - low) / (high - low);
 							// now we have to split: 0.00 => color1, 0.33 => color2, 0.67 => color3, 1.00 => color4
-							if (hmod < 1f/3f) hsv = interpolateHSV(ref hsv1, ref hsv2, hmod * 3f);
-							else if (hmod < 2f/3f) hsv = interpolateHSV(ref hsv2, ref hsv3, (hmod * 3f) - 1f);
-							else hsv = interpolateHSV(ref hsv3, ref hsv4, (hmod * 3f) - 2f);
+							if (hmod < 1d/3d) hsv = interpolateHSV(ref hsv1, ref hsv2, (float)(hmod * 3d));
+							else if (hmod < 2d/3d) hsv = interpolateHSV(ref hsv2, ref hsv3, (float)((hmod * 3d) - 1d));
+							else hsv = interpolateHSV(ref hsv3, ref hsv4, (float)((hmod * 3d) - 2d));
 						}
 
 						// Shade the terrain for shadows
 						if (x < (mapbmp.Width - 1) && y < (mapbmp.Height - 1))
 						{
-							float hfvaluecompare = getHeight(hm, (x + 1) / (mapbmp.Width - 1), (y + 1) / (mapbmp.Height - 1)); // light from north-east => look at land height there
-							if (Single.IsInfinity(hfvaluecompare) || Single.IsNaN(hfvaluecompare))
-								hfvaluecompare = 0f;
+							var hfvaluecompare = getHeight(_region.heightmapData, (x + 1) / (mapbmp.Width - 1), (y + 1) / (mapbmp.Height - 1)); // light from north-east => look at land height there
+							if (Double.IsInfinity(hfvaluecompare) || Double.IsNaN(hfvaluecompare))
+								hfvaluecompare = 0d;
 
-							float hfdiff = heightvalue - hfvaluecompare;  // => positive if NE is lower, negative if here is lower
-							hfdiff *= 0.06f; // some random factor so "it looks good"
-							if (hfdiff > 0.02f)
+							var hfdiff = heightvalue - hfvaluecompare;  // => positive if NE is lower, negative if here is lower
+							hfdiff *= 0.06d; // some random factor so "it looks good"
+							if (hfdiff > 0.02d)
 							{
-								float highlightfactor = 0.18f;
+								var highlightfactor = 0.18d;
 								// NE is lower than here
 								// We have to desaturate and lighten the land at the same time
-								hsv.s = (hsv.s - (hfdiff * highlightfactor) > 0f) ? hsv.s - (hfdiff * highlightfactor) : 0f;
-								hsv.v = (hsv.v + (hfdiff * highlightfactor) < 1f) ? hsv.v + (hfdiff * highlightfactor) : 1f;
+								hsv.s = (hsv.s - (hfdiff * highlightfactor) > 0d) ? (float) (hsv.s - (hfdiff * highlightfactor)) : 0f;
+								hsv.v = (hsv.v + (hfdiff * highlightfactor) < 1d) ? (float) (hsv.v + (hfdiff * highlightfactor)) : 1f;
 							}
 							else if (hfdiff < -0.02f)
 							{
 								// here is lower than NE:
 								// We have to desaturate and blacken the land at the same time
-								hsv.s = (hsv.s + hfdiff > 0f) ? hsv.s + hfdiff : 0f;
-								hsv.v = (hsv.v + hfdiff > 0f) ? hsv.v + hfdiff : 0f;
+								hsv.s = (hsv.s + hfdiff > 0f) ? (float) (hsv.s + hfdiff) : 0f;
+								hsv.v = (hsv.v + hfdiff > 0f) ? (float) (hsv.v + hfdiff) : 0f;
 							}
 						}
 						mapbmp.Bitmap.SetPixel(x, yr, hsv.toColor());
@@ -313,7 +344,7 @@ namespace Anaximander {
 						// We're under the water level with the terrain, so paint water instead of land
 
 						heightvalue = waterHeight - heightvalue;
-						if (Single.IsInfinity(heightvalue) || Single.IsNaN(heightvalue))
+						if (Double.IsInfinity(heightvalue) || Double.IsNaN(heightvalue))
 							heightvalue = 0f;
 						else if (heightvalue > 19f)
 							heightvalue = 19f;
@@ -328,7 +359,6 @@ namespace Anaximander {
 				}
 			}
 			LOG.Info("[TERRAIN]: Done in " + (Environment.TickCount - tc) + " ms");
-			*/
 		}
 
 	}

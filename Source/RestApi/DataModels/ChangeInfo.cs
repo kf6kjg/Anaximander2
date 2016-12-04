@@ -23,14 +23,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Generic;
 
 namespace RestApi {
 	public class ChangeInfo {
-		public bool terrainShape { get; set;}
-		public bool terrainTexture { get; set;}
-		public int minPrimScaleX { get; set;}
-		public int minPrimScaleY { get; set;}
-		public int minPrimScaleZ { get; set;}
+		public Dictionary<string, ChangeCategory> Changes { get; set; }
+	}
+
+	public enum ChangeCategory {
+		/// <summary>
+		/// Terrain heightmap data was edited, reloaded, or otherwise modified.
+		/// </summary>
+		TerrainElevationChange,
+		/// <summary>
+		/// Terrain texture information was changed.  Could be any of the textures or their repective ehights were adjusted.
+		/// </summary>
+		TerrainTextureChange,
+		/// <summary>
+		/// A prim was changed that qualifies to taint the map.  Please be sure of that before using this value.
+		/// </summary>
+		PrimChange,
 	}
 }
 

@@ -104,6 +104,8 @@ namespace DataReader {
 
 		public double waterHeight { get { return _terrainData.waterHeight; } private set { _terrainData.waterHeight = value; } }
 
+		public double[,] heightmapData { get { return _terrainData.heightmap; } private set { _terrainData.heightmap = value; }} // Yes, the elements are stull mutable, but I don't feel like making my life that difficult ATM.
+
 		#endregion
 
 		#region Private Properties

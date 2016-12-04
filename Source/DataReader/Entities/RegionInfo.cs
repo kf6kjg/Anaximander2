@@ -1,4 +1,4 @@
-﻿// EmptyStruct.cs
+﻿// RegionInfo.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>

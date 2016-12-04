@@ -1,4 +1,4 @@
-﻿// MyClass.cs
+﻿// RDBMap.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -25,6 +25,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -34,9 +36,10 @@ using Nini.Config;
 
 namespace DataReader {
 	public class RDBMap {
-		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly Dictionary<string, Region> MAP = new Dictionary<string, Region>();
+		private readonly Dictionary<long, Region> COORD_MAP = new Dictionary<long, Region>();
 		private readonly List<string> DEAD_REGION_IDS = new List<string>();
 
 		private readonly string CONNECTION_STRING;
@@ -103,6 +106,10 @@ namespace DataReader {
 
 			Parallel.ForEach(MAP.Keys.Except(active_regions).ToList(), (id) => {
 				DEAD_REGION_IDS.Add(id);
+				Region reg;
+				if (MAP.TryGetValue(id, out reg) && reg.locationX != null && reg.locationY != null) {
+					COORD_MAP.Remove(CoordToIndex((int)reg.locationX, (int)reg.locationY));
+				}
 				MAP.Remove(id);
 			});
 		}
@@ -181,13 +188,19 @@ namespace DataReader {
 				}
 			}
 
+			#if DEBUG
+			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
+
+			Parallel.ForEach(regions_by_rdb.Keys.ToList(), options, (rdb_connection_string) => {
+			#else
 			Parallel.ForEach(regions_by_rdb.Keys.ToList(), (rdb_connection_string) => {
+			#endif
 				RegionTerrainData data;
 				string region_id;
 
 				using (MySqlConnection conn = DBHelpers.GetConnection(rdb_connection_string)) {
 					using (MySqlCommand cmd = conn.CreateCommand()) {
-						cmd.CommandText = @"SELECT RegionUUID, terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height FROM regionsettings;";
+						cmd.CommandText = @"SELECT RegionUUID, terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield FROM regionsettings natural join terrain;";
 						IDataReader reader = DBHelpers.ExecuteReader(cmd);
 
 						try {
@@ -210,7 +223,28 @@ namespace DataReader {
 
 								data.waterHeight = GetDBValue<double>(reader, "water_height");
 
-								MAP.Add(region_id, new Region(regions_by_rdb[rdb_connection_string][region_id], data));
+								data.heightmap = new double[256, 256];
+								data.heightmap.Initialize();
+
+								var br = new BinaryReader(new MemoryStream((byte[])reader["Heightfield"]));
+								for (int x = 0; x < data.heightmap.GetLength(0); x++)
+								{
+									for (int y = 0; y < data.heightmap.GetLength(1); y++)
+									{
+										data.heightmap[x, y] = br.ReadDouble();
+									}
+								}
+								LOG.Info($"[REGION DB]: Loaded data for region {region_id}");
+
+								var info = regions_by_rdb[rdb_connection_string][region_id];
+								var region = new Region(info, data);
+
+								MAP.Add(region_id, region);
+
+								// Not all regions returned have a position, after all some could be in a crashed state.
+								if (info.locationX != null) {
+									COORD_MAP.Add(CoordToIndex((int)info.locationX, (int)info.locationY), region);
+								}
 							}
 						}
 						finally {
@@ -233,7 +267,15 @@ namespace DataReader {
 			return MAP[uuid];
 		}
 
+		public Region GetRegionByLocation(int locationX, int locationY) {
+			return COORD_MAP[CoordToIndex(locationX, locationY)];
+		}
+
 		#endregion
+
+		private static long CoordToIndex(int x, int y) {
+			return (long)x << 32 + y;
+		}
 
 		private static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T: struct {
 			var result = new T?();

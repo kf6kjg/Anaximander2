@@ -35,7 +35,7 @@ namespace RestApi {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		public delegate void UpdateRegionDelegate(string uuid, ChangeInfo changeData);
-		public delegate IDictionary GetMapRulesDelegate(string uuid = null);
+		public delegate RulesModel GetMapRulesDelegate(string uuid = null);
 		public delegate bool CheckAPIKeyDelegate(string apiKey, string uuid);
 
 		private static UpdateRegionDelegate _updateRegionDelegate;
@@ -97,7 +97,7 @@ namespace RestApi {
 					return (Response) HttpStatusCode.NotFound;
 				}
 
-				IAsyncResult result = _getMapRulesDelegate.BeginInvoke(parameters["uuid"].Value, null, null);
+				var result = _getMapRulesDelegate.BeginInvoke(parameters["uuid"].Value, null, null);
 
 				return _getMapRulesDelegate.EndInvoke(result);
 			};

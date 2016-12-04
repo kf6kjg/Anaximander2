@@ -49,6 +49,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestAPI.cs" />
     <Compile Include="DataModels\ChangeInfo.cs" />
+    <Compile Include="DataModels\RulesModel.cs" />
     <Compile Include="JsonConvertEnum.cs" />
     <Compile Include="RestAPIBootstrapper.cs" />
   </ItemGroup>

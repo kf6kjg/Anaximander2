@@ -41,6 +41,8 @@ namespace DataReader {
 		public double elevation2SE;
 
 		public double waterHeight;
+
+		public double[,] heightmap;
 	}
 }
 

@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Net;
 using NUnit.Framework;
 using RestSharp;
+using RestApi;
 
 namespace UnitTests {
 	[TestFixture]
@@ -38,20 +39,20 @@ namespace UnitTests {
 		private static readonly string _protocol = _useSSL ? "https" : "http";
 
 		private static string _regionUUID;
-		private static IDictionary MapRulesDelegate(string uuid = null) {
+		private static RulesModel MapRulesDelegate(string uuid = null) {
 			_regionUUID = uuid;
-			return new Dictionary<string, object>
+			return new RulesModel
 			{
-				["terrainShape"] = true,
-				["terrainTexture"] = false,
-
-				["minPrimScaleX"] = 2,
-				["minPrimScaleY"] = 2,
-				["minPrimScaleZ"] = 2
+				Info = new GeneralRulesModel {
+					PushNotifyEvents = new List<PushNotifyOn> {
+						PushNotifyOn.DBUpdate,
+					},
+					PushNotifyUri = new Uri($"{_protocol}://{_domain}:{_port}/wherever_I_want_it_to__be"),
+				},
 			};
 		}
 
-		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) {
+		private static void UpdateRegionDelegate(string uuid, ChangeInfo changeData) {
 			_regionUUID = uuid;
 		}
 
@@ -62,12 +63,12 @@ namespace UnitTests {
 
 		[TestFixtureSetUp]
 		public void Init() {
-			RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, _domain, _port, _useSSL);
+			RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, _domain, _port, _useSSL);
 		}
 
 		[TestFixtureTearDown]
 		public void Stop() {
-			RestApi.RestAPI.StopHost();
+			RestAPI.StopHost();
 		}
 
 		[Test]
@@ -90,9 +91,9 @@ namespace UnitTests {
 
 			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
 			Assert.Null(_regionUUID);
-			Assert.AreEqual(true, response.Data?.terrainShape);
-			Assert.AreEqual(false, response.Data?.terrainTexture);
-			Assert.AreEqual(2, response.Data?.minPrimScaleX);
+			//Assert.AreEqual(true, response.Data?.terrainShape);
+			//Assert.AreEqual(false, response.Data?.terrainTexture);
+			//Assert.AreEqual(2, response.Data?.minPrimScaleX);
 		}
 
 		[Test]
@@ -101,13 +102,23 @@ namespace UnitTests {
 
 			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
 			var request = new RestRequest($"maprules/{regionUUID}", Method.GET);
-			var response = client.Execute<RulesModel>(request);
+			var response = client.Execute<Dictionary<string,object>>(request);
+			//var response = client.Execute(request);
+			//{"info":{"pushNotifyUri":"http://localhost:6473/wherever_I_want_it_to__be","pushNotifyEvents":["DBUpdate"]}}
 
 			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
 			Assert.AreEqual(regionUUID, _regionUUID);
-			Assert.AreEqual(true, response.Data?.terrainShape);
-			Assert.AreEqual(false, response.Data?.terrainTexture);
-			Assert.AreEqual(2, response.Data?.minPrimScaleX);
+			Assert.True(response.Data.ContainsKey("info"), "Missing 'info' key in response!");
+
+			var info = (IDictionary<string,object>)response.Data["info"];
+			Assert.IsNotNull(info, "Key 'info' must be a JSON object!");
+			Assert.True(info.ContainsKey("pushNotifyUri"), "Missing 'pushNotifyUri' key in the 'info' object!");
+			Assert.AreEqual($"{_protocol}://{_domain}:{_port}/wherever_I_want_it_to__be", info["pushNotifyUri"]);
+
+			Assert.True(info.ContainsKey("pushNotifyEvents"), "Missing 'pushNotifyEvents' key in the 'info' object!");
+			var events = (JsonArray)info["pushNotifyEvents"];
+			Assert.IsNotNull(events, "Key 'pushNotifyEvents' must be a JSON array!");
+			Assert.AreEqual("DBUpdate", events[0]);
 		}
 		#endregion
 

@@ -47,6 +47,9 @@
       <HintPath>..\packages\OpenMetaverseTypes.0.9.3.3318\lib\net35\OpenMetaverseTypes.dll</HintPath>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="Nancy">
+      <HintPath>..\packages\Nancy.1.4.3\lib\net40\Nancy.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -56,6 +59,7 @@
     <Compile Include="Texture\DirectBitmap.cs" />
     <Compile Include="Texture\CommonTextures.cs" />
     <Compile Include="Texture\Texture.cs" />
+    <Compile Include="HeightmapDrawing\TerrainUtil.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -63,6 +67,7 @@
     <Folder Include="PrimDrawing\" />
     <Folder Include="HeightmapDrawing\" />
     <Folder Include="Texture\" />
+    <Folder Include="TileMapping\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

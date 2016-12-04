@@ -30,6 +30,8 @@ using log4net.Config;
 using Nini.Config;
 using System.IO;
 using DataReader;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Anaximander {
 	class Application {
@@ -87,16 +89,41 @@ namespace Anaximander {
 			LOG.Info($"[MAIN] Loaded region DB in {watch.ElapsedMilliseconds} ms for a total of {rdb_map.GetRegionCount()} regions, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
 			watch.Restart();
 
-
 			/* Issues to watch for:
 			 * Region delete - The DBA will need to actually remove the estate record to cause a map tile delete.
 			 *  - (Done) This implies that the RDBMap needs to check its list of regions against the DB and remove all that aren't in the DB.
 			 * Region move - The list of images in the filesystem will need to be compared with the data structure and any images that are not in the data structure will need to be culled.
 			 *  - Unless the images are actually stored in the filesystem with the regionID as the filename and a conversion table is used (softlinks, redirects, etc).
+			 * Tile image read during write - The web server could attempt to read a file while the file is being written.
+			 *  - Possible solution: write to a random filename then try { mv rndname to finalname with overwrite } catch { try again later for a max of N times }
+			 *    This should provide as much atomicity as possible, and allow anything that's blocking access to be bypassed via time delay. Needs to just fail under exceptions that indicate always-fail conditions.
 			 */
+
+
+			// Generate & replace ocean tile
+			// Remove all tiles that do not have a corresponding enry in the map.
+
+			// Generate region tiles - all existing are nearly guaranteed to be out of date.  Could do a file timestamp check.
+			// Generate zoom level tiles
+
+
+			RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, useSSL:false);
+
 
 			while (true) {
 			}
+		}
+
+		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) { // TODO
+			return new RestApi.RulesModel();
+		}
+
+		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) { // TODO
+			
+		}
+
+		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) { // TODO
+			return true;
 		}
 
 		private static void ReadConfigurationFromINI(IConfigSource configSource) {
