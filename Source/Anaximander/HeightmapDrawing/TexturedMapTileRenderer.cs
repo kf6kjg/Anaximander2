@@ -52,12 +52,11 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection;
 using log4net;
 using OpenMetaverse;
-using AssetReader;
+using Nini.Config;
 
 namespace Anaximander {
 	// Hue, Saturation, Value; used for color-interpolation
@@ -98,7 +97,7 @@ namespace Anaximander {
 		}
 
 		// (for info about algorithm, see http://en.wikipedia.org/wiki/HSL_and_HSV)
-		public Color toColor()
+		public Color ToColor()
 		{
 			if (s < 0f) LOG.Debug("S < 0: " + s);
 			else if (s > 1f) LOG.Debug("S > 1: " + s);
@@ -142,6 +141,18 @@ namespace Anaximander {
 
 	public static class TexturedMapTileRenderer {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		private static Color _waterColor;
+
+		public static void SetConfig(IConfigSource config) {
+			var tileInfo = config.Configs["MapTileInfo"];
+
+			_waterColor = Color.FromArgb(
+				tileInfo?.GetInt("OceanColorRed", Constants.OceanColor.R) ?? Constants.OceanColor.R,
+				tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
+				tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
+			);
+		}
 
 		#region Helpers
 
@@ -328,7 +339,7 @@ namespace Anaximander {
 								hsv.v = (hsv.v + hfdiff > 0f) ? (float) (hsv.v + hfdiff) : 0f;
 							}
 						}
-						mapbmp.Bitmap.SetPixel(x, yr, hsv.toColor());
+						mapbmp.Bitmap.SetPixel(x, yr, hsv.ToColor());
 					}
 					else
 					{
@@ -344,8 +355,10 @@ namespace Anaximander {
 
 						heightvalue = 100f - (heightvalue * 100f) / 19f;  // 0 - 19 => 100 - 0
 
-						Color water = Color.FromArgb((int)heightvalue, (int)heightvalue, 255);
-						mapbmp.Bitmap.SetPixel(x, yr, water);
+						var water = new HSV(_waterColor);
+						water.v = (float)heightvalue / 255f;
+
+						mapbmp.Bitmap.SetPixel(x, yr, water.ToColor());
 					}
 				}
 			}

@@ -59,6 +59,10 @@
     <Compile Include="Texture\CommonTextures.cs" />
     <Compile Include="Texture\Texture.cs" />
     <Compile Include="HeightmapDrawing\TerrainUtil.cs" />
+    <Compile Include="TileMapping\TileImageWriter.cs" />
+    <Compile Include="HeightmapDrawing\OceanMapTileRenderer.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="TileMapping\TileGenerator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -100,8 +100,13 @@ namespace Anaximander {
 			 */
 
 
+			var writer = new TileImageWriter(configSource);
+			var tileGen = new TileGenerator(configSource);
+
 			// Generate & replace ocean tile
-			// Remove all tiles that do not have a corresponding enry in the map.
+			writer.WriteOceanTile(tileGen.GenerateOceanTile());
+
+			// Remove all tiles that do not have a corresponding entry in the map.
 
 			// Generate region tiles - all existing are nearly guaranteed to be out of date.  Could do a file timestamp check.
 			// Generate zoom level tiles
