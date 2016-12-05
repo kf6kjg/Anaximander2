@@ -30,8 +30,6 @@ using log4net.Config;
 using Nini.Config;
 using System.IO;
 using DataReader;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Anaximander {
 	class Application {
@@ -103,10 +101,11 @@ namespace Anaximander {
 			var writer = new TileImageWriter(configSource);
 			var tileGen = new TileGenerator(configSource);
 
+			// Remove all tiles that do not have a corresponding entry in the map.
+			writer.RemoveDeadTiles(rdb_map);
+
 			// Generate & replace ocean tile
 			writer.WriteOceanTile(tileGen.GenerateOceanTile());
-
-			// Remove all tiles that do not have a corresponding entry in the map.
 
 			// Generate region tiles - all existing are nearly guaranteed to be out of date.  Could do a file timestamp check.
 			// Generate zoom level tiles

@@ -24,10 +24,14 @@
 // THE SOFTWARE.
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Nini.Config;
 using log4net;
 using System.Drawing.Imaging;
+using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace Anaximander {
 	public class TileImageWriter {
@@ -62,6 +66,16 @@ namespace Anaximander {
 			}
 		}
 
+		public DateTimeOffset? GetTileModDate(int locationX, int locationY, int locationZ) {
+			try {
+				return File.GetLastWriteTimeUtc(Path.Combine(_tileFolder.FullName, PrepareTileFilename(locationX, locationY, locationZ)));
+			}
+			catch (FileNotFoundException) {
+			}
+
+			return null;
+		}
+
 		/// <summary>
 		/// Writes the tile to disk with the formatting specified in the INI file, and in the config-file specified folder.
 		/// </summary>
@@ -70,7 +84,7 @@ namespace Anaximander {
 		/// <param name="locationZ">Region location z.</param>
 		/// <param name="bitmap">Bitmap of the region.</param>
 		public void WriteTile(int locationX, int locationY, int locationZ, DirectBitmap bitmap) {
-			WriteTile(_tileNameFormat.Replace("{X}", locationX.ToString()).Replace("{Y}", locationY.ToString()).Replace("{Z}", locationZ.ToString()), bitmap);
+			WriteTile(PrepareTileFilename(locationX, locationY, locationZ), bitmap);
 		}
 
 		/// <summary>
@@ -78,7 +92,7 @@ namespace Anaximander {
 		/// </summary>
 		/// <param name="bitmap">Bitmap of the region.</param>
 		public void WriteOceanTile(DirectBitmap bitmap) {
-			WriteTile(_oceanTileName, bitmap);
+			WriteTile(PrepareTileFilename(_oceanTileName), bitmap);
 		}
 
 		/// <summary>
@@ -88,25 +102,134 @@ namespace Anaximander {
 		/// <param name="bitmap">Bitmap.</param>
 		private void WriteTile(string filename, DirectBitmap bitmap) {
 			ImageFormat format = ImageFormat.Jpeg;
-			string extension = string.Empty;
 			switch (_imageFormat) {
 				case ImageFormats.JPEG:
 					format = ImageFormat.Jpeg;
-					extension = ".jpg";
 				break;
 				case ImageFormats.PNG:
 					format = ImageFormat.Png;
-					extension = ".png";
 				break;
 			}
 
 			try {
-				bitmap.Bitmap.Save(Path.Combine(_tileFolder.FullName, filename + extension), format);
+				bitmap.Bitmap.Save(Path.Combine(_tileFolder.FullName, filename), format);
 			}
 			catch (Exception e) {
 				LOG.Error($"Error writing map image tile to disk: {e}");
 			}
 		}
+
+		private string PrepareTileFilename(int locationX, int locationY, int locationZ) {
+			return PrepareTileFilename(_tileNameFormat.Replace("{X}", locationX.ToString()).Replace("{Y}", locationY.ToString()).Replace("{Z}", locationZ.ToString()));
+		}
+
+		private string PrepareTileFilename(string filename) {
+			string extension = string.Empty;
+			switch (_imageFormat) {
+				case ImageFormats.JPEG:
+					extension = ".jpg";
+				break;
+				case ImageFormats.PNG:
+					extension = ".png";
+				break;
+			}
+
+			return filename + extension;
+		}
+
+		// This really doesn't belong here, but where should it be?
+		public void RemoveDeadTiles(DataReader.RDBMap rdbMap) {
+			LOG.Info("Checking for base region tiles that need to be removed.");
+
+			var files = Directory.EnumerateFiles(_tileFolder.FullName);
+
+			var order = string.Join(string.Empty, _tileNameFormat.Split('{')
+				.Where(str => str.Contains("}"))
+				.Select(str => str[0])
+			);
+			var regex = new Regex("/" + PrepareTileFilename(Regex.Replace(_tileNameFormat, "{[XYZ]}", "([0-9]+)")) + "$");
+
+			var counter = 0;
+
+			#if DEBUG
+			var options = new ParallelOptions { MaxDegreeOfParallelism = 1 }; // -1 means full parallel.  1 means non-parallel.
+
+			Parallel.ForEach(files, options, (filename) => {
+			#else
+			Parallel.ForEach(files, (filename) => {
+			#endif
+				var match = regex.Match(filename);
+
+				if (!match.Success) {
+					return;
+				}
+
+				int x, y, z;
+				switch (order) {
+					case "XYZ":
+						x = int.Parse(match.Groups[1].Value);
+						y = int.Parse(match.Groups[2].Value);
+						z = int.Parse(match.Groups[3].Value);
+					break;
+					case "XZY":
+						x = int.Parse(match.Groups[1].Value);
+						z = int.Parse(match.Groups[2].Value);
+						y = int.Parse(match.Groups[3].Value);
+					break;
+					case "YXZ":
+						y = int.Parse(match.Groups[1].Value);
+						x = int.Parse(match.Groups[2].Value);
+						z = int.Parse(match.Groups[3].Value);
+					break;
+					case "YZX":
+						y = int.Parse(match.Groups[1].Value);
+						z = int.Parse(match.Groups[2].Value);
+						x = int.Parse(match.Groups[3].Value);
+					break;
+					case "ZXY":
+						z = int.Parse(match.Groups[1].Value);
+						x = int.Parse(match.Groups[2].Value);
+						y = int.Parse(match.Groups[3].Value);
+					break;
+					//case "ZYX":
+					default:
+						z = int.Parse(match.Groups[1].Value);
+						y = int.Parse(match.Groups[2].Value);
+						x = int.Parse(match.Groups[3].Value);
+					break;
+				}
+
+				// Delete all region tiles for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.
+				if (z == 0) {
+					var regionExists = false;
+
+					try {
+						rdbMap.GetRegionByLocation(x, y);
+						regionExists = true;
+					}
+					catch(KeyNotFoundException) {
+					}
+
+					if (!regionExists) {
+						try {
+							File.Delete(filename);
+							counter++;
+						}
+						catch (IOException) {
+							// File was in use.  Skip for now.
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
+						}
+					}
+				}
+			});
+
+			// TODO: check the super tiles for posible removals.  Not a high likelyhood on a growing grid, but will happen in all other cases.
+
+			if (counter > 0) {
+				LOG.Info($"Deleted {counter} region tiles for removed regions.");
+			}
+		}
+
 	}
 }
 
