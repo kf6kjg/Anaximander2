@@ -87,9 +87,13 @@ namespace Anaximander {
 		/// <param name="filename">Filename.</param>
 		/// <param name="bitmap">Bitmap.</param>
 		private void WriteTile(string filename, DirectBitmap bitmap) {
-			var format = ImageFormat.Jpeg;
-			var extension = ".jpg";
+			ImageFormat format = ImageFormat.Jpeg;
+			string extension = string.Empty;
 			switch (_imageFormat) {
+				case ImageFormats.JPEG:
+					format = ImageFormat.Jpeg;
+					extension = ".jpg";
+				break;
 				case ImageFormats.PNG:
 					format = ImageFormat.Png;
 					extension = ".png";
