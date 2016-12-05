@@ -140,23 +140,8 @@ namespace Anaximander {
 		}
 	}
 
-	public class TexturedMapTileRenderer : ITerrainTileRenderer {
+	public static class TexturedMapTileRenderer {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		private readonly Texture[] _textures = new Texture[4];
-		private readonly DataReader.Region _region;
-
-		#region Constructors
-
-		public TexturedMapTileRenderer(DataReader.Region region) {
-			_region = region;
-			_textures[0] = new Texture(UUID.Parse(region.terrainTexture1), CommonTextures.TERRAIN_TEXTURE_1.AverageColor); // TODO: needs to happen later: this violates the no-data-reads-on-bootup principle.   Should be resolved by the addition of the texture color cache.
-			_textures[1] = new Texture(UUID.Parse(region.terrainTexture2), CommonTextures.TERRAIN_TEXTURE_2.AverageColor);
-			_textures[2] = new Texture(UUID.Parse(region.terrainTexture3), CommonTextures.TERRAIN_TEXTURE_3.AverageColor);
-			_textures[3] = new Texture(UUID.Parse(region.terrainTexture4), CommonTextures.TERRAIN_TEXTURE_4.AverageColor);
-		}
-
-		#endregion
 
 		#region Helpers
 
@@ -224,30 +209,36 @@ namespace Anaximander {
 		}
 		#endregion
 
-		public void TerrainToBitmap(DirectBitmap mapbmp)
+		public static void TerrainToBitmap(DataReader.Region region, DirectBitmap mapbmp)
 		{
+			var textures = new Texture[4];
+			textures[0] = new Texture(UUID.Parse(region.terrainTexture1), CommonTextures.TERRAIN_TEXTURE_1.AverageColor);
+			textures[1] = new Texture(UUID.Parse(region.terrainTexture2), CommonTextures.TERRAIN_TEXTURE_2.AverageColor);
+			textures[2] = new Texture(UUID.Parse(region.terrainTexture3), CommonTextures.TERRAIN_TEXTURE_3.AverageColor);
+			textures[3] = new Texture(UUID.Parse(region.terrainTexture4), CommonTextures.TERRAIN_TEXTURE_4.AverageColor);
+
 			int tc = Environment.TickCount;
 			LOG.Info("[TERRAIN]: Generating Maptile Terrain (Textured)");
 
 			// the four terrain colors as HSVs for interpolation
-			var hsv1 = new HSV(_textures[0].AverageColor);
-			var hsv2 = new HSV(_textures[1].AverageColor);
-			var hsv3 = new HSV(_textures[2].AverageColor);
-			var hsv4 = new HSV(_textures[3].AverageColor);
+			var hsv1 = new HSV(textures[0].AverageColor);
+			var hsv2 = new HSV(textures[1].AverageColor);
+			var hsv3 = new HSV(textures[2].AverageColor);
+			var hsv4 = new HSV(textures[3].AverageColor);
 
-			var levelNElow = _region.elevation1NE;
-			var levelNEhigh = _region.elevation2NE;
+			var levelNElow = region.elevation1NE;
+			var levelNEhigh = region.elevation2NE;
 
-			var levelNWlow = _region.elevation1NW;
-			var levelNWhigh = _region.elevation2NW;
+			var levelNWlow = region.elevation1NW;
+			var levelNWhigh = region.elevation2NW;
 
-			var levelSElow = _region.elevation1SE;
-			var levelSEhigh = _region.elevation2SE;
+			var levelSElow = region.elevation1SE;
+			var levelSEhigh = region.elevation2SE;
 
-			var levelSWlow = _region.elevation1SW;
-			var levelSWhigh = _region.elevation2SW;
+			var levelSWlow = region.elevation1SW;
+			var levelSWhigh = region.elevation2SW;
 
-			var waterHeight = _region.waterHeight;
+			var waterHeight = region.waterHeight;
 
 			for (int x = 0; x < mapbmp.Width; x++)
 			{
@@ -261,8 +252,8 @@ namespace Anaximander {
 					var yr = (mapbmp.Height - 1) - y;
 
 					var heightvalue = mapbmp.Width == 256 ?
-						getHeight(_region.heightmapData, (int)(255 * columnRatio), (int)(255 * rowRatio)) :
-						getHeight(_region.heightmapData, 255 * columnRatio, 255 * rowRatio);
+						getHeight(region.heightmapData, (int)(255 * columnRatio), (int)(255 * rowRatio)) :
+						getHeight(region.heightmapData, 255 * columnRatio, 255 * rowRatio);
 
 					if (Double.IsInfinity(heightvalue) || Double.IsNaN(heightvalue))
 						heightvalue = 0d;
@@ -315,7 +306,7 @@ namespace Anaximander {
 						// Shade the terrain for shadows
 						if (x < (mapbmp.Width - 1) && y < (mapbmp.Height - 1))
 						{
-							var hfvaluecompare = getHeight(_region.heightmapData, (x + 1) / (mapbmp.Width - 1), (y + 1) / (mapbmp.Height - 1)); // light from north-east => look at land height there
+							var hfvaluecompare = getHeight(region.heightmapData, (x + 1) / (mapbmp.Width - 1), (y + 1) / (mapbmp.Height - 1)); // light from north-east => look at land height there
 							if (Double.IsInfinity(hfvaluecompare) || Double.IsNaN(hfvaluecompare))
 								hfvaluecompare = 0d;
 

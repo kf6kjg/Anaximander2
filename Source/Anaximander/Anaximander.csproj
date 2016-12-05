@@ -55,7 +55,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HeightmapDrawing\TexturedMapTileRenderer.cs" />
-    <Compile Include="HeightmapDrawing\ITerrainTileRenderer.cs" />
     <Compile Include="Texture\DirectBitmap.cs" />
     <Compile Include="Texture\CommonTextures.cs" />
     <Compile Include="Texture\Texture.cs" />
