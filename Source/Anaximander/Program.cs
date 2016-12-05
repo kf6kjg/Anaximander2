@@ -161,7 +161,7 @@ namespace Anaximander {
 		private static bool isHandlingException = false;
 
 		/// <summary>
-		/// Global exception handler -- all unhandlet exceptions end up here :)
+		/// Global exception handler -- all unhandled exceptions end up here :)
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
