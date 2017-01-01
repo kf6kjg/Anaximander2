@@ -47,6 +47,8 @@
     <Compile Include="DBHelpers.cs" />
     <Compile Include="Entities\RegionInfo.cs" />
     <Compile Include="Entities\RegionTerrainData.cs" />
+    <Compile Include="Entities\RegionPrimData.cs" />
+    <Compile Include="Entities\Prim.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

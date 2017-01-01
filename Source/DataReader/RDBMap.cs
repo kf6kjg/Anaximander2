@@ -253,6 +253,92 @@ namespace DataReader {
 					}
 				}
 			});
+
+			#if DEBUG
+			Parallel.ForEach(regions_by_rdb.Keys.ToList(), options, (rdb_connection_string) => {
+			#else
+			Parallel.ForEach(regions_by_rdb.Keys.ToList(), (rdb_connection_string) => {
+			#endif
+				string region_id;
+				Region region;
+
+				using (MySqlConnection conn = DBHelpers.GetConnection(rdb_connection_string)) {
+					using (MySqlCommand cmd = conn.CreateCommand()) {
+						cmd.CommandText = @"SELECT
+	RegionUUID,
+	ObjectFlags,
+	State,
+	PositionX, PositionY, PositionZ,
+	GroupPositionX, GroupPositionY, GroupPositionZ,
+	ScaleX, ScaleY, ScaleZ,
+	RotationX, RotationY, RotationZ, RotationW,
+	RootRotationX, RootRotationY, RootRotationZ, RootRotationW,
+	Texture
+FROM
+	prims pr
+	NATURAL JOIN primshapes
+	LEFT JOIN (
+		SELECT
+			RotationX AS RootRotationX,
+			RotationY AS RootRotationY,
+			RotationZ AS RootRotationZ,
+			RotationW AS RootRotationW,
+			SceneGroupID
+		FROM
+			prims pr
+		WHERE
+			LinkNumber = 1
+	) AS rootprim ON rootprim.SceneGroupID = pr.SceneGroupID
+WHERE
+	GroupPositionZ < 766 /* = max terrain height + render height */
+	AND LENGTH(Texture) > 0
+	AND ObjectFlags & (0 | 0x40000 | 0x20000) = 0
+	AND ScaleX > 1.0
+	AND ScaleY > 1.0
+	AND ScaleZ > 1.0
+	AND PCode NOT IN (255, 111, 95)
+ORDER BY
+	GroupPositionZ, PositionZ
+;";
+						IDataReader reader = DBHelpers.ExecuteReader(cmd);
+
+						try {
+							while (reader.Read()) {
+								region_id = GetDBValue(reader, "RegionUUID");
+								region = MAP[region_id];
+
+								var data = new RegionPrimData() {
+									ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
+									State = GetDBValue<int>(reader, "State"),
+									PositionX = GetDBValue<double>(reader, "PositionX"),
+									PositionY = GetDBValue<double>(reader, "PositionY"),
+									PositionZ = GetDBValue<double>(reader, "PositionZ"),
+									GroupPositionX = GetDBValue<double>(reader, "GroupPositionX"),
+									GroupPositionY = GetDBValue<double>(reader, "GroupPositionY"),
+									GroupPositionZ = GetDBValue<double>(reader, "GroupPositionZ"),
+									ScaleX = GetDBValue<double>(reader, "ScaleX"),
+									ScaleY = GetDBValue<double>(reader, "ScaleY"),
+									ScaleZ = GetDBValue<double>(reader, "ScaleZ"),
+									RotationX = GetDBValue<double>(reader, "RotationX"),
+									RotationY = GetDBValue<double>(reader, "RotationY"),
+									RotationZ = GetDBValue<double>(reader, "RotationZ"),
+									RotationW = GetDBValue<double>(reader, "RotationW"),
+									RootRotationX = GetDBValue<double>(reader, "RootRotationX"),
+									RootRotationY = GetDBValue<double>(reader, "RootRotationY"),
+									RootRotationZ = GetDBValue<double>(reader, "RootRotationZ"),
+									RootRotationW = GetDBValue<double>(reader, "RootRotationW"),
+									Texture = (byte[])reader["Texture"],
+								};
+
+								region.AddPrim(new Prim(ref data));
+							}
+						}
+						finally {
+							reader.Close();
+						}
+					}
+				}
+			});
 		}
 
 		public int GetRegionCount() {

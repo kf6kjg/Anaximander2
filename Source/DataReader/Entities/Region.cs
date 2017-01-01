@@ -29,6 +29,7 @@ using System.Net;
 using log4net;
 using MySql.Data.MySqlClient;
 using Nini.Config;
+using System.Collections.Generic;
 
 namespace DataReader {
 	public class Region {
@@ -106,12 +107,23 @@ namespace DataReader {
 
 		public double[,] heightmapData { get { return _terrainData.heightmap; } private set { _terrainData.heightmap = value; }} // Yes, the elements are stull mutable, but I don't feel like making my life that difficult ATM.
 
+		public IEnumerable<Prim> prims { get { return _primData; } }
+
 		#endregion
 
 		#region Private Properties
 
 		private RegionInfo _info;
 		private RegionTerrainData _terrainData;
+		private readonly List<Prim> _primData; // List was chosen because it guarantees that insertion order will be preserved unless explictly sorted.
+
+		#endregion
+
+		#region Public Methods
+
+		public void AddPrim(Prim prim) {
+			_primData.Add(prim);
+		}
 
 		#endregion
 
@@ -120,26 +132,7 @@ namespace DataReader {
 		public Region(RegionInfo info, RegionTerrainData terrain_data) {
 			_info = info;
 			_terrainData = terrain_data;
-		}
-
-		public Region(
-			string region_id, string rdb_connection_string, string region_name,
-			int? loc_x, int? loc_y,
-			int? size_x, int? size_y,
-			string server_ip, int? server_port
-		) {
-			regionId = region_id;
-			_info.RDBConnectionString = rdb_connection_string;
-			regionName = region_name;
-
-			locationX = loc_x;
-			locationY = loc_y;
-
-			sizeX = size_x;
-			sizeX = size_y;
-
-			serverIP = server_ip;
-			serverPort = server_port;
+			_primData = new List<Prim>();
 		}
 
 		#endregion
