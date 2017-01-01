@@ -36,6 +36,7 @@ namespace Anaximander {
 		public static ImageFormats ImageFormat = ImageFormats.JPEG;
 
 		public static Color OceanColor = Color.FromArgb(0, 0, 255);
+		public static Color BeachColor = Color.FromArgb(0, 255, 255);
 		public static string OceanTileName = "ocean";
 
 		public static int PixelScale = 256;

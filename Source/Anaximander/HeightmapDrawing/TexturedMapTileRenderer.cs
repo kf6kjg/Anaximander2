@@ -143,6 +143,7 @@ namespace Anaximander {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private static Color _waterColor;
+		private static Color _beachColor;
 
 		public static void SetConfig(IConfigSource config) {
 			var tileInfo = config.Configs["MapTileInfo"];
@@ -151,6 +152,11 @@ namespace Anaximander {
 				tileInfo?.GetInt("OceanColorRed", Constants.OceanColor.R) ?? Constants.OceanColor.R,
 				tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
 				tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
+			);
+			_beachColor = Color.FromArgb(
+				tileInfo?.GetInt("BeachColorRed", Constants.BeachColor.R) ?? Constants.BeachColor.R,
+				tileInfo?.GetInt("BeachColorGreen", Constants.BeachColor.G) ?? Constants.BeachColor.G,
+				tileInfo?.GetInt("BeachColorBlue", Constants.BeachColor.B) ?? Constants.BeachColor.B
 			);
 		}
 
