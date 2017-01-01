@@ -30,6 +30,7 @@ using log4net.Config;
 using Nini.Config;
 using System.IO;
 using DataReader;
+using System.Threading.Tasks;
 
 namespace Anaximander {
 	class Application {
@@ -107,7 +108,27 @@ namespace Anaximander {
 			// Generate & replace ocean tile
 			writer.WriteOceanTile(tileGen.GenerateOceanTile());
 
-			// Generate region tiles - all existing are nearly guaranteed to be out of date.  Could do a file timestamp check.
+			// Generate region tiles - all existing are nearly guaranteed to be out of date.
+			#if DEBUG
+			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
+
+			Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), options, (region_id) => {
+			#else
+			Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), (region_id) => {
+			#endif
+				var region = rdb_map.GetRegionByUUID(region_id);
+
+				if (region.locationX != null) {
+					// TODO: Possibly see if the region tile is out of date before doing the work to overwrite it.
+
+					writer.WriteTile((int)region.locationX, (int)region.locationY, 1, tileGen.RenderRegionTile(region));
+				}
+			});
+
+			watch.Stop();
+			LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
+			watch.Restart();
+
 			// Generate zoom level tiles
 
 

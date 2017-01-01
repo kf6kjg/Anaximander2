@@ -42,6 +42,17 @@ namespace Anaximander {
 			OceanMapTileRenderer.TerrainToBitmap(bitmap);
 			return bitmap;
 		}
+
+		public DirectBitmap RenderRegionTile(DataReader.Region region) {
+			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
+
+			// Draw the terrain.
+			TexturedMapTileRenderer.TerrainToBitmap(region, bitmap);
+
+			// TODO: Draw the prims.
+
+			return bitmap;
+		}
 	}
 }
 
