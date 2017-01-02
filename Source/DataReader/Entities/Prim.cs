@@ -26,47 +26,49 @@ using System;
 
 namespace DataReader {
 	public class Prim {
+		#region Public Properties and Accessors
 
 		public int ObjectFlags { get { return _primData.ObjectFlags; } }
 
 		public int State { get { return _primData.State; } }
 
-		public double PositionX  { get { return _primData.PositionX; } }
+		public float PositionX  { get { return (float) _primData.PositionX; } }
 
-		public double PositionY { get { return _primData.PositionY; } }
+		public float PositionY { get { return (float) _primData.PositionY; } }
 
-		public double PositionZ { get { return _primData.PositionZ; } }
+		public float PositionZ { get { return (float) _primData.PositionZ; } }
 
-		public double GroupPositionX { get { return _primData.GroupPositionX; } }
+		public float GroupPositionX { get { return (float) _primData.GroupPositionX; } }
 
-		public double GroupPositionY { get { return _primData.GroupPositionY; } }
+		public float GroupPositionY { get { return (float) _primData.GroupPositionY; } }
 
-		public double GroupPositionZ { get { return _primData.GroupPositionZ; } }
+		public float GroupPositionZ { get { return (float) _primData.GroupPositionZ; } }
 
-		public double RotationX { get { return _primData.RotationX; } }
+		public float RotationX { get { return (float) _primData.RotationX; } }
 
-		public double RotationY { get { return _primData.RotationY; } }
+		public float RotationY { get { return (float) _primData.RotationY; } }
 
-		public double RotationZ { get { return _primData.RotationZ; } }
+		public float RotationZ { get { return (float) _primData.RotationZ; } }
 
-		public double RotationW { get { return _primData.RotationW; } }
+		public float RotationW { get { return (float) _primData.RotationW; } }
 
-		public double ScaleX { get { return _primData.ScaleX; } }
+		public float ScaleX { get { return (float) _primData.ScaleX; } }
 
-		public double ScaleY { get { return _primData.ScaleY; } }
+		public float ScaleY { get { return (float) _primData.ScaleY; } }
 
-		public double ScaleZ { get { return _primData.ScaleZ; } }
+		public float ScaleZ { get { return (float) _primData.ScaleZ; } }
 
-		public double RootRotationX { get { return _primData.RootRotationX; } }
+		public float? RootRotationX { get { return (float?) _primData.RootRotationX; } }
 
-		public double RootRotationY { get { return _primData.RootRotationY; } }
+		public float? RootRotationY { get { return (float?) _primData.RootRotationY; } }
 
-		public double RootRotationZ { get { return _primData.RootRotationZ; } }
+		public float? RootRotationZ { get { return (float?) _primData.RootRotationZ; } }
 
-		public double RootRotationW { get { return _primData.RootRotationW; } }
+		public float? RootRotationW { get { return (float?) _primData.RootRotationW; } }
 
 		public byte[] Texture { get { return _primData.Texture; } }
 
+		#endregion
 
 		#region Private Properties
 

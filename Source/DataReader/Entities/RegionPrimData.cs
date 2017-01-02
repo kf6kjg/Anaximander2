@@ -56,13 +56,13 @@ namespace DataReader {
 
 		public double ScaleZ { get; set; }
 
-		public double RootRotationX { get; set; }
+		public double? RootRotationX { get; set; }
 
-		public double RootRotationY { get; set; }
+		public double? RootRotationY { get; set; }
 
-		public double RootRotationZ { get; set; }
+		public double? RootRotationZ { get; set; }
 
-		public double RootRotationW { get; set; }
+		public double? RootRotationW { get; set; }
 
 		public byte[] Texture { get; set; }
 

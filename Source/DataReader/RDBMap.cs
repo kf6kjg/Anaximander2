@@ -323,10 +323,10 @@ ORDER BY
 									RotationY = GetDBValue<double>(reader, "RotationY"),
 									RotationZ = GetDBValue<double>(reader, "RotationZ"),
 									RotationW = GetDBValue<double>(reader, "RotationW"),
-									RootRotationX = GetDBValue<double>(reader, "RootRotationX"),
-									RootRotationY = GetDBValue<double>(reader, "RootRotationY"),
-									RootRotationZ = GetDBValue<double>(reader, "RootRotationZ"),
-									RootRotationW = GetDBValue<double>(reader, "RootRotationW"),
+									RootRotationX = GetDBValueOrNull<double>(reader, "RootRotationX"),
+									RootRotationY = GetDBValueOrNull<double>(reader, "RootRotationY"),
+									RootRotationZ = GetDBValueOrNull<double>(reader, "RootRotationZ"),
+									RootRotationW = GetDBValueOrNull<double>(reader, "RootRotationW"),
 									Texture = (byte[])reader["Texture"],
 								};
 

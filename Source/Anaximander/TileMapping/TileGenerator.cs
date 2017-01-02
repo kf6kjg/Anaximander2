@@ -35,6 +35,7 @@ namespace Anaximander {
 
 			OceanMapTileRenderer.SetConfig(config);
 			TexturedMapTileRenderer.SetConfig(config);
+			PrimColoredOBBRenderer.SetConfig(config);
 		}
 
 		public DirectBitmap GenerateOceanTile() {
@@ -49,7 +50,8 @@ namespace Anaximander {
 			// Draw the terrain.
 			TexturedMapTileRenderer.TerrainToBitmap(region, bitmap);
 
-			// TODO: Draw the prims.
+			// Draw the prims.
+			PrimColoredOBBRenderer.DrawObjects(region.prims, region.heightmapData, bitmap);
 
 			return bitmap;
 		}
