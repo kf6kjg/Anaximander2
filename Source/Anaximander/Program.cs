@@ -24,13 +24,15 @@
 // THE SOFTWARE.
 
 using System;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using DataReader;
 using log4net;
 using log4net.Config;
 using Nini.Config;
-using System.IO;
-using DataReader;
-using System.Threading.Tasks;
 
 namespace Anaximander {
 	class Application {
@@ -109,30 +111,89 @@ namespace Anaximander {
 			// Generate & replace ocean tile
 			writer.WriteOceanTile(tileGen.GenerateOceanTile());
 
+			var defaultTiles = configSource.Configs["DefaultTiles"];
+			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
+			RegionErrorDisplayTechnique offlineTechnique;
+			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out offlineTechnique)) {
+				LOG.Error($"Invalid offline region technique '{techniqueConfig}' in configuration.");
+			}
+			techniqueConfig = defaultTiles?.GetString("CrashedRegion", Constants.CrashedRegion.ToString()) ?? Constants.CrashedRegion.ToString();
+			RegionErrorDisplayTechnique crashedTechnique;
+			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out crashedTechnique)) {
+				LOG.Error($"Invalid crashed region technique '{techniqueConfig}' in configuration.");
+			}
+
 			// Generate region tiles - all existing are nearly guaranteed to be out of date.
-			#if DEBUG
+#if DEBUG
 			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
 
 			Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), options, (region_id) => {
-			#else
+#else
 			Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), (region_id) => {
-			#endif
+#endif
 			//foreach(var region_id in rdb_map.GetRegionUUIDsAsStrings()) {
 				var region = rdb_map.GetRegionByUUID(region_id);
 
 				if (region.locationX != null) {
 					// Assume that during bootup the tile is out of date and rebuild everything.
-					writer.WriteTile((int)region.locationX, (int)region.locationY, 1, tileGen.RenderRegionTile(region));
+
+					if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.isRegionCurrentlyUp) {
+						writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tileGen.RenderRegionTile(region));
+					}
+					else {
+						if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
+							var filename = defaultTiles?.GetString("CrashedRegionImage", Constants.CrashedRegionImage) ?? Constants.CrashedRegionImage;
+
+							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
+						}
+						else if (crashedTechnique == RegionErrorDisplayTechnique.COLOR) {
+							var colorR = defaultTiles?.GetInt("CrashedRegionRed", Constants.CrashedRegionColor.R) ?? Constants.CrashedRegionColor.R;
+							var colorG = defaultTiles?.GetInt("CrashedRegionGreen", Constants.CrashedRegionColor.G) ?? Constants.CrashedRegionColor.G;
+							var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
+
+							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB)));
+						}
+					}
 				}
-				// TODO: Find the coordinates from some form of lookup, and render an "is offline" tile.
+				else if (offlineTechnique != RegionErrorDisplayTechnique.IGNORE) {
+					// Go looking for the backup technique to find the coordinates of a region that has gone offline.
+					var folderinfo = configSource.Configs["Folders"];
+					var tilepath = folderinfo?.GetString("MapTilePath", Constants.MapTilePath) ?? Constants.MapTilePath;
+
+					var coords = string.Empty;
+					try {
+						coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id));
+					}
+					catch (SystemException) { // All IO errors just mean skippage.
+					}
+
+					if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succedded, do as specified in config.
+						var coordsList = coords.Split(',').Select(coord => int.Parse(coord));
+
+						if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
+							var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
+
+							writer.WriteTile(coordsList.ElementAt(0), coordsList.ElementAt(1), 1, region_id, filename);
+						}
+						else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
+							var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
+							var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
+							var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
+
+							writer.WriteTile(coordsList.ElementAt(0), coordsList.ElementAt(1), 1, region_id, tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB)));
+						}
+					}
+				}
 			});
 
 			watch.Stop();
 			LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
 			watch.Restart();
 
-			// Generate zoom level tiles
+			// TODO: Generate zoom level tiles
 
+
+			// Activate server process
 			if (configSource.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
 				LOG.Info("Activating server, listening for region updates.");
 				RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, useSSL:false); // TODO: make SSL an option.  Not really needed since servers all should be on a private network, but...
@@ -143,15 +204,15 @@ namespace Anaximander {
 			}
 		}
 
-		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) { // TODO
+		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) { // TODO: MapRulesDelegate
 			return new RestApi.RulesModel();
 		}
 
-		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) { // TODO
+		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) { // TODO: UpdateRegionDelegate
 			
 		}
 
-		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) { // TODO
+		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) { // TODO: CheckAPIKeyDelegate
 			return true;
 		}
 

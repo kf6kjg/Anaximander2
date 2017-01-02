@@ -34,6 +34,7 @@ namespace Anaximander {
 
 		// Folders
 		public static string MapTilePath = "./maptiles";
+		public static string ReverseLookupPath = "by_uuid"; // relative to MapTilePath
 
 		// MapTileInfo
 		public static ImageFormats ImageFormat = ImageFormats.JPEG;
@@ -48,10 +49,25 @@ namespace Anaximander {
 
 		// TileZooming
 		public static int HighestZoomLevel = 8;
+
+		// DefaultTiles
+		public static RegionErrorDisplayTechnique OfflineRegion = RegionErrorDisplayTechnique.IGNORE;
+		public static string OfflineRegionImage = "./images/offline.jpg";
+		public static Color OfflineRegionColor = Color.FromArgb(0, 0, 0);
+
+		public static RegionErrorDisplayTechnique CrashedRegion = RegionErrorDisplayTechnique.IGNORE;
+		public static string CrashedRegionImage = "./images/crashed.jpg";
+		public static Color CrashedRegionColor = Color.FromArgb(0, 0, 0);
 	}
 
 	public enum ImageFormats {
 		JPEG,
-		PNG
+		PNG,
+	}
+
+	public enum RegionErrorDisplayTechnique {
+		IGNORE,
+		IMAGE,
+		COLOR,
 	}
 }

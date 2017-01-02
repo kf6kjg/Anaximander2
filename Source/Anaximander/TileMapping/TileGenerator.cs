@@ -23,6 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Drawing;
 using Nini.Config;
 
 namespace Anaximander {
@@ -41,6 +42,12 @@ namespace Anaximander {
 		public DirectBitmap GenerateOceanTile() {
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
 			OceanMapTileRenderer.TerrainToBitmap(bitmap);
+			return bitmap;
+		}
+
+		public DirectBitmap GenerateConstantColorTile(Color color) {
+			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
+			OceanMapTileRenderer.TerrainToBitmap(color, bitmap);
 			return bitmap;
 		}
 

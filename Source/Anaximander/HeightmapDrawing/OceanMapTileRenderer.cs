@@ -34,17 +34,21 @@ namespace Anaximander {
 			_tileInfo = config.Configs["MapTileInfo"];
 		}
 
-		public static void TerrainToBitmap(DirectBitmap mapbmp) {
-			using (var gfx = Graphics.FromImage(mapbmp.Bitmap))
-			using (var brush = new SolidBrush(Color.FromArgb(
+		public static DirectBitmap TerrainToBitmap(DirectBitmap mapbmp) {
+			return TerrainToBitmap(Color.FromArgb(
 				_tileInfo?.GetInt("OceanColorRed", Constants.OceanColor.R) ?? Constants.OceanColor.R,
 				_tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
 				_tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
-			)))
-			{
+			), mapbmp);
+		}
+
+		public static DirectBitmap TerrainToBitmap(Color color, DirectBitmap mapbmp) {
+			using (var gfx = Graphics.FromImage(mapbmp.Bitmap))
+			using (var brush = new SolidBrush(color)) {
 				gfx.FillRectangle(brush, 0, 0, mapbmp.Width, mapbmp.Height);
 			}
+			return mapbmp;
 		}
-	}
+}
 }
 

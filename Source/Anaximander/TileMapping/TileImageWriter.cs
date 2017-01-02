@@ -23,15 +23,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Nini.Config;
-using log4net;
-using System.Drawing.Imaging;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
+using System.Threading.Tasks;
+using log4net;
+using Nini.Config;
 
 namespace Anaximander {
 	public class TileImageWriter {
@@ -39,6 +40,7 @@ namespace Anaximander {
 
 		private readonly ImageFormats _imageFormat;
 		private readonly DirectoryInfo _tileFolder;
+		private readonly DirectoryInfo _reverseLookupFolder = null;
 		private readonly string _tileNameFormat;
 		private readonly string _oceanTileName;
 
@@ -64,6 +66,14 @@ namespace Anaximander {
 				LOG.Fatal($"Error creating folder '{tilepath}': {e}");
 				throw e;
 			}
+
+			try {
+				_reverseLookupFolder = Directory.CreateDirectory(Path.Combine(_tileFolder.FullName, Constants.ReverseLookupPath));
+			}
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+			catch { // Don't care if this fails.
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+			}
 		}
 
 		public DateTimeOffset? GetTileModDate(int locationX, int locationY, int locationZ) {
@@ -78,13 +88,48 @@ namespace Anaximander {
 
 		/// <summary>
 		/// Writes the tile to disk with the formatting specified in the INI file, and in the config-file specified folder.
+		/// Also writes a file with the specified UUID into a "by_uuid" folder under the config-file specified folder for later recall of previous coordinates.
 		/// </summary>
 		/// <param name="locationX">Region location x.</param>
 		/// <param name="locationY">Region location y.</param>
 		/// <param name="locationZ">Region location z.</param>
+		/// <param name="regionId">Region UUID.</param>
 		/// <param name="bitmap">Bitmap of the region.</param>
-		public void WriteTile(int locationX, int locationY, int locationZ, DirectBitmap bitmap) {
+		public void WriteTile(int locationX, int locationY, int locationZ, string regionId, DirectBitmap bitmap) {
+			if (locationZ == 1 && _reverseLookupFolder != null) { // Only if a region.
+				try { // Store the reverse lookup file.
+					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId), $"{locationX},{locationY}");
+				}
+				// Analysis disable once EmptyGeneralCatchClause
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+				catch { // I don't care if this fails for some reason.
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+				}
+			}
 			WriteTile(PrepareTileFilename(locationX, locationY, locationZ), bitmap);
+		}
+
+		/// <summary>
+		/// Copies the specified tile with the formatting specified in the INI file, and in the config-file specified folder.
+		/// Also writes a file with the specified UUID into a "by_uuid" folder under the config-file specified folder for later recall of previous coordinates.
+		/// </summary>
+		/// <param name="locationX">Region location x.</param>
+		/// <param name="locationY">Region location y.</param>
+		/// <param name="locationZ">Region location z.</param>
+		/// <param name="regionId">Region UUID.</param>
+		/// <param name="file">File to be copied.</param>
+		public void WriteTile(int locationX, int locationY, int locationZ, string regionId, string file) {
+			if (locationZ == 1 && _reverseLookupFolder != null) { // Only if a region.
+				try { // Store the reverse lookup file.
+					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId), $"{locationX},{locationY}");
+				}
+				// Analysis disable once EmptyGeneralCatchClause
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+				catch { // I don't care if this fails for some reason.
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+				}
+			}
+			File.Copy(file, Path.Combine(_tileFolder.FullName, PrepareTileFilename(locationX, locationY, locationZ)));
 		}
 
 		/// <summary>
