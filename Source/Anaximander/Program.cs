@@ -52,7 +52,7 @@ namespace Anaximander {
 
 			// Configure Log4Net
 			configSource.AddSwitch("Startup", "logconfig");
-			string logConfigFile = configSource.Configs["Startup"].GetString("logconfig", String.Empty);
+			var logConfigFile = configSource.Configs["Startup"].GetString("logconfig", String.Empty);
 			if (String.IsNullOrEmpty(logConfigFile)) {
 				XmlConfigurator.Configure();
 				LOG.Info("[MAIN]: Configured log4net using ./Anaximander.exe.config as the default.");
@@ -73,6 +73,7 @@ namespace Anaximander {
 			configSource.Alias.AddAlias("No", false);
 
 			configSource.AddSwitch("Startup", "inifile");
+			configSource.AddSwitch("Startup", "ServerMode");
 
 			// Read in the ini file
 			ReadConfigurationFromINI(configSource);
@@ -116,13 +117,14 @@ namespace Anaximander {
 			#else
 			Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), (region_id) => {
 			#endif
+			//foreach(var region_id in rdb_map.GetRegionUUIDsAsStrings()) {
 				var region = rdb_map.GetRegionByUUID(region_id);
 
 				if (region.locationX != null) {
-					// TODO: Possibly see if the region tile is out of date before doing the work to overwrite it.
-
+					// Assume that during bootup the tile is out of date and rebuild everything.
 					writer.WriteTile((int)region.locationX, (int)region.locationY, 1, tileGen.RenderRegionTile(region));
 				}
+				// TODO: Find the coordinates from some form of lookup, and render an "is offline" tile.
 			});
 
 			watch.Stop();
@@ -131,11 +133,13 @@ namespace Anaximander {
 
 			// Generate zoom level tiles
 
+			if (configSource.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
+				LOG.Info("Activating server, listening for region updates.");
+				RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, useSSL:false); // TODO: make SSL an option.  Not really needed since servers all should be on a private network, but...
 
-			RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, useSSL:false);
-
-
-			while (true) {
+				while (true) {
+					// Just spin.
+				}
 			}
 		}
 

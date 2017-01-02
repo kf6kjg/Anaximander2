@@ -29,6 +29,9 @@ namespace Anaximander {
 	public static class Constants {
 		// Please keep constants sorted by category and name.
 
+		// Operations
+		public static bool KeepRunningDefault = false;
+
 		// Folders
 		public static string MapTilePath = "./maptiles";
 
