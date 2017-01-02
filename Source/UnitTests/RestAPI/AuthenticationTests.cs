@@ -90,7 +90,7 @@ namespace UnitTests {
 			var response = client.Execute<RulesModel>(request);
 
 			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
-			Assert.Null(_regionUUID);
+			Assert.IsNull(_regionUUID);
 			//Assert.AreEqual(true, response.Data?.terrainShape);
 			//Assert.AreEqual(false, response.Data?.terrainTexture);
 			//Assert.AreEqual(2, response.Data?.minPrimScaleX);
@@ -108,14 +108,14 @@ namespace UnitTests {
 
 			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "Bad Status: \n\n" + response.Content);
 			Assert.AreEqual(regionUUID, _regionUUID);
-			Assert.True(response.Data.ContainsKey("info"), "Missing 'info' key in response!");
+			Assert.That(response.Data.ContainsKey("info"), "Missing 'info' key in response!");
 
 			var info = (IDictionary<string,object>)response.Data["info"];
 			Assert.IsNotNull(info, "Key 'info' must be a JSON object!");
-			Assert.True(info.ContainsKey("pushNotifyUri"), "Missing 'pushNotifyUri' key in the 'info' object!");
+			Assert.That(info.ContainsKey("pushNotifyUri"), "Missing 'pushNotifyUri' key in the 'info' object!");
 			Assert.AreEqual($"{_protocol}://{_domain}:{_port}/wherever_I_want_it_to__be", info["pushNotifyUri"]);
 
-			Assert.True(info.ContainsKey("pushNotifyEvents"), "Missing 'pushNotifyEvents' key in the 'info' object!");
+			Assert.That(info.ContainsKey("pushNotifyEvents"), "Missing 'pushNotifyEvents' key in the 'info' object!");
 			var events = (JsonArray)info["pushNotifyEvents"];
 			Assert.IsNotNull(events, "Key 'pushNotifyEvents' must be a JSON array!");
 			Assert.AreEqual("DBUpdate", events[0]);
