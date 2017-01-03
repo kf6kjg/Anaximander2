@@ -110,7 +110,7 @@ namespace Anaximander {
 
 			// Generate & replace ocean tile
 			using (var ocean_tile = tileGen.GenerateOceanTile()) {
-				writer.WriteOceanTile(ocean_tile);
+				writer.WriteOceanTile(ocean_tile.Bitmap);
 			}
 
 			var defaultTiles = configSource.Configs["DefaultTiles"];
@@ -141,7 +141,7 @@ namespace Anaximander {
 
 					if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.isRegionCurrentlyUp) {
 						using (var tile_image = tileGen.RenderRegionTile(region)) {
-							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image);
+							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
 						}
 					}
 					else {
@@ -156,7 +156,7 @@ namespace Anaximander {
 							var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
 
 							using (var tile_image = tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
-								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image);
+								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
 							}
 						}
 					}
@@ -190,7 +190,7 @@ namespace Anaximander {
 							var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
 
 							using (var tile_image = tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
-								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image);
+								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
 							}
 						}
 					}

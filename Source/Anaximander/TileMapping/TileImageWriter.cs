@@ -95,8 +95,8 @@ namespace Anaximander {
 		/// <param name="locationZ">Region location z.</param>
 		/// <param name="regionId">Region UUID.</param>
 		/// <param name="bitmap">Bitmap of the region.</param>
-		public void WriteTile(int locationX, int locationY, int locationZ, string regionId, DirectBitmap bitmap) {
-			if (locationZ == 1 && _reverseLookupFolder != null) { // Only if a region.
+		public void WriteTile(int locationX, int locationY, int locationZ, string regionId, Bitmap bitmap) {
+			if (locationZ == 1 && _reverseLookupFolder != null && !string.IsNullOrWhiteSpace(regionId)) { // Only if a region.
 				try { // Store the reverse lookup file.
 					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId), $"{locationX},{locationY}");
 				}
@@ -119,7 +119,7 @@ namespace Anaximander {
 		/// <param name="regionId">Region UUID.</param>
 		/// <param name="file">File to be copied.</param>
 		public void WriteTile(int locationX, int locationY, int locationZ, string regionId, string file) {
-			if (locationZ == 1 && _reverseLookupFolder != null) { // Only if a region.
+			if (locationZ == 1 && _reverseLookupFolder != null && !string.IsNullOrWhiteSpace(regionId)) { // Only if a region.
 				try { // Store the reverse lookup file.
 					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId), $"{locationX},{locationY}");
 				}
@@ -136,7 +136,7 @@ namespace Anaximander {
 		/// Writes the tile to disk named as the ocean tile, and in the config-file specified folder.
 		/// </summary>
 		/// <param name="bitmap">Bitmap of the region.</param>
-		public void WriteOceanTile(DirectBitmap bitmap) {
+		public void WriteOceanTile(Bitmap bitmap) {
 			WriteTile(PrepareTileFilename(_oceanTileName), bitmap);
 		}
 
@@ -145,7 +145,7 @@ namespace Anaximander {
 		/// </summary>
 		/// <param name="filename">Filename.</param>
 		/// <param name="bitmap">Bitmap.</param>
-		private void WriteTile(string filename, DirectBitmap bitmap) {
+		private void WriteTile(string filename, Bitmap bitmap) {
 			ImageFormat format = ImageFormat.Jpeg;
 			switch (_imageFormat) {
 				case ImageFormats.JPEG:
@@ -157,7 +157,7 @@ namespace Anaximander {
 			}
 
 			try {
-				bitmap.Bitmap.Save(Path.Combine(_tileFolder.FullName, filename), format);
+				bitmap.Save(Path.Combine(_tileFolder.FullName, filename), format);
 			}
 			catch (Exception e) {
 				LOG.Error($"Error writing map image tile to disk: {e}");
