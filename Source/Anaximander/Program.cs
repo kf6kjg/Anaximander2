@@ -109,7 +109,9 @@ namespace Anaximander {
 			writer.RemoveDeadTiles(rdb_map);
 
 			// Generate & replace ocean tile
-			writer.WriteOceanTile(tileGen.GenerateOceanTile());
+			using (var ocean_tile = tileGen.GenerateOceanTile()) {
+				writer.WriteOceanTile(ocean_tile);
+			}
 
 			var defaultTiles = configSource.Configs["DefaultTiles"];
 			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
@@ -138,7 +140,9 @@ namespace Anaximander {
 					// Assume that during bootup the tile is out of date and rebuild everything.
 
 					if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.isRegionCurrentlyUp) {
-						writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tileGen.RenderRegionTile(region));
+						using (var tile_image = tileGen.RenderRegionTile(region)) {
+							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image);
+						}
 					}
 					else {
 						if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
@@ -151,7 +155,9 @@ namespace Anaximander {
 							var colorG = defaultTiles?.GetInt("CrashedRegionGreen", Constants.CrashedRegionColor.G) ?? Constants.CrashedRegionColor.G;
 							var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
 
-							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB)));
+							using (var tile_image = tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
+								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image);
+							}
 						}
 					}
 				}
@@ -180,7 +186,9 @@ namespace Anaximander {
 							var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
 							var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
 
-							writer.WriteTile(coordsList[0], coordsList[1], 1, region_id, tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB)));
+							using (var tile_image = tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
+								writer.WriteTile(coordsList[0], coordsList[1], 1, region_id, tile_image);
+							}
 						}
 					}
 				}
