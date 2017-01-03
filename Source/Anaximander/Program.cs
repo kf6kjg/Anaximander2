@@ -167,20 +167,20 @@ namespace Anaximander {
 					catch (SystemException) { // All IO errors just mean skippage.
 					}
 
-					if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succedded, do as specified in config.
-						var coordsList = coords.Split(',').Select(coord => int.Parse(coord));
+					if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
+						var coordsList = coords.Split(',').Select(coord => int.Parse(coord)).ToArray();
 
 						if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
 							var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
 
-							writer.WriteTile(coordsList.ElementAt(0), coordsList.ElementAt(1), 1, region_id, filename);
+							writer.WriteTile(coordsList[0], coordsList[1], 1, region_id, filename);
 						}
 						else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
 							var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
 							var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
 							var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
 
-							writer.WriteTile(coordsList.ElementAt(0), coordsList.ElementAt(1), 1, region_id, tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB)));
+							writer.WriteTile(coordsList[0], coordsList[1], 1, region_id, tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB)));
 						}
 					}
 				}
