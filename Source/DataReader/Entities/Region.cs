@@ -66,9 +66,17 @@ namespace DataReader {
 			}
 		}
 
-		public int? locationX { get { return _info.locationX; } private set { _info.locationX = value; } }
+		/// <summary>
+		/// Gets or sets the location x.  Please use the RDBMap's UpdateRegionLocation method instead of setting this.
+		/// </summary>
+		/// <value>The location x.</value>
+		public int? locationX { get { return _info.locationX; } set { _info.locationX = value; } }
 
-		public int? locationY { get { return _info.locationY; } private set { _info.locationY = value; } }
+		/// <summary>
+		/// Gets or sets the location y.  Please use the RDBMap's UpdateRegionLocation method instead of setting this.
+		/// </summary>
+		/// <value>The location y.</value>
+		public int? locationY { get { return _info.locationY; } set { _info.locationY = value; } }
 
 		public int? sizeX { get { return _info.sizeX; } private set { _info.sizeX = value; } }
 

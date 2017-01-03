@@ -357,6 +357,21 @@ ORDER BY
 			return COORD_MAP[CoordToIndex(locationX, locationY)];
 		}
 
+		public void UpdateRegionLocation(string region_id, int locationX, int locationY) {
+			var region = GetRegionByUUID(region_id);
+			var coord_index = CoordToIndex(locationX, locationY);
+
+			if (region.locationX != null) {
+				// Clean up the reverse lookup.
+				COORD_MAP.Remove(coord_index);
+			}
+
+			region.locationX = locationX;
+			region.locationY = locationY;
+
+			COORD_MAP.Add(coord_index, region);
+		}
+
 		#endregion
 
 		private static long CoordToIndex(int x, int y) {
