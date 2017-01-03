@@ -176,10 +176,13 @@ namespace Anaximander {
 					if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
 						var coordsList = coords.Split(',').Select(coord => int.Parse(coord)).ToArray();
 
+						region.locationX = coordsList[0];
+						region.locationY = coordsList[1];
+
 						if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
 							var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
 
-							writer.WriteTile(coordsList[0], coordsList[1], 1, region_id, filename);
+							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
 						}
 						else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
 							var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
@@ -187,7 +190,7 @@ namespace Anaximander {
 							var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
 
 							using (var tile_image = tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
-								writer.WriteTile(coordsList[0], coordsList[1], 1, region_id, tile_image);
+								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image);
 							}
 						}
 					}
