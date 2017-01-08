@@ -146,7 +146,7 @@ namespace Anaximander {
 		/// <param name="filename">Filename.</param>
 		/// <param name="bitmap">Bitmap.</param>
 		private void WriteTile(string filename, Bitmap bitmap) {
-			ImageFormat format = ImageFormat.Jpeg;
+			var format = ImageFormat.Jpeg;
 			switch (_imageFormat) {
 				case ImageFormats.JPEG:
 					format = ImageFormat.Jpeg;
@@ -275,6 +275,19 @@ namespace Anaximander {
 			}
 		}
 
+		[System.Obsolete("This method is a hack.  Parallelize the super tile generation and put the image tile generation in that process.")]
+		public Bitmap LoadTile(int locationX, int locationY, int locationZ) {
+			var image_path = Path.Combine(_tileFolder.FullName, PrepareTileFilename(locationX, locationY, locationZ));
+
+			try {
+				return new Bitmap(Image.FromFile(image_path));
+			}
+			catch (Exception e) {
+				LOG.Error($"Error writing map image tile to disk: {e}");
+			}
+
+			return null;
+		}
 	}
 }
 
