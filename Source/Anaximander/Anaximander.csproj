@@ -70,6 +70,8 @@
     <Compile Include="Constants.cs" />
     <Compile Include="TileMapping\TileGenerator.cs" />
     <Compile Include="PrimDrawing\PrimColoredOBBRenderer.cs" />
+    <Compile Include="TileZooming\SuperTileGenerator.cs" />
+    <Compile Include="TileZooming\TileTreeNode.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -78,6 +80,7 @@
     <Folder Include="HeightmapDrawing\" />
     <Folder Include="Texture\" />
     <Folder Include="TileMapping\" />
+    <Folder Include="TileZooming\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

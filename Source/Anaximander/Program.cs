@@ -201,8 +201,15 @@ namespace Anaximander {
 			LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
 			watch.Restart();
 
-			// TODO: Generate zoom level tiles
+			// Generate zoom level tiles.
+			var superGen = new SuperTileGenerator(configSource, rdb_map);
 
+			superGen.PreloadTileTrees(rdb_map.GetRegionUUIDsAsStrings());
+			superGen.GeneratePreloadedTree();
+
+			watch.Stop();
+			LOG.Info($"[MAIN] Created all super tiles in {watch.ElapsedMilliseconds} ms.");
+			//watch.Restart();
 
 			// Activate server process
 			if (configSource.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
