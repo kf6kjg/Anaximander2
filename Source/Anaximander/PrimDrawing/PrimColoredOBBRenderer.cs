@@ -34,7 +34,7 @@ using System.Reflection;
 
 namespace Anaximander {
 	public static class PrimColoredOBBRenderer {
-		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		public struct DrawStruct {
 			public float sort_order;

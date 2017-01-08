@@ -36,6 +36,7 @@ namespace RestApi {
 		// The below cannot be used because at the time the region knows about this,
 		//  the data has not yet been persisted to the DB.
 		// To use, it woudl require the region sending the data to the db or directly to Anax - a waste of resources either way.
+		// 20170108 - Actually, it could be used to set a special flag that will be checked after the DB write.  If that check passes, then the call to Anax would be sent.
 		// -----
 		// flag mask: (PrimFlags.Physics | PrimFlags.Temporary | PrimFlags.TemporaryOnRez)
 		// Min part scale: part.Scale.X > 1f || part.Scale.Y > 1f || part.Scale.Z > 1f

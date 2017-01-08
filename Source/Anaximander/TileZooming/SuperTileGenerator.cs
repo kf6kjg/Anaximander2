@@ -33,7 +33,7 @@ using System.Drawing;
 
 namespace Anaximander {
 	public class SuperTileGenerator {
-		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly int _tilePixelSize;
 
@@ -180,7 +180,7 @@ namespace Anaximander {
 						var offset_x = Math.Abs(((branch.X - parent.X) * _tilePixelSize) >> (branch.Zoom - 1));
 						var offset_y = _tilePixelSize - Math.Abs(((branch.Y - parent.Y) * _tilePixelSize) >> (branch.Zoom - 1)); // Y coordinates are reversed between images (+Y is down) and grid maps (+Y is up).
 
-						// TODO: composite the branch image onto the parent image at the offset position.
+						// Composite the branch image onto the parent image at the offset position.
 						using (var g = Graphics.FromImage(parent.Image)) {
 							g.DrawImage(branch.Image, offset_x, offset_y, _tilePixelSize, _tilePixelSize);
 						}
