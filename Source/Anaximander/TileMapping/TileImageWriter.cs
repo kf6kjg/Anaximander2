@@ -183,7 +183,7 @@ namespace Anaximander {
 		}
 
 		// This really doesn't belong here, but where should it be?
-		public void RemoveDeadTiles(DataReader.RDBMap rdbMap) {
+		public void RemoveDeadTiles(DataReader.RDBMap rdbMap, IEnumerable<string> superTiles) {
 			LOG.Info("Checking for base region tiles that need to be removed.");
 
 			var files = Directory.EnumerateFiles(_tileFolder.FullName);
@@ -192,7 +192,7 @@ namespace Anaximander {
 				.Where(str => str.Contains("}"))
 				.Select(str => str[0])
 			);
-			var regex = new Regex("/" + PrepareTileFilename(Regex.Replace(_tileNameFormat, "{[XYZ]}", "([0-9]+)")) + "$");
+			var region_tile_regex = new Regex("/" + PrepareTileFilename(Regex.Replace(_tileNameFormat, "{[XYZ]}", "([0-9]+)")) + "$");
 
 			var counter = 0;
 
@@ -203,7 +203,7 @@ namespace Anaximander {
 			#else
 			Parallel.ForEach(files, (filename) => {
 			#endif
-				var match = regex.Match(filename);
+				var match = region_tile_regex.Match(filename);
 
 				if (!match.Success) {
 					return;
@@ -245,17 +245,31 @@ namespace Anaximander {
 				}
 
 				// Delete all region tiles for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.
-				if (z == 0) {
-					var regionExists = false;
+				if (z == 1) {
+					DataReader.Region region = null;
 
 					try {
-						rdbMap.GetRegionByLocation(x, y);
-						regionExists = true;
+						region = rdbMap.GetRegionByLocation(x, y);
 					}
 					catch(KeyNotFoundException) {
 					}
 
-					if (!regionExists) {
+					if (region == null) {
+						// Remove the region tile.
+						try {
+							File.Delete(filename);
+							counter++;
+						}
+						catch (IOException) {
+							// File was in use.  Skip for now.
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
+						}
+					}
+				}
+				else {
+					// Check the super tiles for posible removals.  Not a high likelyhood on a growing grid, but will happen in all other cases.
+					var key = TileTreeNode.MakeId(x, y, z);
+					if (!superTiles.Contains(key)) {
 						try {
 							File.Delete(filename);
 							counter++;
@@ -268,10 +282,44 @@ namespace Anaximander {
 				}
 			});
 
-			// TODO: check the super tiles for posible removals.  Not a high likelyhood on a growing grid, but will happen in all other cases.
+			if (counter > 0) {
+				LOG.Info($"Deleted {counter} region tiles for removed regions and consequent super tiles.");
+			}
+
+
+			// Go clean up the uuid reverse lookup folder.
+			counter = 0;
+
+			var uuid_regex = new Regex("/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
+			files = Directory.EnumerateFiles(_reverseLookupFolder.FullName);
+			#if DEBUG
+			Parallel.ForEach(files, options, (filename) => {
+			#else
+			Parallel.ForEach(files, (filename) => {
+			#endif
+				var match = uuid_regex.Match(filename);
+
+				if (!match.Success) {
+					return;
+				}
+
+				// Delete all uuid lookup files for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.
+				var uuid = match.Value.Substring(1);
+				if (!rdbMap.GetRegionUUIDsAsStrings().Contains(uuid)) {
+					// Remove the file.
+					try {
+						File.Delete(filename);
+						counter++;
+					}
+					catch (IOException) {
+						// File was in use.  Skip for now.
+						LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
+					}
+				}
+			});
 
 			if (counter > 0) {
-				LOG.Info($"Deleted {counter} region tiles for removed regions.");
+				LOG.Info($"Deleted {counter} uuid lookup files for removed regions.");
 			}
 		}
 

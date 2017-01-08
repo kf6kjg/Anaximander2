@@ -36,7 +36,7 @@ namespace AssetReader {
 		public static UInt64 GetLongTickCount() {
 			return IsWindows ?
 				GetTickCount64() :
-				// TODO: Fill in implementation for linux/cross platform GetTickCount64 implementation
+				// TODO: Remove need for this utility by using stopwatches.
 				(UInt64)Environment.TickCount;
 		}
 

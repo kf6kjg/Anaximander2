@@ -105,9 +105,6 @@ namespace Anaximander {
 			var writer = new TileImageWriter(configSource);
 			var tileGen = new TileGenerator(configSource);
 
-			// Remove all tiles that do not have a corresponding entry in the map.
-			writer.RemoveDeadTiles(rdb_map);
-
 			// Generate & replace ocean tile
 			using (var ocean_tile = tileGen.GenerateOceanTile()) {
 				writer.WriteOceanTile(ocean_tile.Bitmap);
@@ -201,10 +198,27 @@ namespace Anaximander {
 			LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
 			watch.Restart();
 
+
 			// Generate zoom level tiles.
+			// Just quickly build the tile tree so that lookups of the super tiles can be done.
 			var superGen = new SuperTileGenerator(configSource, rdb_map);
 
 			superGen.PreloadTileTrees(rdb_map.GetRegionUUIDsAsStrings());
+
+			watch.Stop();
+			LOG.Info($"[MAIN] Preloaded tile tree in {watch.ElapsedMilliseconds} ms.");
+			watch.Restart();
+
+
+			// Remove all tiles that do not have a corresponding entry in the map.
+			writer.RemoveDeadTiles(rdb_map, superGen.AllNodesById);
+
+			watch.Stop();
+			LOG.Info($"[MAIN] Removed all old tiles in {watch.ElapsedMilliseconds} ms.");
+			watch.Restart();
+
+
+			// Actually generate the zoom level tiles.
 			superGen.GeneratePreloadedTree();
 
 			watch.Stop();

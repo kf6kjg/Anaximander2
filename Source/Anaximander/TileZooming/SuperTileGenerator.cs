@@ -42,8 +42,8 @@ namespace Anaximander {
 		private readonly RDBMap _rdbMap;
 
 		private readonly Dictionary<string, TileTreeNode> _allNodesById = new Dictionary<string, TileTreeNode>();
+		public IEnumerable<string> AllNodesById => _allNodesById.Keys;
 		private readonly List<string> _rootNodeIds = new List<string>();
-
 		private readonly TileImageWriter _imageWriter;
 
 		private readonly Color _oceanColor;
@@ -67,7 +67,6 @@ namespace Anaximander {
 				_tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
 			);
 		}
-
 
 		public void PreloadTileTrees(IEnumerable<string> region_ids) {
 			_rootNodeIds.Clear();
