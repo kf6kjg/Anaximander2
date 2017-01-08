@@ -72,8 +72,6 @@ namespace Anaximander {
 			_rootNodeIds.Clear();
 			_allNodesById.Clear();
 
-			// TODO: Somehow use the RDBMap to get all the correct neighbors for each of the passed regions and add them into the mix.
-
 			// Preload the base layer as given.
 			foreach (var region_id in region_ids) {
 				var region = _rdbMap.GetRegionByUUID(region_id);
@@ -81,10 +79,57 @@ namespace Anaximander {
 					continue; // Skip over the regions that have no known location.
 				}
 
-				var node = new TileTreeNode((int)region.locationX, (int)region.locationY, 1);
+				// Add all regions that would show on the same super tile to make sure a full picture is generated.
+				var super_x = ((int)region.locationX >> 1) << 1;
+				var super_y = ((int)region.locationY >> 1) << 1;
 
-				_rootNodeIds.Add(node.Id);
-				_allNodesById.Add(node.Id, node);
+				if (_rdbMap.GetRegionByLocation(super_x, super_y) != null) {
+					var node = new TileTreeNode(super_x, super_y, 1);
+
+					try { // Might already be added.
+						_allNodesById.Add(node.Id, node);
+						_rootNodeIds.Add(node.Id);
+					}
+					catch (ArgumentException) {
+						// Don't care.
+					}
+				}
+
+				if (_rdbMap.GetRegionByLocation(super_x + 1, super_y) != null) {
+					var node = new TileTreeNode(super_x + 1, super_y, 1);
+
+					try { // Might already be added.
+						_allNodesById.Add(node.Id, node);
+						_rootNodeIds.Add(node.Id);
+					}
+					catch (ArgumentException) {
+						// Don't care.
+					}
+				}
+
+				if (_rdbMap.GetRegionByLocation(super_x, super_y + 1) != null) {
+					var node = new TileTreeNode(super_x, super_y + 1, 1);
+
+					try { // Might already be added.
+						_allNodesById.Add(node.Id, node);
+						_rootNodeIds.Add(node.Id);
+					}
+					catch (ArgumentException) {
+						// Don't care.
+					}
+				}
+
+				if (_rdbMap.GetRegionByLocation(super_x + 1, super_y + 1) != null) {
+					var node = new TileTreeNode(super_x + 1, super_y + 1, 1);
+
+					try { // Might already be added.
+						_allNodesById.Add(node.Id, node);
+						_rootNodeIds.Add(node.Id);
+					}
+					catch (ArgumentException) {
+						// Don't care.
+					}
+				}
 			}
 
 			// Generate tree of tiles using a bottom-up breadth-first algorithm.
@@ -99,8 +144,8 @@ namespace Anaximander {
 					var branch = _allNodesById[node_id];
 
 					// Find super tile.
-					var super_x = (int) (branch.X >> zoom_level) << zoom_level; // = Math.floor(region.x / Math.pow(2, zoom_level)) * Math.pow(2, zoom_level)
-					var super_y = (int) (branch.Y >> zoom_level) << zoom_level; // = Math.floor(region.y / Math.pow(2, zoom_level)) * Math.pow(2, zoom_level)
+					var super_x = (branch.X >> zoom_level) << zoom_level; // = Math.floor(region.x / Math.pow(2, zoom_level)) * Math.pow(2, zoom_level)
+					var super_y = (branch.Y >> zoom_level) << zoom_level; // = Math.floor(region.y / Math.pow(2, zoom_level)) * Math.pow(2, zoom_level)
 					var super = new TileTreeNode(super_x, super_y, zoom_level + 1);
 					try {
 						// Super tile might not exist, so try adding it.
@@ -149,8 +194,6 @@ namespace Anaximander {
 
 					if (branch.Zoom == 1) {
 						// Zoom 1 is the definition of a leaf.
-						// TODO: generate the tile here and now and write it to disk instead of as an earlier process.  That way I don't have to try and load the image from disk!
-						// To do this will require figuring out a way to parallelize this process and then refactoring a whole mess of code.
 						var image = _imageWriter.LoadTile(branch.X, branch.Y, branch.Zoom);
 
 						if (image != null) {
@@ -161,7 +204,10 @@ namespace Anaximander {
 					// Ah, you are ready for reduction, export, and compiling into your parent then!
 
 					// But if you are a leaf (region tile) then we'll let you slide...
-					if (branch.Zoom > 1) {
+					else { //if (branch.Zoom > 1) {
+						// Save off fullres uncompressed bitmaps of the super tile for helping with future partial updates.
+						_imageWriter.WriteRawTile(branch.X, branch.Y, branch.Zoom, branch.Image);
+
 						// Scale down to _tilePixelSize
 						branch.CreateImage(_tilePixelSize, _tilePixelSize, branch.Image);
 
@@ -174,7 +220,15 @@ namespace Anaximander {
 						var parent = _allNodesById[branch.ParentNodeId];
 
 						if (parent.Image == null) {
-							parent.CreateImage(_tilePixelSize * 2, _tilePixelSize * 2, _oceanColor);
+							// Attempt to load from disk and update it instead of just wiping out all the data during partial updates.
+							var image = _imageWriter.LoadRawTile(parent.X, parent.Y, parent.Zoom);
+
+							if (image != null) {
+								parent.CreateImage(_tilePixelSize * 2, _tilePixelSize * 2, image); // In theory there won't be any scaling - unles the resolution was changed between runs.
+							}
+							else {
+								parent.CreateImage(_tilePixelSize * 2, _tilePixelSize * 2, _oceanColor);
+							}
 						}
 
 						var offset_x = Math.Abs(((branch.X - parent.X) * _tilePixelSize) >> (branch.Zoom - 1));

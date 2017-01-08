@@ -350,11 +350,20 @@ ORDER BY
 		}
 
 		public Region GetRegionByUUID(string uuid) {
-			return MAP[uuid];
+			Region region;
+			if (MAP.TryGetValue(uuid, out region)) {
+				return region;
+			}
+			return null;
 		}
 
 		public Region GetRegionByLocation(int locationX, int locationY) {
-			return COORD_MAP[CoordToIndex(locationX, locationY)];
+			var index = CoordToIndex(locationX, locationY);
+			Region region;
+			if (COORD_MAP.TryGetValue(index, out region)) {
+				return region;
+			}
+			return null;
 		}
 
 		public void UpdateRegionLocation(string region_id, int locationX, int locationY) {

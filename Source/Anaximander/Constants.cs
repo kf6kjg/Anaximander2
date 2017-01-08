@@ -35,6 +35,7 @@ namespace Anaximander {
 		// Folders
 		public static string MapTilePath = "./maptiles";
 		public static string ReverseLookupPath = "by_uuid"; // relative to MapTilePath
+		public static string RawImagePath = "raw"; // relative to MapTilePath
 
 		// MapTileInfo
 		public static ImageFormats ImageFormat = ImageFormats.JPEG;

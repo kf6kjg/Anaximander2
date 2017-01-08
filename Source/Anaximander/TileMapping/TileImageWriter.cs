@@ -40,7 +40,8 @@ namespace Anaximander {
 
 		private readonly ImageFormats _imageFormat;
 		private readonly DirectoryInfo _tileFolder;
-		private readonly DirectoryInfo _reverseLookupFolder = null;
+		private readonly DirectoryInfo _reverseLookupFolder;
+		private readonly DirectoryInfo _rawImageFolder;
 		private readonly string _tileNameFormat;
 		private readonly string _oceanTileName;
 
@@ -69,6 +70,14 @@ namespace Anaximander {
 
 			try {
 				_reverseLookupFolder = Directory.CreateDirectory(Path.Combine(_tileFolder.FullName, Constants.ReverseLookupPath));
+			}
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+			catch { // Don't care if this fails.
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+			}
+
+			try {
+				_rawImageFolder = Directory.CreateDirectory(Path.Combine(_tileFolder.FullName, Constants.RawImagePath));
 			}
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			catch { // Don't care if this fails.
@@ -130,6 +139,23 @@ namespace Anaximander {
 				}
 			}
 			File.Copy(file, Path.Combine(_tileFolder.FullName, PrepareTileFilename(locationX, locationY, locationZ)));
+		}
+
+		/// <summary>
+		/// Writes an uncompressed raw format in a "raw" folder under the config-file specified folder for later recall during super tile regeneration.
+		/// </summary>
+		/// <param name="locationX">Region location x.</param>
+		/// <param name="locationY">Region location y.</param>
+		/// <param name="locationZ">Region location z.</param>
+		/// <param name="regionId">Region UUID.</param>
+		/// <param name="bitmap">Bitmap of the region.</param>
+		public void WriteRawTile(int locationX, int locationY, int locationZ, Bitmap bitmap) {
+			try {
+				bitmap.Save(Path.Combine(_rawImageFolder.FullName, $"{TileTreeNode.MakeId(locationX, locationY, locationZ)}.tiff"), ImageFormat.Tiff);
+			}
+			catch (Exception e) {
+				LOG.Error($"Error writing map image tile to disk: {e}");
+			}
 		}
 
 		/// <summary>
@@ -196,13 +222,13 @@ namespace Anaximander {
 
 			var counter = 0;
 
-			#if DEBUG
+#if DEBUG
 			var options = new ParallelOptions { MaxDegreeOfParallelism = 1 }; // -1 means full parallel.  1 means non-parallel.
 
 			Parallel.ForEach(files, options, (filename) => {
-			#else
+#else
 			Parallel.ForEach(files, (filename) => {
-			#endif
+#endif
 				var match = region_tile_regex.Match(filename);
 
 				if (!match.Success) {
@@ -251,7 +277,7 @@ namespace Anaximander {
 					try {
 						region = rdbMap.GetRegionByLocation(x, y);
 					}
-					catch(KeyNotFoundException) {
+					catch (KeyNotFoundException) {
 					}
 
 					if (region == null) {
@@ -288,42 +314,81 @@ namespace Anaximander {
 
 
 			// Go clean up the uuid reverse lookup folder.
-			counter = 0;
+			if (_reverseLookupFolder != null) {
+				counter = 0;
 
-			var uuid_regex = new Regex("/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
-			files = Directory.EnumerateFiles(_reverseLookupFolder.FullName);
-			#if DEBUG
-			Parallel.ForEach(files, options, (filename) => {
-			#else
-			Parallel.ForEach(files, (filename) => {
-			#endif
-				var match = uuid_regex.Match(filename);
+				var uuid_regex = new Regex("/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
+				files = Directory.EnumerateFiles(_reverseLookupFolder.FullName);
+#if DEBUG
+				Parallel.ForEach(files, options, (filename) => {
+#else
+				Parallel.ForEach(files, (filename) => {
+#endif
+					var match = uuid_regex.Match(filename);
 
-				if (!match.Success) {
-					return;
-				}
-
-				// Delete all uuid lookup files for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.
-				var uuid = match.Value.Substring(1);
-				if (!rdbMap.GetRegionUUIDsAsStrings().Contains(uuid)) {
-					// Remove the file.
-					try {
-						File.Delete(filename);
-						counter++;
+					if (!match.Success) {
+						return;
 					}
-					catch (IOException) {
-						// File was in use.  Skip for now.
-						LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
-					}
-				}
-			});
 
-			if (counter > 0) {
-				LOG.Info($"Deleted {counter} uuid lookup files for removed regions.");
+					// Delete all uuid lookup files for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.
+					var uuid = match.Value.Substring(1);
+					if (!rdbMap.GetRegionUUIDsAsStrings().Contains(uuid)) {
+						// Remove the file.
+						try {
+							File.Delete(filename);
+							counter++;
+						}
+						catch (IOException) {
+							// File was in use.  Skip for now.
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
+						}
+					}
+				});
+
+				if (counter > 0) {
+					LOG.Info($"Deleted {counter} uuid lookup files for removed regions.");
+				}
+			}
+
+			// Go clean up the raw image folder.
+			if (_rawImageFolder != null) {
+				counter = 0;
+
+				var raw_image_regex = new Regex("/[^/]+.tiff$");
+				files = Directory.EnumerateFiles(_rawImageFolder.FullName);
+#if DEBUG
+				Parallel.ForEach(files, options, (filename) => {
+#else
+				Parallel.ForEach(files, (filename) => {
+#endif
+					var match = raw_image_regex.Match(filename);
+
+					if (!match.Success) {
+						return;
+					}
+
+					// Delete all uuid lookup files for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.
+					var key = match.Value.Substring(1, match.Value.Length - 6);
+					if (!superTiles.Contains(key)) {
+						// Remove the file.
+						try {
+							File.Delete(filename);
+							counter++;
+						}
+						catch (IOException) {
+							// File was in use.  Skip for now.
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
+						}
+					}
+				});
+
+				if (counter > 0) {
+					LOG.Info($"Deleted {counter} raw image files for removed super tiles.");
+				}
 			}
 		}
 
-		[System.Obsolete("This method is a hack.  Parallelize the super tile generation and put the image tile generation in that process.")]
+		[System.Obsolete("These load methods should be in their own 'reader' class")]
 		public Bitmap LoadTile(int locationX, int locationY, int locationZ) {
 			var image_path = Path.Combine(_tileFolder.FullName, PrepareTileFilename(locationX, locationY, locationZ));
 
@@ -331,7 +396,21 @@ namespace Anaximander {
 				return new Bitmap(Image.FromFile(image_path));
 			}
 			catch (Exception e) {
-				LOG.Error($"Error writing map image tile to disk: {e}");
+				LOG.Error($"Error reading map image tile from disk: {e}");
+			}
+
+			return null;
+		}
+
+		[System.Obsolete("These load methods should be in their own 'reader' class")]
+		public Bitmap LoadRawTile(int locationX, int locationY, int locationZ) {
+			var image_path = Path.Combine(_rawImageFolder.FullName, $"{TileTreeNode.MakeId(locationX, locationY, locationZ)}.tiff");
+
+			try {
+				return new Bitmap(Image.FromFile(image_path));
+			}
+			catch (Exception e) {
+				LOG.Warn($"Error reading raw image tile from disk: {e}");
 			}
 
 			return null;
