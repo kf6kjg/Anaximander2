@@ -227,11 +227,27 @@ namespace Anaximander {
 
 			// Activate server process
 			if (configSource.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
-				LOG.Info("Activating server, listening for region updates.");
-				RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, useSSL:configSource.Configs["Startup"].GetBoolean("ServerUseSSL", Constants.ServerUseSSL));
+				var server_config = configSource.Configs["Server"];
+
+				var domain = server_config?.GetString("UseSSL", Constants.ServerDomain) ?? Constants.ServerDomain;
+				var port = (uint)(server_config?.GetInt("UseSSL", Constants.ServerPort) ?? Constants.ServerPort);
+				var useSSL = server_config?.GetBoolean("UseSSL", Constants.ServerUseSSL) ?? Constants.ServerUseSSL;
+
+				var protocol = useSSL ? "https" : "http";
+				LOG.Info($"Activating server on '{protocol}://{domain}:{port}', listening for region updates.");
+
+				RestApi.RestAPI.StartHost(
+					UpdateRegionDelegate,
+					MapRulesDelegate,
+					CheckAPIKeyDelegate,
+					domain,
+					port,
+					useSSL
+				);
 
 				while (true) {
 					// Just spin.
+					// TODO: swap out for a wait handle based approach. See http://stackoverflow.com/a/12367882/7363787
 				}
 			}
 		}

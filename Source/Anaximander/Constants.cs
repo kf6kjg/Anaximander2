@@ -31,7 +31,11 @@ namespace Anaximander {
 
 		// Operations
 		public static bool KeepRunningDefault = false;
+
+		// Server
 		public static bool ServerUseSSL = false;
+		public static string ServerDomain = "localhost";
+		public static int ServerPort = 6473;
 
 		// Folders
 		public static string MapTilePath = "./maptiles";
