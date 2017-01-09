@@ -27,29 +27,19 @@ using System.Collections.Generic;
 
 namespace RestApi {
 	public class RulesModel {
-
 		public GeneralRulesModel Info { get; set; }
 
-		// TODO: find rules for notifying, if any, that can be known after region DB persist time. Otherwise it'll jsut be "notify after every DB commit"
-		// Theoretically it could even be the DB itself sending the push notify.s
-
-		// The below cannot be used because at the time the region knows about this,
-		//  the data has not yet been persisted to the DB.
-		// To use, it woudl require the region sending the data to the db or directly to Anax - a waste of resources either way.
-		// 20170108 - Actually, it could be used to set a special flag that will be checked after the DB write.  If that check passes, then the call to Anax would be sent.
-		// -----
-		// flag mask: (PrimFlags.Physics | PrimFlags.Temporary | PrimFlags.TemporaryOnRez)
-		// Min part scale: part.Scale.X > 1f || part.Scale.Y > 1f || part.Scale.Z > 1f
-		// Max part scale
-		// allow offregion prims? (should there be a difference if center (AllowObjectOriginOffRegion) vs any OBB corner?)
-		// Max altitude
-		// altitude reference: Region, Water, Terrain (, maybe water|Terrain?)
-		// ?Min altitude
-		// MinimumTaintedMapTileWaitTime in seconds
-		// MaximumTaintedMapTileWaitTime in seconds
-		// Invalid PCode[] = PCode.Tree, PCode.NewTree, PCode.Grass
-		// 
-	}
+		// The below are used to set a special flag in the region that will be checked after the DB write if ValidatedDBUpdate is set.
+		// If that check passes or AnyDBUpdate is set, then the call to Anax is sent.
+		public uint? ObjectFlagMask { get; set; }
+		public float? PartMinScale { get; set; }
+		public float? PartMaxScale { get; set; }
+		public OffRegionPrimHandling OffRegionPrims { get; set; } = OffRegionPrimHandling.All;
+		public float? PartMinAltitude { get; set; }
+		public float? PartMaxAltitude { get; set; }
+		public AltitudeReference? PartAltitudeReference { get; set; }
+		public IEnumerable<uint> PCodesToIgnore { get; set; }
+}
 
 	public class GeneralRulesModel {
 		public Uri PushNotifyUri { get; set; }
@@ -57,7 +47,22 @@ namespace RestApi {
 	}
 
 	public enum PushNotifyOn {
-		DBUpdate
+		AnyDBUpdate,
+		ValidatedPrimDBUpdate,
+		TerrainUpdate
+	}
+
+	public enum OffRegionPrimHandling {
+		None,
+		CenterInRegion,
+		OBBCornerInRegion,
+		All
+	}
+
+	public enum AltitudeReference {
+		Region,
+		Terrain,
+		Water
 	}
 }
 

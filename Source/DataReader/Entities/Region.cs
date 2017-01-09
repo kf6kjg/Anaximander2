@@ -86,6 +86,8 @@ namespace DataReader {
 
 		public int? serverPort { get { return _info.serverPort; } private set { _info.serverPort = value; } }
 
+		public string rdbConnectionString => _info.RDBConnectionString;
+
 
 		public string terrainTexture1 { get { return _terrainData.terrainTexture1; } private set { _terrainData.terrainTexture1 = value; } }
 
@@ -132,6 +134,10 @@ namespace DataReader {
 		public void AddPrim(Prim prim) {
 			_primData.Add(prim);
 		}
+		public void ClearPrims() {
+			_primData.Clear();
+		}
+
 
 		#endregion
 
@@ -141,6 +147,20 @@ namespace DataReader {
 			_info = info;
 			_terrainData = terrain_data;
 			_primData = new List<Prim>();
+		}
+
+		public Region(Region region, RegionInfo info) : this(info, region._terrainData) {
+			_primData.AddRange(region.prims);
+		}
+
+		public Region(Region region, RegionTerrainData terrain_data) : this(region._info, terrain_data) {
+			_primData.AddRange(region.prims);
+		}
+
+		public Region(Region region, bool wipe_prims = false) : this(region._info, region._terrainData) {
+			if (!wipe_prims) {
+				_primData.AddRange(region.prims);
+			}
 		}
 
 		#endregion

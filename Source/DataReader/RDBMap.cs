@@ -33,6 +33,7 @@ using System.Linq;
 using log4net;
 using MySql.Data.MySqlClient;
 using Nini.Config;
+using System.Diagnostics.Contracts;
 
 namespace DataReader {
 	public class RDBMap {
@@ -52,14 +53,14 @@ namespace DataReader {
 
 			CONNECTION_STRING = data_config.GetString("MasterDatabaseConnectionString", CONNECTION_STRING).Trim();
 
-			if (String.IsNullOrWhiteSpace(CONNECTION_STRING)) {
+			if (string.IsNullOrWhiteSpace(CONNECTION_STRING)) {
 				// Analysis disable once NotResolvedInText
 				throw new ArgumentNullException("MasterDatabaseConnectionString", "Missing or empty key in section [Database] of the ini file.");
 			}
 
 			RDB_CONNECTION_STRING_PARTIAL = data_config.GetString("RDBConnectionStringPartial", RDB_CONNECTION_STRING_PARTIAL).Trim();
 
-			if (String.IsNullOrWhiteSpace(RDB_CONNECTION_STRING_PARTIAL)) {
+			if (string.IsNullOrWhiteSpace(RDB_CONNECTION_STRING_PARTIAL)) {
 				// Analysis disable once NotResolvedInText
 				throw new ArgumentNullException("RDBConnectionStringPartial", "Missing or empty key in section [Database] of the ini file.");
 			}
@@ -82,8 +83,8 @@ namespace DataReader {
 		public void DeleteOldMapEntries() {
 			var active_regions = new List<string>();
 
-			using (MySqlConnection conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
-				using (MySqlCommand cmd = conn.CreateCommand()) {
+			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				using (var cmd = conn.CreateCommand()) {
 					/* Gets the full list of known regions.  Any region IDs that are not in this list are to be removed. */
 					cmd.CommandText = @"SELECT
 						regionID
@@ -91,7 +92,7 @@ namespace DataReader {
 						estate_map
 					ORDER BY
 						region_id";
-					IDataReader reader = DBHelpers.ExecuteReader(cmd);
+					var reader = DBHelpers.ExecuteReader(cmd);
 
 					try {
 						while (reader.Read()) {
@@ -119,8 +120,8 @@ namespace DataReader {
 			RegionInfo new_entry;
 			Dictionary<string, RegionInfo> region_list;
 
-			using (MySqlConnection conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
-				using (MySqlCommand cmd = conn.CreateCommand()) {
+			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				using (var cmd = conn.CreateCommand()) {
 					/* Gets the full list of what regions are on what host.
 					A null host_name indicates that that region's data is on this host, otherwise contains the host for the region's data.
 					A null regionName indicates that the region is shut down, otherwise that the region is up or crashed.
@@ -139,17 +140,17 @@ namespace DataReader {
 						LEFT OUTER JOIN regions ON regionID = uuid
 					ORDER BY
 						host_name, region_id";
-					IDataReader reader = DBHelpers.ExecuteReader(cmd);
+					var reader = DBHelpers.ExecuteReader(cmd);
 
 					try {
 						while (reader.Read()) {
 							var rdbhost = Convert.ToString(reader["host_name"]);
 
-							if (String.IsNullOrWhiteSpace(rdbhost)) {
+							if (string.IsNullOrWhiteSpace(rdbhost)) {
 								rdbhost = conn.DataSource;
 							}
 
-							rdbhost = String.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost);
+							rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost);
 
 							if (regions_by_rdb.ContainsKey(rdbhost)) {
 								region_list = regions_by_rdb[rdbhost];
@@ -159,7 +160,7 @@ namespace DataReader {
 								regions_by_rdb.Add(rdbhost, region_list);
 							}
 
-							string region_id = Convert.ToString(reader["regionID"]);
+							var region_id = Convert.ToString(reader["regionID"]);
 
 							// Check to see if the map already has this entry and if the new entry is shut down.
 							if (region_list.ContainsKey(region_id) && Convert.IsDBNull(reader["regionName"])) {
@@ -198,10 +199,10 @@ namespace DataReader {
 				RegionTerrainData data;
 				string region_id;
 
-				using (MySqlConnection conn = DBHelpers.GetConnection(rdb_connection_string)) {
-					using (MySqlCommand cmd = conn.CreateCommand()) {
+				using (var conn = DBHelpers.GetConnection(rdb_connection_string)) {
+					using (var cmd = conn.CreateCommand()) {
 						cmd.CommandText = @"SELECT RegionUUID, terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield FROM regionsettings natural join terrain;";
-						IDataReader reader = DBHelpers.ExecuteReader(cmd);
+						var reader = DBHelpers.ExecuteReader(cmd);
 
 						try {
 							while (reader.Read()) {
@@ -262,8 +263,8 @@ namespace DataReader {
 				string region_id;
 				Region region;
 
-				using (MySqlConnection conn = DBHelpers.GetConnection(rdb_connection_string)) {
-					using (MySqlCommand cmd = conn.CreateCommand()) {
+				using (var conn = DBHelpers.GetConnection(rdb_connection_string)) {
+					using (var cmd = conn.CreateCommand()) {
 						cmd.CommandText = @"SELECT
 	RegionUUID,
 	ObjectFlags,
@@ -300,7 +301,7 @@ WHERE
 ORDER BY
 	GroupPositionZ, PositionZ
 ;";
-						IDataReader reader = DBHelpers.ExecuteReader(cmd);
+						var reader = DBHelpers.ExecuteReader(cmd);
 
 						try {
 							while (reader.Read()) {
@@ -339,6 +340,244 @@ ORDER BY
 					}
 				}
 			});
+		}
+
+		public void UpdateRegionInfo(string region_id) {
+			var region = GetRegionByUUID(region_id);
+
+			if (region == null) {
+				// This region is missing...
+				// TODO: call a new method that gets both halves of the needed info to create the new region.
+				return;
+			}
+
+			var info = new RegionInfo();
+
+			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				using (var cmd = conn.CreateCommand()) {
+					/* Gets the full list of what regions are on what host.
+					A null host_name indicates that that region's data is on this host, otherwise contains the host for the region's data.
+					A null regionName indicates that the region is shut down, otherwise that the region is up or crashed.
+					*/
+					cmd.CommandText = @"SELECT
+							(
+								SELECT
+									host_name
+								FROM
+									RdbHosts
+									INNER JOIN RegionRdbMapping ON id = rdb_host_id
+								WHERE
+									region_id = @region_id
+							) host_name, regionName, locX, locY, sizeX, sizeY, serverIP, serverPort
+						FROM
+							regions
+						WHERE
+							uuid = @region_id
+					";
+					cmd.Parameters.AddWithValue("region_id", region_id);
+					cmd.Prepare();
+					var reader = DBHelpers.ExecuteReader(cmd);
+
+					try {
+						reader.Read();
+						var rdbhost = Convert.ToString(reader["host_name"]);
+
+						if (string.IsNullOrWhiteSpace(rdbhost)) {
+							rdbhost = conn.DataSource;
+						}
+
+						rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost);
+
+						// Check to see if the map already has this entry and if the new entry is shut down.
+						if (Convert.IsDBNull(reader["regionName"])) {
+							info.RDBConnectionString = rdbhost; // Update the RDB connection
+						}
+						else { // The DB has the freshest information.  Does not imply the region is online - it could have crashed.
+							info.regionId = region_id;
+							info.RDBConnectionString = rdbhost;
+							info.regionName = reader.IsDBNull(reader.GetOrdinal("regionName")) ? null : Convert.ToString(reader["regionName"]);
+							info.locationX = GetDBValueOrNull<int>(reader, "locX");
+							info.locationY = GetDBValueOrNull<int>(reader, "locY");
+							info.sizeX = GetDBValueOrNull<int>(reader, "sizeX");
+							info.sizeY = GetDBValueOrNull<int>(reader, "sizeY");
+							info.serverIP = reader.IsDBNull(reader.GetOrdinal("serverIP")) ? null : Convert.ToString(reader["serverIP"]);
+							info.serverPort = GetDBValueOrNull<int>(reader, "serverPort");
+						}
+					}
+					finally {
+						reader.Close();
+					}
+				}
+			}
+
+			region = new Region(region, info);
+
+			MAP[region_id] = region; // Add or update.
+
+			// Not all regions returned have a position, after all some could be in a crashed state.
+			if (region.locationX != null) {
+				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+			}
+		}
+
+		public void UpdateRegionTerrainData(string region_id) {
+			var region = GetRegionByUUID(region_id);
+
+			if (region == null) {
+				// This region is missing...
+				// TODO: call a new method that gets both halves of the needed info to create the new region.
+				return;
+			}
+
+			RegionTerrainData terrain_data;
+
+			using (var conn = DBHelpers.GetConnection(region.rdbConnectionString)) {
+				using (var cmd = conn.CreateCommand()) {
+					cmd.CommandText = @"SELECT terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield
+						FROM regionsettings NATURAL JOIN terrain
+						WHERE RegionUUID = @region_id
+					";
+					cmd.Parameters.AddWithValue("region_id", region_id);
+					cmd.Prepare();
+					var reader = DBHelpers.ExecuteReader(cmd);
+
+					try {
+						reader.Read();
+
+						terrain_data.terrainTexture1 = GetDBValue(reader, "terrain_texture_1");
+						terrain_data.terrainTexture2 = GetDBValue(reader, "terrain_texture_2");
+						terrain_data.terrainTexture3 = GetDBValue(reader, "terrain_texture_3");
+						terrain_data.terrainTexture4 = GetDBValue(reader, "terrain_texture_4");
+
+						terrain_data.elevation1NW = GetDBValue<double>(reader, "elevation_1_nw");
+						terrain_data.elevation2NW = GetDBValue<double>(reader, "elevation_2_nw");
+						terrain_data.elevation1NE = GetDBValue<double>(reader, "elevation_1_ne");
+						terrain_data.elevation2NE = GetDBValue<double>(reader, "elevation_2_ne");
+						terrain_data.elevation1SW = GetDBValue<double>(reader, "elevation_1_sw");
+						terrain_data.elevation2SW = GetDBValue<double>(reader, "elevation_2_sw");
+						terrain_data.elevation1SE = GetDBValue<double>(reader, "elevation_1_se");
+						terrain_data.elevation2SE = GetDBValue<double>(reader, "elevation_2_se");
+
+						terrain_data.waterHeight = GetDBValue<double>(reader, "water_height");
+
+						terrain_data.heightmap = new double[256, 256];
+						terrain_data.heightmap.Initialize();
+
+						var br = new BinaryReader(new MemoryStream((byte[])reader["Heightfield"]));
+						for (int x = 0; x < terrain_data.heightmap.GetLength(0); x++) {
+							for (int y = 0; y < terrain_data.heightmap.GetLength(1); y++) {
+								terrain_data.heightmap[x, y] = br.ReadDouble();
+							}
+						}
+						LOG.Info($"[REGION DB]: Loaded data for region {region_id}");
+					}
+					finally {
+						reader.Close();
+					}
+				}
+			}
+
+			region = new Region(region, terrain_data);
+
+			MAP[region_id] = region; // Add or update.
+
+			// Not all regions returned have a position, after all some could be in a crashed state.
+			if (region.locationX != null) {
+				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+			}
+		}
+
+		public void UpdateRegionPrimData(string region_id) {
+			var region = new Region(GetRegionByUUID(region_id), wipe_prims:true);
+
+			if (region == null) {
+				// This region is missing...
+				// TODO: call a new method that gets both halves of the needed info to create the new region and then continue instead of returning.
+				return;
+			}
+
+			using (var conn = DBHelpers.GetConnection(region.rdbConnectionString)) {
+				using (var cmd = conn.CreateCommand()) {
+					cmd.CommandText = @"SELECT
+							ObjectFlags,
+							State,
+							PositionX, PositionY, PositionZ,
+							GroupPositionX, GroupPositionY, GroupPositionZ,
+							ScaleX, ScaleY, ScaleZ,
+							RotationX, RotationY, RotationZ, RotationW,
+							RootRotationX, RootRotationY, RootRotationZ, RootRotationW,
+							Texture
+						FROM
+							prims pr
+							NATURAL JOIN primshapes
+							LEFT JOIN (
+								SELECT
+									RotationX AS RootRotationX,
+									RotationY AS RootRotationY,
+									RotationZ AS RootRotationZ,
+									RotationW AS RootRotationW,
+									SceneGroupID
+								FROM
+									prims pr
+								WHERE
+									LinkNumber = 1
+							) AS rootprim ON rootprim.SceneGroupID = pr.SceneGroupID
+						WHERE
+							GroupPositionZ < 766 /* = max terrain height + render height */
+							AND LENGTH(Texture) > 0
+							AND ObjectFlags & (0 | 0x40000 | 0x20000) = 0
+							AND ScaleX > 1.0
+							AND ScaleY > 1.0
+							AND ScaleZ > 1.0
+							AND PCode NOT IN (255, 111, 95)
+							AND RegionUUID = @region_id
+						ORDER BY
+							GroupPositionZ, PositionZ
+					";
+					cmd.Parameters.AddWithValue("region_id", region_id);
+					cmd.Prepare();
+					var reader = DBHelpers.ExecuteReader(cmd);
+
+					try {
+						while (reader.Read()) {
+							var prim_data = new RegionPrimData() {
+								ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
+								State = GetDBValue<int>(reader, "State"),
+								PositionX = GetDBValue<double>(reader, "PositionX"),
+								PositionY = GetDBValue<double>(reader, "PositionY"),
+								PositionZ = GetDBValue<double>(reader, "PositionZ"),
+								GroupPositionX = GetDBValue<double>(reader, "GroupPositionX"),
+								GroupPositionY = GetDBValue<double>(reader, "GroupPositionY"),
+								GroupPositionZ = GetDBValue<double>(reader, "GroupPositionZ"),
+								ScaleX = GetDBValue<double>(reader, "ScaleX"),
+								ScaleY = GetDBValue<double>(reader, "ScaleY"),
+								ScaleZ = GetDBValue<double>(reader, "ScaleZ"),
+								RotationX = GetDBValue<double>(reader, "RotationX"),
+								RotationY = GetDBValue<double>(reader, "RotationY"),
+								RotationZ = GetDBValue<double>(reader, "RotationZ"),
+								RotationW = GetDBValue<double>(reader, "RotationW"),
+								RootRotationX = GetDBValueOrNull<double>(reader, "RootRotationX"),
+								RootRotationY = GetDBValueOrNull<double>(reader, "RootRotationY"),
+								RootRotationZ = GetDBValueOrNull<double>(reader, "RootRotationZ"),
+								RootRotationW = GetDBValueOrNull<double>(reader, "RootRotationW"),
+								Texture = (byte[])reader["Texture"],
+							};
+
+							region.AddPrim(new Prim(ref prim_data));
+						}
+					}
+					finally {
+						reader.Close();
+					}
+				}
+			}
+
+			MAP[region_id] = region; // Add or update.
+
+			// Not all regions returned have a position, after all some could be in a crashed state.
+			if (region.locationX != null) {
+				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+			}
 		}
 
 		public int GetRegionCount() {
@@ -388,6 +627,7 @@ ORDER BY
 		}
 
 		private static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T: struct {
+			Contract.Ensures(Contract.Result<T?>() != null);
 			var result = new T?();
 			try {
 				var ordinal = reader.GetOrdinal(name);

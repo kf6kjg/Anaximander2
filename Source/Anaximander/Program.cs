@@ -24,6 +24,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -38,9 +39,17 @@ namespace Anaximander {
 	class Application {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private static readonly string ExecutableDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", String.Empty));
+		private static readonly string EXECUTABLE_DIRECTORY = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", String.Empty));
 
 		private static readonly string DEFAULT_INI_FILE = "Anaximander.ini";
+
+		private static IConfigSource _configSource;
+
+		private static RDBMap _rdbMap;
+
+		private static TileGenerator _tileGenerator;
+
+		private static TileImageWriter _tileWriter;
 
 		public static void Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
@@ -51,6 +60,7 @@ namespace Anaximander {
 
 			// Add the arguments supplied when running the application to the configuration
 			var configSource = new ArgvConfigSource(args);
+			_configSource = configSource;
 
 			// Configure Log4Net
 			configSource.AddSwitch("Startup", "logconfig");
@@ -86,6 +96,7 @@ namespace Anaximander {
 
 			// Load the RDB map
 			var rdb_map = new RDBMap(configSource);
+			_rdbMap = rdb_map;
 
 			watch.Stop();
 			LOG.Info($"[MAIN] Loaded region DB in {watch.ElapsedMilliseconds} ms for a total of {rdb_map.GetRegionCount()} regions, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
@@ -93,137 +104,64 @@ namespace Anaximander {
 
 			/* Issues to watch for:
 			 * Region delete - The DBA will need to actually remove the estate record to cause a map tile delete.
-			 *  - (Done) This implies that the RDBMap needs to check its list of regions against the DB and remove all that aren't in the DB.
-			 * Region move - The list of images in the filesystem will need to be compared with the data structure and any images that are not in the data structure will need to be culled.
-			 *  - Unless the images are actually stored in the filesystem with the regionID as the filename and a conversion table is used (softlinks, redirects, etc).
-			 * Tile image read during write - The web server could attempt to read a file while the file is being written.
+			 * TODO: Tile image read during write - The web server could attempt to read a file while the file is being written.
 			 *  - Possible solution: write to a random filename then try { mv rndname to finalname with overwrite } catch { try again later for a max of N times }
 			 *    This should provide as much atomicity as possible, and allow anything that's blocking access to be bypassed via time delay. Needs to just fail under exceptions that indicate always-fail conditions.
 			 */
 
+			{
+				_tileWriter = new TileImageWriter(configSource);
+				_tileGenerator = new TileGenerator(configSource);
 
-			var writer = new TileImageWriter(configSource);
-			var tileGen = new TileGenerator(configSource);
+				// Generate & replace ocean tile
+				using (var ocean_tile = _tileGenerator.GenerateOceanTile()) {
+					_tileWriter.WriteOceanTile(ocean_tile.Bitmap);
+				}
 
-			// Generate & replace ocean tile
-			using (var ocean_tile = tileGen.GenerateOceanTile()) {
-				writer.WriteOceanTile(ocean_tile.Bitmap);
-			}
-
-			var defaultTiles = configSource.Configs["DefaultTiles"];
-			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
-			RegionErrorDisplayTechnique offlineTechnique;
-			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out offlineTechnique)) {
-				LOG.Error($"Invalid offline region technique '{techniqueConfig}' in configuration.");
-			}
-			techniqueConfig = defaultTiles?.GetString("CrashedRegion", Constants.CrashedRegion.ToString()) ?? Constants.CrashedRegion.ToString();
-			RegionErrorDisplayTechnique crashedTechnique;
-			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out crashedTechnique)) {
-				LOG.Error($"Invalid crashed region technique '{techniqueConfig}' in configuration.");
-			}
-
-			// Generate region tiles - all existing are nearly guaranteed to be out of date.
+				// Generate region tiles - all existing are nearly guaranteed to be out of date.
 #if DEBUG
-			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
+				var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
 
-			Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), options, (region_id) => {
+				Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), options, (region_id) => {
 #else
-			Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), (region_id) => {
+				Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), (region_id) => {
 #endif
-			//foreach(var region_id in rdb_map.GetRegionUUIDsAsStrings()) {
-				var region = rdb_map.GetRegionByUUID(region_id);
+					//foreach(var region_id in rdb_map.GetRegionUUIDsAsStrings()) {
+					UpdateRegionTile(region_id);
+				});
 
-				if (region.locationX != null) {
-					// Assume that during bootup the tile is out of date and rebuild everything.
-
-					if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.isRegionCurrentlyUp) {
-						using (var tile_image = tileGen.RenderRegionTile(region)) {
-							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
-						}
-					}
-					else {
-						if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
-							var filename = defaultTiles?.GetString("CrashedRegionImage", Constants.CrashedRegionImage) ?? Constants.CrashedRegionImage;
-
-							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
-						}
-						else if (crashedTechnique == RegionErrorDisplayTechnique.COLOR) {
-							var colorR = defaultTiles?.GetInt("CrashedRegionRed", Constants.CrashedRegionColor.R) ?? Constants.CrashedRegionColor.R;
-							var colorG = defaultTiles?.GetInt("CrashedRegionGreen", Constants.CrashedRegionColor.G) ?? Constants.CrashedRegionColor.G;
-							var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
-
-							using (var tile_image = tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
-								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
-							}
-						}
-					}
-				}
-				else if (offlineTechnique != RegionErrorDisplayTechnique.IGNORE) {
-					// Go looking for the backup technique to find the coordinates of a region that has gone offline.
-					var folderinfo = configSource.Configs["Folders"];
-					var tilepath = folderinfo?.GetString("MapTilePath", Constants.MapTilePath) ?? Constants.MapTilePath;
-
-					var coords = string.Empty;
-					try {
-						coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id));
-					}
-					catch (SystemException) { // All IO errors just mean skippage.
-					}
-
-					if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
-						var coordsList = coords.Split(',').Select(coord => int.Parse(coord)).ToArray();
-
-						region.locationX = coordsList[0];
-						region.locationY = coordsList[1];
-
-						if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
-							var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
-
-							writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
-						}
-						else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
-							var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
-							var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
-							var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
-
-							using (var tile_image = tileGen.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
-								writer.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
-							}
-						}
-					}
-				}
-			});
-
-			watch.Stop();
-			LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
-			watch.Restart();
+				watch.Stop();
+				LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
+				watch.Restart();
 
 
-			// Generate zoom level tiles.
-			// Just quickly build the tile tree so that lookups of the super tiles can be done.
-			var superGen = new SuperTileGenerator(configSource, rdb_map);
+				// Generate zoom level tiles.
+				// Just quickly build the tile tree so that lookups of the super tiles can be done.
 
-			superGen.PreloadTileTrees(rdb_map.GetRegionUUIDsAsStrings());
+				var superGen = new SuperTileGenerator(configSource, rdb_map);
 
-			watch.Stop();
-			LOG.Info($"[MAIN] Preloaded tile tree in {watch.ElapsedMilliseconds} ms.");
-			watch.Restart();
+				superGen.PreloadTileTrees(rdb_map.GetRegionUUIDsAsStrings());
 
-
-			// Remove all tiles that do not have a corresponding entry in the map.
-			writer.RemoveDeadTiles(rdb_map, superGen.AllNodesById);
-
-			watch.Stop();
-			LOG.Info($"[MAIN] Removed all old tiles in {watch.ElapsedMilliseconds} ms.");
-			watch.Restart();
+				watch.Stop();
+				LOG.Info($"[MAIN] Preloaded tile tree in {watch.ElapsedMilliseconds} ms.");
+				watch.Restart();
 
 
-			// Actually generate the zoom level tiles.
-			superGen.GeneratePreloadedTree();
+				// Remove all tiles that do not have a corresponding entry in the map.
+				_tileWriter.RemoveDeadTiles(rdb_map, superGen.AllNodesById);
 
-			watch.Stop();
-			LOG.Info($"[MAIN] Created all super tiles in {watch.ElapsedMilliseconds} ms.");
-			//watch.Restart();
+				watch.Stop();
+				LOG.Info($"[MAIN] Removed all old tiles in {watch.ElapsedMilliseconds} ms.");
+				watch.Restart();
+
+
+				// Actually generate the zoom level tiles.
+				superGen.GeneratePreloadedTree();
+
+				watch.Stop();
+				LOG.Info($"[MAIN] Created all super tiles in {watch.ElapsedMilliseconds} ms.");
+				//watch.Restart();
+			}
 
 			// Activate server process
 			if (configSource.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
@@ -234,7 +172,7 @@ namespace Anaximander {
 				var useSSL = server_config?.GetBoolean("UseSSL", Constants.ServerUseSSL) ?? Constants.ServerUseSSL;
 
 				var protocol = useSSL ? "https" : "http";
-				LOG.Info($"Activating server on '{protocol}://{domain}:{port}', listening for region updates.");
+				LOG.Info($"[MAIN] Activating server on '{protocol}://{domain}:{port}', listening for region updates.");
 
 				RestApi.RestAPI.StartHost(
 					UpdateRegionDelegate,
@@ -252,16 +190,145 @@ namespace Anaximander {
 			}
 		}
 
-		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) { // TODO: MapRulesDelegate
-			return new RestApi.RulesModel();
+		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) {
+			var server_config = _configSource.Configs["Server"];
+
+			var domain = server_config?.GetString("UseSSL", Constants.ServerDomain) ?? Constants.ServerDomain;
+			var port = (uint)(server_config?.GetInt("UseSSL", Constants.ServerPort) ?? Constants.ServerPort);
+			var useSSL = server_config?.GetBoolean("UseSSL", Constants.ServerUseSSL) ?? Constants.ServerUseSSL;
+
+			var protocol = useSSL ? "https" : "http";
+			var rules = new RestApi.RulesModel {
+				Info = new RestApi.GeneralRulesModel {
+					PushNotifyUri = new Uri($"{protocol}://{domain}:{port}"),
+					PushNotifyEvents = new List<RestApi.PushNotifyOn> {
+						RestApi.PushNotifyOn.ValidatedPrimDBUpdate,
+						RestApi.PushNotifyOn.TerrainUpdate
+					},
+				},
+			};
+
+			// TODO: hook up the filters.  Takes config entries.
+
+			return rules;
 		}
 
-		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) { // TODO: UpdateRegionDelegate
-			
+		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) {
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+
+			foreach (var change in changeData.Changes) {
+				switch (change) {
+					case RestApi.ChangeCategory.TerrainElevation:
+					case RestApi.ChangeCategory.TerrainTexture:
+						_rdbMap.UpdateRegionTerrainData(uuid);
+					break;
+					case RestApi.ChangeCategory.Prim:
+						_rdbMap.UpdateRegionPrimData(uuid);
+					break;
+				}
+			}
+
+			if (changeData.Changes.Count > 0) {
+				UpdateRegionTile(uuid);
+
+				var superGen = new SuperTileGenerator(_configSource, _rdbMap);
+
+				// Only update that portion of the tree that's affected by the change.
+				superGen.PreloadTileTrees(new string[] { uuid });
+				superGen.GeneratePreloadedTree();
+
+				// Time for cleanup: make sure that we only have what we need.
+				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDsAsStrings());
+				_tileWriter.RemoveDeadTiles(_rdbMap, superGen.AllNodesById);
+			}
+
+			watch.Stop();
+			LOG.Info($"[UpdateRegionDelegate] Rebuilt region id '{uuid}', parent tree, and did filesystem cleanup in {watch.ElapsedMilliseconds} ms.");
 		}
 
-		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) { // TODO: CheckAPIKeyDelegate
-			return true;
+		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) {
+			return _configSource.Configs["Server"]
+				?.GetString("APIKeys", string.Empty)
+				.Split(',')
+				.Select(key => key.Trim())
+				.Contains(apiKey)
+				?? true;
+		}
+
+		private static void UpdateRegionTile(string region_id) {
+			var defaultTiles = _configSource.Configs["DefaultTiles"];
+			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
+			RegionErrorDisplayTechnique offlineTechnique;
+			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out offlineTechnique)) {
+				LOG.Error($"Invalid offline region technique '{techniqueConfig}' in configuration.");
+			}
+			techniqueConfig = defaultTiles?.GetString("CrashedRegion", Constants.CrashedRegion.ToString()) ?? Constants.CrashedRegion.ToString();
+			RegionErrorDisplayTechnique crashedTechnique;
+			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out crashedTechnique)) {
+				LOG.Error($"Invalid crashed region technique '{techniqueConfig}' in configuration.");
+			}
+
+			var region = _rdbMap.GetRegionByUUID(region_id);
+
+			if (region.locationX != null) {
+				// Assume that during bootup the tile is out of date and rebuild everything.
+
+				if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.isRegionCurrentlyUp) {
+					using (var tile_image = _tileGenerator.RenderRegionTile(region)) {
+						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
+					}
+				}
+				else {
+					if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
+						var filename = defaultTiles?.GetString("CrashedRegionImage", Constants.CrashedRegionImage) ?? Constants.CrashedRegionImage;
+
+						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
+					}
+					else if (crashedTechnique == RegionErrorDisplayTechnique.COLOR) {
+						var colorR = defaultTiles?.GetInt("CrashedRegionRed", Constants.CrashedRegionColor.R) ?? Constants.CrashedRegionColor.R;
+						var colorG = defaultTiles?.GetInt("CrashedRegionGreen", Constants.CrashedRegionColor.G) ?? Constants.CrashedRegionColor.G;
+						var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
+
+						using (var tile_image = _tileGenerator.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
+							_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
+						}
+					}
+				}
+			}
+			else if (offlineTechnique != RegionErrorDisplayTechnique.IGNORE) {
+				// Go looking for the backup technique to find the coordinates of a region that has gone offline.
+				var folderinfo = _configSource.Configs["Folders"];
+				var tilepath = folderinfo?.GetString("MapTilePath", Constants.MapTilePath) ?? Constants.MapTilePath;
+
+				var coords = string.Empty;
+				try {
+					coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id));
+				}
+				catch (SystemException) { // All IO errors just mean skippage.
+				}
+
+				if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
+					var coordsList = coords.Split(',').Select(coord => int.Parse(coord)).ToArray();
+
+					region.locationX = coordsList[0];
+					region.locationY = coordsList[1];
+
+					if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
+						var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
+
+						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
+					}
+					else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
+						var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
+						var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
+						var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
+
+						using (var tile_image = _tileGenerator.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
+							_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
+						}
+					}
+				}
+			}
 		}
 
 		private static void ReadConfigurationFromINI(IConfigSource configSource) {
@@ -282,7 +349,7 @@ namespace Anaximander {
 
 			if (!found_at_given_path) {
 				// Combine with true path to binary and try again.
-				iniFileName = Path.Combine(ExecutableDirectory, iniFileName);
+				iniFileName = Path.Combine(EXECUTABLE_DIRECTORY, iniFileName);
 
 				try {
 					LOG.Info($"[MAIN] Attempting to read configuration file from installation path {Path.GetFullPath(iniFileName)}");
@@ -334,8 +401,8 @@ namespace Anaximander {
 
 					var err_reporter = new System.Diagnostics.Process();
 					err_reporter.EnableRaisingEvents = false;
-					err_reporter.StartInfo.FileName = Path.Combine(ExecutableDirectory, "RollbarCrashReporter.exe");
-					err_reporter.StartInfo.WorkingDirectory = ExecutableDirectory;
+					err_reporter.StartInfo.FileName = Path.Combine(EXECUTABLE_DIRECTORY, "RollbarCrashReporter.exe");
+					err_reporter.StartInfo.WorkingDirectory = EXECUTABLE_DIRECTORY;
 					err_reporter.StartInfo.Arguments = raw_msg.Length.ToString(); // Let it know ahead of time how many characters are expected.
 					err_reporter.StartInfo.RedirectStandardInput = true;
 					err_reporter.StartInfo.RedirectStandardOutput = false;

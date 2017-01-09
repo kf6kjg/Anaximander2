@@ -45,7 +45,7 @@ namespace UnitTests {
 			{
 				Info = new GeneralRulesModel {
 					PushNotifyEvents = new List<PushNotifyOn> {
-						PushNotifyOn.DBUpdate,
+						PushNotifyOn.AnyDBUpdate,
 					},
 					PushNotifyUri = new Uri($"{_protocol}://{_domain}:{_port}/wherever_I_want_it_to__be"),
 				},
@@ -125,7 +125,7 @@ namespace UnitTests {
 			Assert.That(info.ContainsKey("pushNotifyEvents"), "Missing 'pushNotifyEvents' key in the 'info' object!");
 			var events = (JsonArray)info["pushNotifyEvents"];
 			Assert.IsNotNull(events, "Key 'pushNotifyEvents' must be a JSON array!");
-			Assert.AreEqual("DBUpdate", events[0]);
+			Assert.AreEqual("AnyDBUpdate", events[0]);
 		}
 		#endregion
 

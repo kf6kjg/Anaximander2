@@ -56,6 +56,10 @@ namespace RestApi {
 
 			_host = new Nancy.Hosting.Self.NancyHost(new Uri($"{protocol}://{domain}:{port}"));
 			_host.Start();
+
+#if DEBUG
+			StaticConfiguration.DisableErrorTraces = false;
+#endif
 		}
 
 		public static void StopHost() {
