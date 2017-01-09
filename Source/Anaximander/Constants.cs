@@ -31,17 +31,18 @@ namespace Anaximander {
 
 		// Operations
 		public static bool KeepRunningDefault = false;
+		public static bool ServerUseSSL = false;
 
 		// Folders
 		public static string MapTilePath = "./maptiles";
-		public static string ReverseLookupPath = "by_uuid"; // relative to MapTilePath
 		public static string RawImagePath = "raw"; // relative to MapTilePath
+		public static string ReverseLookupPath = "by_uuid"; // relative to MapTilePath
 
 		// MapTileInfo
 		public static ImageFormats ImageFormat = ImageFormats.JPEG;
 
-		public static Color OceanColor = Color.FromArgb(0, 0, 255);
 		public static Color BeachColor = Color.FromArgb(0, 255, 255);
+		public static Color OceanColor = Color.FromArgb(0, 0, 255);
 		public static string OceanTileName = "ocean";
 
 		public static int PixelScale = 256;
@@ -53,12 +54,12 @@ namespace Anaximander {
 
 		// DefaultTiles
 		public static RegionErrorDisplayTechnique OfflineRegion = RegionErrorDisplayTechnique.IGNORE;
-		public static string OfflineRegionImage = "./images/offline.jpg";
 		public static Color OfflineRegionColor = Color.FromArgb(0, 0, 0);
+		public static string OfflineRegionImage = "./images/offline.jpg";
 
 		public static RegionErrorDisplayTechnique CrashedRegion = RegionErrorDisplayTechnique.IGNORE;
-		public static string CrashedRegionImage = "./images/crashed.jpg";
 		public static Color CrashedRegionColor = Color.FromArgb(0, 0, 0);
+		public static string CrashedRegionImage = "./images/crashed.jpg";
 	}
 
 	public enum ImageFormats {

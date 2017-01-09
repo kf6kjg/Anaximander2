@@ -228,7 +228,7 @@ namespace Anaximander {
 			// Activate server process
 			if (configSource.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
 				LOG.Info("Activating server, listening for region updates.");
-				RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, useSSL:false); // TODO: make SSL an option.  Not really needed since servers all should be on a private network, but...
+				RestApi.RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, useSSL:configSource.Configs["Startup"].GetBoolean("ServerUseSSL", Constants.ServerUseSSL));
 
 				while (true) {
 					// Just spin.
