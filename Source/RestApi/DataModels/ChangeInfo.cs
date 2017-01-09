@@ -27,22 +27,22 @@ using System.Collections.Generic;
 
 namespace RestApi {
 	public class ChangeInfo {
-		public Dictionary<string, ChangeCategory> Changes { get; set; }
+		public List<ChangeCategory> Changes { get; set; }
 	}
 
 	public enum ChangeCategory {
 		/// <summary>
 		/// Terrain heightmap data was edited, reloaded, or otherwise modified.
 		/// </summary>
-		TerrainElevationChange,
+		TerrainElevation,
 		/// <summary>
-		/// Terrain texture information was changed.  Could be any of the textures or their repective ehights were adjusted.
+		/// Terrain texture information was changed.  Could be any of the textures or their repective heights were adjusted.
 		/// </summary>
-		TerrainTextureChange,
+		TerrainTexture,
 		/// <summary>
 		/// A prim was changed that qualifies to taint the map.  Please be sure of that before using this value.
 		/// </summary>
-		PrimChange,
+		Prim,
 	}
 }
 

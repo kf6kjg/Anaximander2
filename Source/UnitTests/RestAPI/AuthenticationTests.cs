@@ -53,7 +53,14 @@ namespace UnitTests {
 		}
 
 		private static void UpdateRegionDelegate(string uuid, ChangeInfo changeData) {
-			_regionUUID = uuid;
+			var change = changeData.Changes?.Contains(ChangeCategory.TerrainTexture);
+
+			if (change ?? false) {
+				_regionUUID = uuid;
+			}
+			else {
+				_regionUUID = "failed to get change.";
+			}
 		}
 
 		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) {
@@ -135,7 +142,9 @@ namespace UnitTests {
 
 			var body = new
 			{
-				terrainHeight = true
+				changes = new string[] {
+					"TerrainTexture"
+				}
 			};
 
 			request.AddJsonBody(body);
@@ -160,7 +169,9 @@ namespace UnitTests {
 
 			var body = new
 			{
-				terrainHeight = true
+				changes = new string[] {
+					"TerrainTexture"
+				}
 			};
 
 			request.AddJsonBody(body);

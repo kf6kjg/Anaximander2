@@ -41,9 +41,9 @@ namespace RestApi {
 		private static UpdateRegionDelegate _updateRegionDelegate;
 		private static GetMapRulesDelegate _getMapRulesDelegate;
 		private static CheckAPIKeyDelegate _checkAPIKeyDelegate;
-		private static Nancy.Hosting.Self.NancyHost host;
+		private static Nancy.Hosting.Self.NancyHost _host;
 
-		private static readonly BindingConfig bindingConfig = new BindingConfig();
+		private static readonly BindingConfig BINDING_CONFIG = new BindingConfig();
 
 		public static void StartHost(UpdateRegionDelegate update, GetMapRulesDelegate rules, CheckAPIKeyDelegate keychecker, string domain = "localhost", uint port = 6473, bool useSSL = true) {
 			_updateRegionDelegate = update;
@@ -52,14 +52,14 @@ namespace RestApi {
 
 			var protocol = useSSL ? "https" : "http";
 
-			bindingConfig.BodyOnly = true;
+			BINDING_CONFIG.BodyOnly = true;
 
-			host = new Nancy.Hosting.Self.NancyHost(new Uri($"{protocol}://{domain}:{port}"));
-			host.Start();
+			_host = new Nancy.Hosting.Self.NancyHost(new Uri($"{protocol}://{domain}:{port}"));
+			_host.Start();
 		}
 
 		public static void StopHost() {
-			host.Stop();
+			_host.Stop();
 		}
 
 		public RestAPI() {
@@ -85,7 +85,7 @@ namespace RestApi {
 				}
 
 				// Read in the change data object and pass on to delegate.
-				var changeData = this.Bind<ChangeInfo>(bindingConfig);
+				var changeData = this.Bind<ChangeInfo>(BINDING_CONFIG);
 				_updateRegionDelegate.EndInvoke(_updateRegionDelegate.BeginInvoke(parameters.uuid, changeData, null, null));
 
 				return (Response) HttpStatusCode.NoContent;
