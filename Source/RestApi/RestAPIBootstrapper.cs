@@ -23,15 +23,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Reflection;
+using System.Text;
+using log4net;
 using Nancy;
+using Nancy.ErrorHandling;
 
 namespace RestApi {
 	// Automagically called by the default bootstrapper.
 	public class RestAPIBootstrapper : DefaultNancyBootstrapper {
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		protected override void ApplicationStartup(Nancy.TinyIoc.TinyIoCContainer container, Nancy.Bootstrapper.IPipelines pipelines) {
 			base.ApplicationStartup(container, pipelines);
 			Nancy.Json.JsonSettings.PrimitiveConverters.Add(new JsonConvertEnum());
+
+			pipelines.OnError += (context, exception) => {
+				LOG.Error($"[SERVER] Unhandled error from '{context.Request.UserHostAddress}' on '{context.Request.Url}': {exception.Message}", exception);
+
+				var response = new Response();
+				response.StatusCode = HttpStatusCode.InternalServerError;
+				response.ContentType = "application/json";
+				response.Contents = (obj) => {
+					var output = Encoding.UTF8.GetBytes("{\"error\": \"Server error.  This error has been sent to the developers.\"}");
+					obj.Write(output, 0, output.Length);
+				};
+
+				return response;
+			};
+
+#if DEBUG
+			StaticConfiguration.DisableErrorTraces = false;
+#endif
 		}
 	}
 }
-
