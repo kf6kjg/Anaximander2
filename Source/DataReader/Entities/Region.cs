@@ -134,10 +134,6 @@ namespace DataReader {
 		public void AddPrim(Prim prim) {
 			_primData.Add(prim);
 		}
-		public void ClearPrims() {
-			_primData.Clear();
-		}
-
 
 		#endregion
 
@@ -164,8 +160,6 @@ namespace DataReader {
 		}
 
 		#endregion
-
-
 	}
 }
 
