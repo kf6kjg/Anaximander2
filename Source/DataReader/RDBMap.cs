@@ -147,10 +147,13 @@ namespace DataReader {
 							var rdbhost = Convert.ToString(reader["host_name"]);
 
 							if (string.IsNullOrWhiteSpace(rdbhost)) {
+								// Not on an RDB, use the main.
 								rdbhost = conn.DataSource;
 							}
-
-							rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost);
+							else {
+								// Got an RDB, normallize the case and format.
+								rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost.ToLowerInvariant());
+							}
 
 							if (regions_by_rdb.ContainsKey(rdbhost)) {
 								region_list = regions_by_rdb[rdbhost];
