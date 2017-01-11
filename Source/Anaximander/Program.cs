@@ -215,20 +215,36 @@ namespace Anaximander {
 
 		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) {
 			var watch = System.Diagnostics.Stopwatch.StartNew();
+			var redraw = false;
 
-			foreach (var change in changeData.Changes) {
-				switch (change) {
-					case RestApi.ChangeCategory.TerrainElevation:
-					case RestApi.ChangeCategory.TerrainTexture:
-						_rdbMap.UpdateRegionTerrainData(uuid);
-					break;
-					case RestApi.ChangeCategory.Prim:
-						_rdbMap.UpdateRegionPrimData(uuid);
-					break;
+			if (_rdbMap.GetRegionByUUID(uuid) != null) {
+				foreach (var change in changeData.Changes) {
+					switch (change) {
+						case RestApi.ChangeCategory.RegionStart:
+							// Get all new data.
+							redraw = _rdbMap.CreateRegion(uuid);
+						break;
+						case RestApi.ChangeCategory.RegionStop:
+							// RegionStop just means redraw but no need to update source data.
+							redraw = true;
+						break;
+						case RestApi.ChangeCategory.TerrainElevation:
+						case RestApi.ChangeCategory.TerrainTexture:
+							_rdbMap.UpdateRegionTerrainData(uuid);
+							redraw = true;
+						break;
+						case RestApi.ChangeCategory.Prim:
+							_rdbMap.UpdateRegionPrimData(uuid);
+							redraw = true;
+						break;
+					}
 				}
 			}
+			else { // New region, maybe.
+				redraw = _rdbMap.CreateRegion(uuid);
+			}
 
-			if (changeData.Changes.Count > 0) {
+			if (redraw) {
 				UpdateRegionTile(uuid);
 
 				var superGen = new SuperTileGenerator(_configSource, _rdbMap);
@@ -240,10 +256,14 @@ namespace Anaximander {
 				// Time for cleanup: make sure that we only have what we need.
 				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDsAsStrings());
 				_tileWriter.RemoveDeadTiles(_rdbMap, superGen.AllNodesById);
-			}
 
-			watch.Stop();
-			LOG.Info($"[UpdateRegionDelegate] Rebuilt region id '{uuid}', parent tree, and did filesystem cleanup in {watch.ElapsedMilliseconds} ms.");
+				watch.Stop();
+				LOG.Info($"[UpdateRegionDelegate] Rebuilt region id '{uuid}', parent tree, and did filesystem cleanup in {watch.ElapsedMilliseconds} ms.");
+			}
+			else {
+				watch.Stop();
+				LOG.Info($"[UpdateRegionDelegate] Got request to rebuild region id '{uuid}', but there was nothing to do.");
+			}
 		}
 
 		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) {

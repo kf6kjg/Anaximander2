@@ -342,7 +342,7 @@ ORDER BY
 			});
 		}
 
-		public void CreateRegion(string region_id) {
+		public bool CreateRegion(string region_id) {
 			var info = new RegionInfo();
 			RegionTerrainData terrain_data;
 			Region region;
@@ -374,9 +374,11 @@ ORDER BY
 
 					try {
 						if (!reader.Read()) {
-							// TODO: If there are no valid results, then the requested region does not exist and there's no point in continuing.
-							//throw or jsut log and return
+							// If there are no valid results, then the requested region does not exist and there's no point in continuing.
+							LOG.Info($"Region '{region_id}' does not exist in the database.  Aborting creation.");
+							return false;
 						}
+
 						var rdbhost = Convert.ToString(reader["host_name"]);
 
 						if (string.IsNullOrWhiteSpace(rdbhost)) {
@@ -535,6 +537,8 @@ ORDER BY
 			if (region.locationX != null) {
 				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
 			}
+
+			return true;
 		}
 
 		public void UpdateRegionInfo(string region_id) {
