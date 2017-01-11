@@ -212,7 +212,8 @@ namespace DataReader {
 								region_id = GetDBValue(reader, "RegionUUID");
 
 								if (!regions_by_rdb[rdb_connection_string].ContainsKey(region_id)) {
-									LOG.Info($"Either of the regionsettings and/or terrain tables on one of the rdb hosts has an entry for region id '{region_id}' that does not exist in the estates table.");
+									// Either of the regionsettings and/or terrain tables on one of the rdb hosts has an entry for a region id that does not exist in the estates table.
+									// Or the DB has entries for both the domain AND the IP that domain points to.
 									continue;
 								}
 
@@ -316,7 +317,8 @@ ORDER BY
 								region_id = GetDBValue(reader, "RegionUUID");
 
 								if (!MAP.ContainsKey(region_id)) {
-									LOG.Info($"The prims table on one of the rdb hosts has an entry for region id '{region_id}' that does not exist in the estates, regionsettings, and terrain tables.");
+									// The prims table on one of the rdb hosts has an entry for a region id that does not exist in the estates, regionsettings, and terrain tables.
+									// Or the DB has entries for both the domain AND the IP that domain points to.
 									continue;
 								}
 
