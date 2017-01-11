@@ -46,7 +46,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MyClass.cs" />
+    <Compile Include="AssetReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AssetBase.cs" />
     <Compile Include="AssetRequestInfo.cs" />
