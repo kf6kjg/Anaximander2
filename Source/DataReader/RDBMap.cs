@@ -208,6 +208,11 @@ namespace DataReader {
 							while (reader.Read()) {
 								region_id = GetDBValue(reader, "RegionUUID");
 
+								if (!regions_by_rdb[rdb_connection_string].ContainsKey(region_id)) {
+									LOG.Info($"Either of the regionsettings and/or terrain tables on one of the rdb hosts has an entry for region id '{region_id}' that does not exist in the estates table.");
+									continue;
+								}
+
 								data.terrainTexture1 = GetDBValue(reader, "terrain_texture_1");
 								data.terrainTexture2 = GetDBValue(reader, "terrain_texture_2");
 								data.terrainTexture3 = GetDBValue(reader, "terrain_texture_3");
@@ -306,6 +311,12 @@ ORDER BY
 						try {
 							while (reader.Read()) {
 								region_id = GetDBValue(reader, "RegionUUID");
+
+								if (!MAP.ContainsKey(region_id)) {
+									LOG.Info($"The prims table on one of the rdb hosts has an entry for region id '{region_id}' that does not exist in the estates, regionsettings, and terrain tables.");
+									continue;
+								}
+
 								region = MAP[region_id];
 
 								var data = new RegionPrimData() {
