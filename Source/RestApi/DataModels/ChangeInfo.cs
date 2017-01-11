@@ -32,6 +32,14 @@ namespace RestApi {
 
 	public enum ChangeCategory {
 		/// <summary>
+		/// The region just booted up.
+		/// </summary>
+		RegionStart,
+		/// <summary>
+		/// The region just shut down safely.
+		/// </summary>
+		RegionStop,
+		/// <summary>
 		/// Terrain heightmap data was edited, reloaded, or otherwise modified.
 		/// </summary>
 		TerrainElevation,
