@@ -342,12 +342,207 @@ ORDER BY
 			});
 		}
 
+		public void CreateRegion(string region_id) {
+			var info = new RegionInfo();
+			RegionTerrainData terrain_data;
+			Region region;
+
+			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				using (var cmd = conn.CreateCommand()) {
+					/* Gets the full list of what regions are on what host.
+					A null host_name indicates that that region's data is on this host, otherwise contains the host for the region's data.
+					A null regionName indicates that the region is shut down, otherwise that the region is up or crashed.
+					*/
+					cmd.CommandText = @"SELECT
+							(
+								SELECT
+									host_name
+								FROM
+									RdbHosts
+									INNER JOIN RegionRdbMapping ON id = rdb_host_id
+								WHERE
+									region_id = @region_id
+							) host_name, regionName, locX, locY, sizeX, sizeY, serverIP, serverPort
+						FROM
+							regions
+						WHERE
+							uuid = @region_id
+					";
+					cmd.Parameters.AddWithValue("region_id", region_id);
+					cmd.Prepare();
+					var reader = DBHelpers.ExecuteReader(cmd);
+
+					try {
+						if (!reader.Read()) {
+							// TODO: If there are no valid results, then the requested region does not exist and there's no point in continuing.
+							//throw or jsut log and return
+						}
+						var rdbhost = Convert.ToString(reader["host_name"]);
+
+						if (string.IsNullOrWhiteSpace(rdbhost)) {
+							rdbhost = conn.DataSource;
+						}
+
+						rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost);
+
+						// Check to see if the map already has this entry and if the new entry is shut down.
+						if (Convert.IsDBNull(reader["regionName"])) {
+							info.RDBConnectionString = rdbhost; // Update the RDB connection
+						}
+						else { // The DB has the freshest information.  Does not imply the region is online - it could have crashed.
+							info.regionId = region_id;
+							info.RDBConnectionString = rdbhost;
+							info.regionName = reader.IsDBNull(reader.GetOrdinal("regionName")) ? null : Convert.ToString(reader["regionName"]);
+							info.locationX = GetDBValueOrNull<int>(reader, "locX");
+							info.locationY = GetDBValueOrNull<int>(reader, "locY");
+							info.sizeX = GetDBValueOrNull<int>(reader, "sizeX");
+							info.sizeY = GetDBValueOrNull<int>(reader, "sizeY");
+							info.serverIP = reader.IsDBNull(reader.GetOrdinal("serverIP")) ? null : Convert.ToString(reader["serverIP"]);
+							info.serverPort = GetDBValueOrNull<int>(reader, "serverPort");
+						}
+					}
+					finally {
+						reader.Close();
+					}
+				}
+			}
+
+			using (var conn = DBHelpers.GetConnection(info.RDBConnectionString)) {
+				using (var cmd = conn.CreateCommand()) {
+					cmd.CommandText = @"SELECT terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield
+						FROM regionsettings NATURAL JOIN terrain
+						WHERE RegionUUID = @region_id
+					";
+					cmd.Parameters.AddWithValue("region_id", region_id);
+					cmd.Prepare();
+					var reader = DBHelpers.ExecuteReader(cmd);
+
+					try {
+						reader.Read();
+
+						terrain_data.terrainTexture1 = GetDBValue(reader, "terrain_texture_1");
+						terrain_data.terrainTexture2 = GetDBValue(reader, "terrain_texture_2");
+						terrain_data.terrainTexture3 = GetDBValue(reader, "terrain_texture_3");
+						terrain_data.terrainTexture4 = GetDBValue(reader, "terrain_texture_4");
+
+						terrain_data.elevation1NW = GetDBValue<double>(reader, "elevation_1_nw");
+						terrain_data.elevation2NW = GetDBValue<double>(reader, "elevation_2_nw");
+						terrain_data.elevation1NE = GetDBValue<double>(reader, "elevation_1_ne");
+						terrain_data.elevation2NE = GetDBValue<double>(reader, "elevation_2_ne");
+						terrain_data.elevation1SW = GetDBValue<double>(reader, "elevation_1_sw");
+						terrain_data.elevation2SW = GetDBValue<double>(reader, "elevation_2_sw");
+						terrain_data.elevation1SE = GetDBValue<double>(reader, "elevation_1_se");
+						terrain_data.elevation2SE = GetDBValue<double>(reader, "elevation_2_se");
+
+						terrain_data.waterHeight = GetDBValue<double>(reader, "water_height");
+
+						terrain_data.heightmap = new double[256, 256];
+						terrain_data.heightmap.Initialize();
+
+						var br = new BinaryReader(new MemoryStream((byte[])reader["Heightfield"]));
+						for (int x = 0; x < terrain_data.heightmap.GetLength(0); x++) {
+							for (int y = 0; y < terrain_data.heightmap.GetLength(1); y++) {
+								terrain_data.heightmap[x, y] = br.ReadDouble();
+							}
+						}
+						LOG.Info($"[REGION DB]: Loaded data for region {region_id}");
+					}
+					finally {
+						reader.Close();
+					}
+				}
+
+				region = new Region(info, terrain_data);
+
+				using (var cmd = conn.CreateCommand()) {
+					cmd.CommandText = @"SELECT
+							ObjectFlags,
+							State,
+							PositionX, PositionY, PositionZ,
+							GroupPositionX, GroupPositionY, GroupPositionZ,
+							ScaleX, ScaleY, ScaleZ,
+							RotationX, RotationY, RotationZ, RotationW,
+							RootRotationX, RootRotationY, RootRotationZ, RootRotationW,
+							Texture
+						FROM
+							prims pr
+							NATURAL JOIN primshapes
+							LEFT JOIN (
+								SELECT
+									RotationX AS RootRotationX,
+									RotationY AS RootRotationY,
+									RotationZ AS RootRotationZ,
+									RotationW AS RootRotationW,
+									SceneGroupID
+								FROM
+									prims pr
+								WHERE
+									LinkNumber = 1
+							) AS rootprim ON rootprim.SceneGroupID = pr.SceneGroupID
+						WHERE
+							GroupPositionZ < 766 /* = max terrain height + render height */
+							AND LENGTH(Texture) > 0
+							AND ObjectFlags & (0 | 0x40000 | 0x20000) = 0
+							AND ScaleX > 1.0
+							AND ScaleY > 1.0
+							AND ScaleZ > 1.0
+							AND PCode NOT IN (255, 111, 95)
+							AND RegionUUID = @region_id
+						ORDER BY
+							GroupPositionZ, PositionZ
+					";
+					cmd.Parameters.AddWithValue("region_id", region_id);
+					cmd.Prepare();
+					var reader = DBHelpers.ExecuteReader(cmd);
+
+					try {
+						while (reader.Read()) {
+							var prim_data = new RegionPrimData() {
+								ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
+								State = GetDBValue<int>(reader, "State"),
+								PositionX = GetDBValue<double>(reader, "PositionX"),
+								PositionY = GetDBValue<double>(reader, "PositionY"),
+								PositionZ = GetDBValue<double>(reader, "PositionZ"),
+								GroupPositionX = GetDBValue<double>(reader, "GroupPositionX"),
+								GroupPositionY = GetDBValue<double>(reader, "GroupPositionY"),
+								GroupPositionZ = GetDBValue<double>(reader, "GroupPositionZ"),
+								ScaleX = GetDBValue<double>(reader, "ScaleX"),
+								ScaleY = GetDBValue<double>(reader, "ScaleY"),
+								ScaleZ = GetDBValue<double>(reader, "ScaleZ"),
+								RotationX = GetDBValue<double>(reader, "RotationX"),
+								RotationY = GetDBValue<double>(reader, "RotationY"),
+								RotationZ = GetDBValue<double>(reader, "RotationZ"),
+								RotationW = GetDBValue<double>(reader, "RotationW"),
+								RootRotationX = GetDBValueOrNull<double>(reader, "RootRotationX"),
+								RootRotationY = GetDBValueOrNull<double>(reader, "RootRotationY"),
+								RootRotationZ = GetDBValueOrNull<double>(reader, "RootRotationZ"),
+								RootRotationW = GetDBValueOrNull<double>(reader, "RootRotationW"),
+								Texture = (byte[])reader["Texture"],
+							};
+
+							region.AddPrim(new Prim(ref prim_data));
+						}
+					}
+					finally {
+						reader.Close();
+					}
+				}
+			}
+
+			MAP[region_id] = region; // Add or update.
+
+			// Not all regions returned have a position, after all some could be in a crashed state.
+			if (region.locationX != null) {
+				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+			}
+		}
+
 		public void UpdateRegionInfo(string region_id) {
 			var region = GetRegionByUUID(region_id);
 
 			if (region == null) {
 				// This region is missing...
-				// TODO: call a new method that gets both halves of the needed info to create the new region.
+				CreateRegion(region_id);
 				return;
 			}
 
@@ -425,7 +620,7 @@ ORDER BY
 
 			if (region == null) {
 				// This region is missing...
-				// TODO: call a new method that gets both halves of the needed info to create the new region.
+				CreateRegion(region_id);
 				return;
 			}
 
@@ -492,7 +687,7 @@ ORDER BY
 
 			if (region == null) {
 				// This region is missing...
-				// TODO: call a new method that gets both halves of the needed info to create the new region and then continue instead of returning.
+				CreateRegion(region_id);
 				return;
 			}
 
