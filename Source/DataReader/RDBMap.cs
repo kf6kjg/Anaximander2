@@ -150,10 +150,9 @@ namespace DataReader {
 								// Not on an RDB, use the main.
 								rdbhost = conn.DataSource;
 							}
-							else {
-								// Got an RDB, normallize the case and format.
-								rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost.ToLowerInvariant());
-							}
+
+							// Got an RDB or the main, either way normallize the case and format.
+							rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost.ToLowerInvariant());
 
 							if (regions_by_rdb.ContainsKey(rdbhost)) {
 								region_list = regions_by_rdb[rdbhost];
