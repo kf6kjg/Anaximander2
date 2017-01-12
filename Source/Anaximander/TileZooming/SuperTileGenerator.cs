@@ -48,6 +48,8 @@ namespace Anaximander {
 
 		private readonly Color _oceanColor;
 
+		private readonly bool _serverMode;
+
 		public SuperTileGenerator(IConfigSource config, RDBMap rdbmap) {
 			var tileInfo = config.Configs["MapTileInfo"];
 			_tilePixelSize = tileInfo?.GetInt("PixelScale", Constants.PixelScale) ?? Constants.PixelScale;
@@ -66,6 +68,8 @@ namespace Anaximander {
 				_tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
 				_tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
 			);
+
+			_serverMode = config.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault);
 		}
 
 		public void PreloadTileTrees(IEnumerable<string> region_ids) {
@@ -206,7 +210,9 @@ namespace Anaximander {
 					// But if you are a leaf (region tile) then we'll let you slide...
 					else { //if (branch.Zoom > 1) {
 						// Save off fullres uncompressed bitmaps of the super tile for helping with future partial updates.
-						_imageWriter.WriteRawTile(branch.X, branch.Y, branch.Zoom, branch.Image);
+						if (_serverMode) {
+							_imageWriter.WriteRawTile(branch.X, branch.Y, branch.Zoom, branch.Image);
+						}
 
 						// Scale down to _tilePixelSize
 						branch.CreateImage(_tilePixelSize, _tilePixelSize, branch.Image);
@@ -220,13 +226,14 @@ namespace Anaximander {
 						var parent = _allNodesById[branch.ParentNodeId];
 
 						if (parent.Image == null) {
-							// Attempt to load from disk and update it instead of just wiping out all the data during partial updates.
-							var image = _imageWriter.LoadRawTile(parent.X, parent.Y, parent.Zoom);
+							// if this is server mode, attempt to load from disk and update it instead of just wiping out all the data during partial updates.
+							var image = _serverMode ? _imageWriter.LoadRawTile(parent.X, parent.Y, parent.Zoom) : null;
 
 							if (image != null) {
-								parent.CreateImage(_tilePixelSize * 2, _tilePixelSize * 2, image); // In theory there won't be any scaling - unles the resolution was changed between runs.
+								parent.CreateImage(_tilePixelSize * 2, _tilePixelSize * 2, image); // In theory there won't be any scaling - unless the resolution was changed between runs.
 							}
 							else {
+								// Just fill with ocean.
 								parent.CreateImage(_tilePixelSize * 2, _tilePixelSize * 2, _oceanColor);
 							}
 						}

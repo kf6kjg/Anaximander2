@@ -76,12 +76,14 @@ namespace Anaximander {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 			}
 
-			try {
-				_rawImageFolder = Directory.CreateDirectory(Path.Combine(_tileFolder.FullName, Constants.RawImagePath));
-			}
+			if (config.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
+				try {
+					_rawImageFolder = Directory.CreateDirectory(Path.Combine(_tileFolder.FullName, Constants.RawImagePath));
+				}
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch { // Don't care if this fails.
+				catch { // Don't care if this fails.
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+				}
 			}
 		}
 
@@ -147,7 +149,6 @@ namespace Anaximander {
 		/// <param name="locationX">Region location x.</param>
 		/// <param name="locationY">Region location y.</param>
 		/// <param name="locationZ">Region location z.</param>
-		/// <param name="regionId">Region UUID.</param>
 		/// <param name="bitmap">Bitmap of the region.</param>
 		public void WriteRawTile(int locationX, int locationY, int locationZ, Bitmap bitmap) {
 			try {
