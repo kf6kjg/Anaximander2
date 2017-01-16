@@ -193,8 +193,8 @@ namespace Anaximander {
 		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) {
 			var server_config = _configSource.Configs["Server"];
 
-			var domain = server_config?.GetString("UseSSL", Constants.ServerDomain) ?? Constants.ServerDomain;
-			var port = (uint)(server_config?.GetInt("UseSSL", Constants.ServerPort) ?? Constants.ServerPort);
+			var domain = server_config?.GetString("Domain", Constants.ServerDomain) ?? Constants.ServerDomain;
+			var port = (uint)(server_config?.GetInt("Port", Constants.ServerPort) ?? Constants.ServerPort);
 			var useSSL = server_config?.GetBoolean("UseSSL", Constants.ServerUseSSL) ?? Constants.ServerUseSSL;
 
 			var protocol = useSSL ? "https" : "http";
@@ -203,7 +203,7 @@ namespace Anaximander {
 					PushNotifyUri = new Uri($"{protocol}://{domain}:{port}"),
 					PushNotifyEvents = new List<RestApi.PushNotifyOn> {
 						RestApi.PushNotifyOn.ValidatedPrimDBUpdate,
-						RestApi.PushNotifyOn.TerrainUpdate
+						RestApi.PushNotifyOn.TerrainUpdate,
 					},
 				},
 			};
