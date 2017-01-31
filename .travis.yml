@@ -3,11 +3,5 @@ solution: Source/Anaximander.sln
 mono:
   - latest
   - 4.6.0
-install:
-  - nuget restore Source/Anaximander.sln
-  - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory testrunner
-script:
-  - xbuild /p:Configuration=Release Source/Anaximander.sln
-  - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Source/UnitTests/bin/Debug/UnitTests.dll
 before_deploy:
   - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/Anaximander.exe.config
