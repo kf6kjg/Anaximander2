@@ -86,9 +86,10 @@
     <None Include="packages.config" />
     <None Include="app.config" />
     <None Include="Anaximander.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Anaximander.sample.ini" />
+    <None Include="Anaximander.sample.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Console\Console.csproj">
