@@ -1,4 +1,4 @@
-<div style="float:right">[![Build Status](https://travis-ci.org/kf6kjg/Anaximander2.svg?branch=master)](https://travis-ci.org/kf6kjg/Anaximander2)</div>
+<a href="https://travis-ci.org/kf6kjg/Anaximander2" style="float:right"><img alt="Build Status" src="https://travis-ci.org/kf6kjg/Anaximander2.svg?branch=master"/></a>
 
 Anaximander the Grid Cartographer is a map tile generator for [InWorldz][] servers using C#, utilizing parallel processing and advanced tree data structures to generate only what is needed in as short a time as possible.
 
