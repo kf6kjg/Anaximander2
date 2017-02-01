@@ -1,0 +1,22 @@
+version: 2.0.{build}
+
+image: Visual Studio 2015
+
+nuget:
+  account_feed: true
+  project_feed: true
+
+configuration: Release
+
+build:
+  parallel: true
+  verbosity: minimal
+
+before_build:
+  - nuget restore Source\Anaximander.sln
+
+after_build:
+  - ps: (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
+
+artifacts:
+  - path: anaximander$(version).zip
