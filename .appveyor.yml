@@ -17,8 +17,9 @@ before_build:
 
 after_build:
   - ps: (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
+  - rename bin Anaximander2
 
 artifacts:
-  - path: bin\*
+  - path: Anaximander2
     name: anaximander2.zip
     type: Zip
