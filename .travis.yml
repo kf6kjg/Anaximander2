@@ -6,7 +6,7 @@ mono:
 before_deploy:
   - mv bin Anaximander2
   - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' Anaximander2/Anaximander.exe.config
-  - zip Anaximander2-mono-$TRAVIS_COMMIT.zip Anaximander2 > /dev/null
+  - zip -r Anaximander2-mono-$TRAVIS_COMMIT.zip Anaximander2 > /dev/null
 deploy:
   provider: releases
   skip_cleanup: true
