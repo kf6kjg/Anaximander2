@@ -3,13 +3,14 @@
 <a href="https://ci.appveyor.com/project/kf6kjg/anaximander2">Appveyor <img alt="Appveyor Build Status" src="https://ci.appveyor.com/api/projects/status/github/kf6kjg/anaximander2?svg=true&branch=master" style="display:block;"/></a>
 </div>
 
-Anaximander the Grid Cartographer is a map tile generator for [InWorldz][] servers using C#, utilizing parallel processing and advanced tree data structures to generate only what is needed in as short a time as possible.
+Anaximander the Grid Cartographer is a map tile generator for [Halcyon][]-based servers using C#, such as [Inworldz][], utilizing parallel processing and advanced tree data structures to generate only what is needed in as short a time as possible.
 
 For installation and building instructions, please see the [Anaximander2 wiki][wiki].
 
 For the history buffs: [Anaximander][] was an early Greek scholar and philosopher who is credited as being one of, if not the, first to draw a map of the world.
 
 [InWorldz]: http://inworldz.com/
+[Halcyon]: https://github.com/InWorldz/halcyon
 [wiki]: https://github.com/kf6kjg/Anaximander2/wiki
 [Anaximander]: http://en.wikipedia.org/wiki/Anaximander
 
