@@ -1,17 +1,23 @@
 language: csharp
 solution: Source/Anaximander.sln
+
 mono:
   - latest
   - 4.6.0
+
 before_deploy:
   - mv bin Anaximander2
   - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' Anaximander2/Anaximander.exe.config
   - zip -r Anaximander2-mono.zip Anaximander2 > /dev/null
+
 deploy:
   provider: releases
   skip_cleanup: true
   api_key:
     secure: CKa5EyJd57xbTjj/MkVSnwn2adrfe3n3+MkTRcOx4aOEAvptcjuw7jOxD6iCX7f1CRmq8Nli1fffWHD7hs1EbtgvpSW0azfSxsIPqpOkY2BsyDfyUfWWNHgJY/MfiyuaU0iOuLzNHcfNz1c/uAVHfXuzvWtiRGy766lfoKutfwKQHg+ZkPkMAWu56JDytNcaHufUXbeAhdLC5PPxmamUbm6hrX2+YVg/W1e3WIbxcuaxwcAuzXw4m/OmCytAk4qFn1Zn33z3QRtJphsqfgctJSoaz9MlfiDhCPnFIpP744+Nj/exuk1X582om7NWiVn+4NztRgvmAiwnMTKzDi4P7DG6Zb5MFdpNEgku0TrjW6S/Jemg4XQidqCKoy8ATU1rP/2c/h/Bl81WDOIM8HwV2yL+4VZ5H+4c7kNpj4z8rsC0WEG0hWK7VouVMPTTbgSLZcb/79Bn4kEkqmu6nQMFXhC/6vA7FUUHb5hmRRenaWRraCwoYkk19B9wCDn3KnkdC8QglYApVQ+FuFX4IQ1TAuHlcPe0RQPWBDqYlJMJB8UloZ1zmY9eeMJc1tXUDvY6CNaiT1KoN86/cpFBe47mwoVnijVPo/U9q+cqHygXAeXnhwGgJo7CZ75cd2kn9q/Y1ygxZGadc1Q2CaMpmbwLzsx25CucMDViQpbkfnpGdtc=
   file: Anaximander2-mono.zip
+  draft: true
   on:
     repo: kf6kjg/Anaximander2
+    branch: master
+    tags: true

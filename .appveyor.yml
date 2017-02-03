@@ -23,3 +23,14 @@ artifacts:
   - path: Anaximander2
     name: anaximander2-dotnet
     type: Zip
+
+deploy:
+  provider: GitHub
+  auth_token:
+    secure: "QUqhwTOVl7qBikVjSddIdfQ/mJAYlmSwsPPxTW8kSPJKALifV/E3UFycqJyf6USR"
+  artifact: anaximander2-dotnet
+  draft: true
+  prerelease: false
+  on:
+    branch: master
+    appveyor_repo_tag: true
