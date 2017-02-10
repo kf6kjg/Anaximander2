@@ -10,7 +10,7 @@ cache:
 
 before_script:
   - if [ ! "$TRAVIS_TAG" ]; then export TRAVIS_TAG="2.0.0"; fi
-  - export TRAVIS_TAG="${ echo $TRAVIS_TAG | sed 's/v//' }"
+  - export TRAVIS_TAG=`echo $TRAVIS_TAG | sed 's/v//'`
   - echo "Setting version to '$TRAVIS_TAG'"
   - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/Anaximander/Properties/AssemblyInfo.cs
   - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/RollbarCrashReporter/Properties/AssemblyInfo.cs
