@@ -27,7 +27,7 @@ namespace RollbarNET.Builders {
 
 			//merge exception data dictionaries to list of keyValues pairs
 			var keyValuePairs = body.TraceChain.Where(tm => tm.Exception.Data != null).SelectMany(tm => tm.Exception.Data);
-                        
+
 			foreach (var keyValue in keyValuePairs) {
 				//the keys in keyValuePairs aren't necessarily unique, so don't add but overwrite
 				model.Custom[keyValue.Key.ToString()] = keyValue.Value;
@@ -51,7 +51,7 @@ namespace RollbarNET.Builders {
 		protected DataModel Create(string level, BodyModel body) {
 			var model = new DataModel(level, body);
 
-			model.CodeVersion = Configuration.CodeVersion;
+			model.CodeVersion = System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
 			model.Environment = Configuration.Environment;
 			model.Platform = Configuration.Platform;
 			model.Language = Configuration.Language;
@@ -68,6 +68,15 @@ namespace RollbarNET.Builders {
 			model.Person = PersonModelBuilder.CreateFromEnvironment();
 
 			model.Server.GitSha = Configuration.GitSha;
+			model.Server.Machine = Environment.MachineName;
+			#if __MonoCS__
+			model.Custom.Add("Compiler", "Mono");
+			#else
+			model.Custom.Add("Compiler", "VS");
+			#endif
+			model.Custom.Add("Commandline", Environment.CommandLine);
+			model.Custom.Add("CWD", Environment.CurrentDirectory);
+			model.Custom.Add("ProcessorCount", Environment.ProcessorCount);
 
 			return model;
 		}

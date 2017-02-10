@@ -137,7 +137,9 @@ namespace RollbarNET {
 			catch { // Not a Unix/Linux environment, or just not using proc.
 				Platform = System.Environment.OSVersion.ToString();
 			}
-			Framework = ".NET " + System.Environment.Version;
+			var bitdepth = System.Environment.Is64BitOperatingSystem ? "64bit" : "unknown or 32bit";
+			var isMono = System.Type.GetType("Mono.Runtime") != null;
+			Framework = (isMono ? "Mono" : ".NET") + $" {bitdepth} {System.Environment.Version}";
 			Language = DefaultLanguage;
 			ScrubParams = DefaultScrubParams;
 		}
