@@ -5,15 +5,15 @@ mono:
   - 4.6.0
 
 before_script:
-  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' Anaximander2/Anaximander.exe.config
-  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' Anaximander2/RollbarCrashReporter.exe.config
-  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Anaximander2/Anaximander.exe.config
-  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Anaximander2/RollbarCrashReporter.exe.config
+  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' bin/Anaximander.exe.config
+  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' bin/RollbarCrashReporter.exe.config
+  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' bin/Anaximander.exe.config
+  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' bin/RollbarCrashReporter.exe.config
 
 before_deploy:
+  - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/Anaximander.exe.config
+  - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/RollbarCrashReporter.exe.config
   - mv bin Anaximander2
-  - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' Anaximander2/Anaximander.exe.config
-  - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' Anaximander2/RollbarCrashReporter.exe.config
   - zip -r Anaximander2-mono.zip Anaximander2 > /dev/null
 
 deploy:
