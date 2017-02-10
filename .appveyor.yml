@@ -13,10 +13,12 @@ build:
   verbosity: minimal
 
 before_build:
-  - ps: (Get-Content bin\Anaximander.exe.config) -replace 'ANAX_VERSION = "0.0.0"', 'ANAX_VERSION = "$APPVEYOR_REPO_TAG_NAME"' | Set-Content bin\Anaximander.exe.config
-  - ps: (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'ANAX_VERSION = "0.0.0"', 'ANAX_VERSION = "$APPVEYOR_REPO_TAG_NAME"' | Set-Content bin\RollbarCrashReporter.exe.config
-  - ps: (Get-Content bin\Anaximander.exe.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content bin\Anaximander.exe.config
-  - ps: (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content bin\RollbarCrashReporter.exe.config
+  - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/Anaximander/Properties/AssemblyInfo.cs
+  - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/RollbarCrashReporter/Properties/AssemblyInfo.cs
+  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1.0.*', "$APPVEYOR_REPO_TAG_NAME" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
+  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1.0.*', "$APPVEYOR_REPO_TAG_NAME" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
+  - ps: (Get-Content Source\Anaximander\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\Anaximander\app.config
+  - ps: (Get-Content Source\RollbarCrashReporter\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\RollbarCrashReporter\app.config
   - nuget restore Source\Anaximander.sln
 
 after_build:

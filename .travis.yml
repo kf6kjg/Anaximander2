@@ -5,10 +5,10 @@ mono:
   - 4.6.0
 
 before_script:
-  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' bin/Anaximander.exe.config
-  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' bin/RollbarCrashReporter.exe.config
-  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' bin/Anaximander.exe.config
-  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' bin/RollbarCrashReporter.exe.config
+  - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/Anaximander/Properties/AssemblyInfo.cs
+  - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/RollbarCrashReporter/Properties/AssemblyInfo.cs
+  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Source/Anaximander/app.config
+  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Source/RollbarCrashReporter/app.config
 
 before_deploy:
   - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/Anaximander.exe.config

@@ -32,8 +32,6 @@ namespace RollbarCrashReporter {
 	class Application {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private static readonly string ANAX_VERSION = "0.0.0"; // Replaced during automatic packaging.
-
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
 
 		public static void Main(string[] args) {
@@ -60,7 +58,7 @@ namespace RollbarCrashReporter {
 		private static string GenerateBootMessage() {
 			var output = new StringBuilder();
 			output.AppendLine("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
-			output.AppendLine($"Anaximander2 v{ANAX_VERSION} {COMPILED_BY}");
+			output.AppendLine($"Anaximander2 v{Assembly.GetExecutingAssembly().GetName().Version.ToString()} {COMPILED_BY}");
 			var bitdepth = Environment.Is64BitOperatingSystem ? "64bit" : "unknown or 32bit";
 			output.AppendLine($"OS: {Environment.OSVersion.VersionString} {bitdepth}");
 			output.AppendLine($"Commandline: {Environment.CommandLine}");

@@ -43,8 +43,6 @@ namespace Anaximander {
 
 		private static readonly string DEFAULT_INI_FILE = "Anaximander.ini";
 
-		private static readonly string ANAX_VERSION = "0.0.0"; // Replaced during automatic packaging.
-
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
 
 		private static IConfigSource _configSource;
@@ -391,7 +389,7 @@ namespace Anaximander {
 
 		private static void LogBootMessage() {
 			LOG.Info("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
-			LOG.Info($"Anaximander2 v{ANAX_VERSION} {COMPILED_BY}");
+			LOG.Info($"Anaximander2 v{Assembly.GetExecutingAssembly().GetName().Version.ToString()} {COMPILED_BY}");
 			var bitdepth = Environment.Is64BitOperatingSystem ? "64bit" : "unknown or 32bit";
 			LOG.Info($"OS: {Environment.OSVersion.VersionString} {bitdepth}");
 			LOG.Info($"Commandline: {Environment.CommandLine}");
