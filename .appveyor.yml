@@ -16,8 +16,8 @@ build:
   verbosity: minimal
 
 before_build:
-  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1.0.*', "$ProjectVersion" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
-  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1.0.*', "$ProjectVersion" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
+  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1.0.*', "$APPVEYOR_REPO_TAG" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
+  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1.0.*', "$APPVEYOR_REPO_TAG" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
   - ps: (Get-Content Source\Anaximander\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\Anaximander\app.config
   - ps: (Get-Content Source\RollbarCrashReporter\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\RollbarCrashReporter\app.config
   - nuget restore Source\Anaximander.sln
