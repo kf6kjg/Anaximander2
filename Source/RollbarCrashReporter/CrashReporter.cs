@@ -23,6 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Text;
 using System.Reflection;
 using log4net;
 using log4net.Config;
@@ -39,7 +40,7 @@ namespace RollbarCrashReporter {
 			XmlConfigurator.Configure();
 
 			if (args.Length < 1) {
-				LOG.Fatal("[CRASH_REPORTER] Missing number of characters to read from stdin.");
+				LOG.Fatal($"[CRASH_REPORTER] Missing number of characters to read from stdin.\n\n{GenerateBootMessage()}");
 				Console.WriteLine("Missing number of characters to read from stdin.");
 				Environment.Exit(1);
 			}
@@ -54,6 +55,24 @@ namespace RollbarCrashReporter {
 
 			Console.WriteLine("[CRASH_REPORTER] Logging inbound message.");
 			LOG.Fatal(msg);
+		}
+
+		private static string GenerateBootMessage() {
+			var output = new StringBuilder();
+			output.AppendLine("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+			output.AppendLine($"Anaximander2 v{ANAX_VERSION} {COMPILED_BY}");
+			var bitdepth = Environment.Is64BitOperatingSystem ? "64bit" : "unknown or 32bit";
+			output.AppendLine($"OS: {Environment.OSVersion.VersionString} {bitdepth}");
+			output.AppendLine($"Commandline: {Environment.CommandLine}");
+			output.AppendLine($"CWD: {Environment.CurrentDirectory}");
+			output.AppendLine($"Machine: {Environment.MachineName}");
+			output.AppendLine($"Processors: {Environment.ProcessorCount}");
+			output.AppendLine($"User: {Environment.UserDomainName}/{Environment.UserName}");
+			var isMono = Type.GetType("Mono.Runtime") != null;
+			output.AppendLine("Interactive shell: " + (Environment.UserInteractive ? "yes" : isMono ? "indeterminate" : "no"));
+			output.AppendLine("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+
+			return output.ToString();
 		}
 	}
 }

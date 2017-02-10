@@ -71,10 +71,12 @@ namespace Anaximander {
 			var logConfigFile = configSource.Configs["Startup"].GetString("logconfig", String.Empty);
 			if (String.IsNullOrEmpty(logConfigFile)) {
 				XmlConfigurator.Configure();
+				LogBootMessage();
 				LOG.Info("[MAIN]: Configured log4net using ./Anaximander.exe.config as the default.");
 			}
 			else {
 				XmlConfigurator.Configure(new FileInfo(logConfigFile));
+				LogBootMessage();
 				LOG.Info($"[MAIN]: Configured log4net using \"{logConfigFile}\" as configuration file.");
 			}
 
@@ -385,6 +387,21 @@ namespace Anaximander {
 					throw;
 				}
 			}
+		}
+
+		private static void LogBootMessage() {
+			LOG.Info("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+			LOG.Info($"Anaximander2 v{ANAX_VERSION} {COMPILED_BY}");
+			var bitdepth = Environment.Is64BitOperatingSystem ? "64bit" : "unknown or 32bit";
+			LOG.Info($"OS: {Environment.OSVersion.VersionString} {bitdepth}");
+			LOG.Info($"Commandline: {Environment.CommandLine}");
+			LOG.Info($"CWD: {Environment.CurrentDirectory}");
+			LOG.Info($"Machine: {Environment.MachineName}");
+			LOG.Info($"Processors: {Environment.ProcessorCount}");
+			LOG.Info($"User: {Environment.UserDomainName}/{Environment.UserName}");
+			var isMono = Type.GetType("Mono.Runtime") != null;
+			LOG.Info("Interactive shell: " + (Environment.UserInteractive ? "yes" : isMono ? "indeterminate" : "no"));
+			LOG.Info("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
 		}
 
 		private static bool isHandlingException = false;
