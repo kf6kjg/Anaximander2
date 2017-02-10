@@ -5,6 +5,7 @@ mono:
   - 4.6.0
 
 before_script:
+  - if [ ! "$TRAVIS_TAG" ]; then export TRAVIS_TAG="2.0.0"; fi
   - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/Anaximander/Properties/AssemblyInfo.cs
   - sed -i "s/1\.0\.\*/$TRAVIS_TAG\.\*/" Source/RollbarCrashReporter/Properties/AssemblyInfo.cs
   - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Source/Anaximander/app.config
