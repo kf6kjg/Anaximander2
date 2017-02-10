@@ -2,12 +2,18 @@ language: csharp
 solution: Source/Anaximander.sln
 
 mono:
-  - latest
   - 4.6.0
+
+before_script:
+  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' Anaximander2/Anaximander.exe.config
+  - sed -i 's/ANAX_VERSION = "0.0.0"/ANAX_VERSION = "$TRAVIS_TAG"/' Anaximander2/RollbarCrashReporter.exe.config
+  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Anaximander2/Anaximander.exe.config
+  - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Anaximander2/RollbarCrashReporter.exe.config
 
 before_deploy:
   - mv bin Anaximander2
   - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' Anaximander2/Anaximander.exe.config
+  - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' Anaximander2/RollbarCrashReporter.exe.config
   - zip -r Anaximander2-mono.zip Anaximander2 > /dev/null
 
 deploy:

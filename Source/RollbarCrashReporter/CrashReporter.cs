@@ -31,6 +31,10 @@ namespace RollbarCrashReporter {
 	class Application {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private static readonly string ANAX_VERSION = "0.0.0"; // Replaced during automatic packaging.
+
+		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
+
 		public static void Main(string[] args) {
 			XmlConfigurator.Configure();
 

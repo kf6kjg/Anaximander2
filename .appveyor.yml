@@ -13,11 +13,16 @@ build:
   verbosity: minimal
 
 before_build:
+  - ps: (Get-Content Anaximander2\Anaximander.exe.config) -replace 'ANAX_VERSION = "0.0.0"', 'ANAX_VERSION = "$APPVEYOR_REPO_TAG_NAME"' | Set-Content Anaximander2\Anaximander.exe.config
+  - ps: (Get-Content Anaximander2\RollbarCrashReporter.exe.config) -replace 'ANAX_VERSION = "0.0.0"', 'ANAX_VERSION = "$APPVEYOR_REPO_TAG_NAME"' | Set-Content Anaximander2\RollbarCrashReporter.exe.config
+  - ps: (Get-Content Anaximander2\Anaximander.exe.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Anaximander2\Anaximander.exe.config
+  - ps: (Get-Content Anaximander2\RollbarCrashReporter.exe.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Anaximander2\RollbarCrashReporter.exe.config
   - nuget restore Source\Anaximander.sln
 
 after_build:
-  - ps: (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
   - rename bin Anaximander2
+  - ps: (Get-Content Anaximander2\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content Anaximander2\Anaximander.exe.config
+  - ps: (Get-Content Anaximander2\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content Anaximander2\RollbarCrashReporter.exe.config
 
 artifacts:
   - path: Anaximander2
