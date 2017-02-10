@@ -8,10 +8,6 @@ nuget:
 
 configuration: Release
 
-install:
-  - ps: if (!(Get-Variable -Name APPVEYOR_REPO_TAG -ErrorAction SilentlyContinue)) { $APPVEYOR_REPO_TAG = "2.0.0" }
-  - ps: $APPVEYOR_REPO_TAG = $APPVEYOR_REPO_TAG -replace 'v',''
-
 build:
   parallel: true
   verbosity: minimal
@@ -20,6 +16,8 @@ cache:
   - Source\packages -> Source\**\packages.config
 
 before_build:
+  - ps: if (!(Get-Variable -Name APPVEYOR_REPO_TAG -ErrorAction SilentlyContinue)) { $APPVEYOR_REPO_TAG = "2.0.0" }
+  - ps: $APPVEYOR_REPO_TAG = $APPVEYOR_REPO_TAG -replace 'v',''
   - ps: Write-Host "Setting version to '$APPVEYOR_REPO_TAG'"
   - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$APPVEYOR_REPO_TAG.*" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
   - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$APPVEYOR_REPO_TAG.*" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
