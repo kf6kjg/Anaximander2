@@ -16,7 +16,7 @@ cache:
   - Source\packages -> Source\**\packages.config
 
 before_build:
-  - ps: if (!(Test-Path env:APPVEYOR_REPO_TAG)) { $env:APPVEYOR_REPO_TAG = "2.0.0" }
+  - ps: if (!(Get-Variable -Name env:APPVEYOR_REPO_TAG -ErrorAction SilentlyContinue)) { $env:APPVEYOR_REPO_TAG = "2.0.0" }
   - ps: $env:APPVEYOR_REPO_TAG = $env:APPVEYOR_REPO_TAG -replace 'v',''
   - ps: Write-Host "Setting version to '$APPVEYOR_REPO_TAG'"
   - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:APPVEYOR_REPO_TAG.*" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
