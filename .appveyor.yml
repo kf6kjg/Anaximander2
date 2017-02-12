@@ -16,11 +16,11 @@ cache:
   - Source\packages -> Source\**\packages.config
 
 before_build:
-  - ps: if (!(Get-Variable -Name env:APPVEYOR_REPO_TAG -ErrorAction SilentlyContinue)) { $env:APPVEYOR_REPO_TAG = "2.0.0" }
-  - ps: $env:APPVEYOR_REPO_TAG = $env:APPVEYOR_REPO_TAG -replace 'v',''
-  - ps: Write-Host "Setting version to '$$env:APPVEYOR_REPO_TAG'"
-  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:APPVEYOR_REPO_TAG.*" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
-  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:APPVEYOR_REPO_TAG.*" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
+  - ps: if (!($env:APPVEYOR_REPO_TAG -eq "true")) { $env:APPVEYOR_REPO_TAG_NAME = "2.0.0" }
+  - ps: $env:APPVEYOR_REPO_TAG_NAME = $env:APPVEYOR_REPO_TAG_NAME -replace 'v',''
+  - ps: Write-Host "Setting version to '$$env:APPVEYOR_REPO_TAG_NAME'"
+  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:APPVEYOR_REPO_TAG_NAME.*" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
+  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:APPVEYOR_REPO_TAG_NAME.*" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
   - ps: (Get-Content Source\Anaximander\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\Anaximander\app.config
   - ps: (Get-Content Source\RollbarCrashReporter\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\RollbarCrashReporter\app.config
   - nuget restore Source\Anaximander.sln
