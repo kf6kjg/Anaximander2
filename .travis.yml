@@ -38,5 +38,4 @@ deploy:
   draft: true
   on:
     repo: kf6kjg/Anaximander2
-    branch: master
     tags: true
