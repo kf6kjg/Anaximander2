@@ -20,9 +20,11 @@ before_script:
 before_deploy:
   - >-
     if [ "$TRAVIS_TAG" ]; then
+      export ENVIRONMENT=production
       sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/Anaximander.exe.config;
       sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/RollbarCrashReporter.exe.config;
     else
+      export ENVIRONMENT=test
       sed -i 's/param name="Environment" value="development"/param name="Environment" value="test"/' bin/Anaximander.exe.config;
       sed -i 's/param name="Environment" value="development"/param name="Environment" value="test"/' bin/RollbarCrashReporter.exe.config;
     fi
@@ -39,3 +41,8 @@ deploy:
   on:
     repo: kf6kjg/Anaximander2
     tags: true
+
+after_deploy:
+  - export LOCAL_USERNAME=`git log -n 1 --pretty=format:"%an"`
+  - export REVISION=`git log -n 1 --pretty=format:"%H"`
+  - curl https://api.rollbar.com/api/1/deploy/ -F access_token=$ACCESS_TOKEN -F environment=$ENVIRONMENT -F revision=$REVISION -F local_username=$LOCAL_USERNAME
