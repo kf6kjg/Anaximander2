@@ -9,17 +9,23 @@ cache:
     - Source\packages
 
 before_script:
-  - if [ ! "$TRAVIS_TAG" ]; then export TRAVIS_TAG="2.0.0"; fi
-  - export TAG_VERSION=`echo $TRAVIS_TAG | sed 's/v//'`
+  - if [ "$TRAVIS_TAG" ]; then export TAG_VERSION="$TRAVIS_TAG.$TRAVIS_BUILD_NUMBER"; else export TAG_VERSION="v2.0.0.$TRAVIS_BUILD_NUMBER"; fi
+  - export TAG_VERSION=`echo $TAG_VERSION | sed 's/v//'`
   - echo "Setting version to '$TAG_VERSION'"
-  - sed -i "s/1\.0\.\*/$TAG_VERSION\.\*/" Source/Anaximander/Properties/AssemblyInfo.cs
-  - sed -i "s/1\.0\.\*/$TAG_VERSION\.\*/" Source/RollbarCrashReporter/Properties/AssemblyInfo.cs
+  - sed -i "s/1\.0\.\*/$TAG_VERSION/" Source/Anaximander/Properties/AssemblyInfo.cs
+  - sed -i "s/1\.0\.\*/$TAG_VERSION/" Source/RollbarCrashReporter/Properties/AssemblyInfo.cs
   - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Source/Anaximander/app.config
   - sed -i 's/COMPILED_BY = "?mono?"/COMPILED_BY = "Mono"/' Source/RollbarCrashReporter/app.config
 
 before_deploy:
-  - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/Anaximander.exe.config
-  - sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/RollbarCrashReporter.exe.config
+  - >-
+    if [ "$TRAVIS_TAG" ]; then
+      sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/Anaximander.exe.config;
+      sed -i 's/param name="Environment" value="development"/param name="Environment" value="production"/' bin/RollbarCrashReporter.exe.config;
+    else
+      sed -i 's/param name="Environment" value="development"/param name="Environment" value="test"/' bin/Anaximander.exe.config;
+      sed -i 's/param name="Environment" value="development"/param name="Environment" value="test"/' bin/RollbarCrashReporter.exe.config;
+    fi
   - mv bin Anaximander2
   - zip -r Anaximander2-mono.zip Anaximander2 > /dev/null
 

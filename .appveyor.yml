@@ -16,18 +16,25 @@ cache:
   - Source\packages -> Source\**\packages.config
 
 before_build:
-  - ps: if (!($env:APPVEYOR_REPO_TAG -eq "true")) { $env:APPVEYOR_REPO_TAG_NAME = "2.0.0" }
-  - ps: $env:APPVEYOR_REPO_TAG_NAME = $env:APPVEYOR_REPO_TAG_NAME -replace 'v',''
-  - ps: Write-Host "Setting version to '$env:APPVEYOR_REPO_TAG_NAME'"
-  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:APPVEYOR_REPO_TAG_NAME.*" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
-  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:APPVEYOR_REPO_TAG_NAME.*" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
+  - ps: if ($env:APPVEYOR_REPO_TAG -eq "true") { $env:TAG_VERSION = "$env:APPVEYOR_REPO_TAG_NAME.$env:APPVEYOR_BUILD_NUMBER" } else { $env:TAG_VERSION = "v2.0.0.$env:APPVEYOR_BUILD_NUMBER" }
+  - ps: $env:TAG_VERSION = $env:TAG_VERSION -replace 'v',''
+  - ps: Write-Host "Setting version to '$env:TAG_VERSION'"
+  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:TAG_VERSION" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
+  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:TAG_VERSION" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
   - ps: (Get-Content Source\Anaximander\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\Anaximander\app.config
   - ps: (Get-Content Source\RollbarCrashReporter\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\RollbarCrashReporter\app.config
   - nuget restore Source\Anaximander.sln
 
 after_build:
-  - ps: (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
-  - ps: (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\RollbarCrashReporter.exe.config
+  - ps: >-
+    if ($env:APPVEYOR_REPO_TAG -eq "true") {
+      (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
+      (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\RollbarCrashReporter.exe.config
+    }
+    else {
+      (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\Anaximander.exe.config
+      (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\RollbarCrashReporter.exe.config
+    }
   - rename bin Anaximander2
 
 artifacts:
