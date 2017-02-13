@@ -27,14 +27,14 @@ before_build:
 
 after_build:
   - ps: >-
-    if ($env:APPVEYOR_REPO_TAG -eq "true") {
-      (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
-      (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\RollbarCrashReporter.exe.config
-    }
-    else {
-      (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\Anaximander.exe.config
-      (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\RollbarCrashReporter.exe.config
-    }
+        if ($env:APPVEYOR_REPO_TAG -eq "true") {
+          (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
+          (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\RollbarCrashReporter.exe.config
+        }
+        else {
+          (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\Anaximander.exe.config
+          (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\RollbarCrashReporter.exe.config
+        }
   - rename bin Anaximander2
 
 artifacts:
