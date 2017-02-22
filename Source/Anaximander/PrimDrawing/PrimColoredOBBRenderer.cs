@@ -458,12 +458,13 @@ namespace Anaximander {
 			var facetexture = textures.GetFace(face);
 			// GetFace throws a generic exception if the parameter is greater than MAX_FACES.
 
-			// TODO: compute a better color from the texture data AND the color applied.
+			// Compute a color from the texture data AND the color applied.  The operation is "Multiplication" aka per-pixel (A*B)/255 or if float in domain 0-1: (A*B)
+			var texture = Texture.GetByUUID(facetexture.TextureID);
 
 			return new SolidBrush(Color.FromArgb(
-				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.R * 255f))),
-				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.G * 255f))),
-				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.B * 255f)))
+				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.R * 255f) * texture.AverageColor.R / 255)),
+				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.G * 255f) * texture.AverageColor.G / 255)),
+				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.B * 255f) * texture.AverageColor.B / 255))
 			));
 			// FromARGB can throw an exception if a parameter is outside 0-255, but that is prevented.
 		}
