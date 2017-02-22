@@ -69,10 +69,9 @@ Global
 		$1.TabWidth = 2
 		$1.IndentWidth = 2
 		$1.EolMarker = Unix
-		$1.inheritsSet = Mono
+		$1.inheritsSet = null
 		$1.inheritsScope = text/plain
-		$1.scope = application/xml
-		$1.NoTabsAfterNonTabs = True
+		$1.scope = text/x-csharp
 		$0.CSharpFormattingPolicy = $2
 		$2.IndentSwitchBody = True
 		$2.IndentBreakStatements = False
@@ -108,6 +107,7 @@ Global
 		$2.SpacingAfterMethodDeclarationName = False
 		$2.SpaceAfterMethodCallName = False
 		$2.SpaceBeforeOpenSquareBracket = False
+		$2.IndentSwitchSection = True
 		$0.TextStylePolicy = $3
 		$3.FileWidth = 120
 		$3.TabWidth = 2
