@@ -94,6 +94,8 @@ namespace Anaximander {
 			// Read in the ini file
 			ReadConfigurationFromINI(configSource);
 
+			Texture.Initialize(new AssetReader.AssetReader(configSource));
+
 			watch.Stop();
 			LOG.Info($"[MAIN] Read configuration in {watch.ElapsedMilliseconds} ms.");
 			watch.Restart();
@@ -192,6 +194,9 @@ namespace Anaximander {
 					// TODO: swap out for a wait handle based approach. See http://stackoverflow.com/a/12367882/7363787
 				}
 			}
+
+			// I don't care what's still connected or keeping things running, it's time to die!
+			Environment.Exit(0);
 		}
 
 		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) {

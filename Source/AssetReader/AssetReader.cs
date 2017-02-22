@@ -1,4 +1,4 @@
-﻿// MyClass.cs
+﻿// AssetReader.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -23,12 +23,186 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using log4net;
+using Nini.Config;
+using OpenMetaverse;
+using ProtoBuf;
 
 namespace AssetReader {
 	public class AssetReader {
-		public AssetReader() {
-			// GOAL: to be able to read in texture assets.
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private List<IAssetServer> _assetServers;
+
+		private DirectoryInfo _cacheFolder = null;
+
+		public AssetReader(IConfigSource configSource) {
+			var config = configSource.Configs["Assets"];
+
+			// Set up caching
+			var cachePath = config?.GetString("CachePath", string.Empty) ?? string.Empty;
+
+			if (string.IsNullOrWhiteSpace(cachePath)) {
+				LOG.Info($"[ASSET_READER] Assets:CachePath is empty, caching assets disabled.");
+			}
+			else if (!Directory.Exists(cachePath)) {
+				LOG.Info($"[ASSET_READER] Assets:CachePath folder does not exist, caching assets disabled.");
+			}
+			else {
+				_cacheFolder = new DirectoryInfo(cachePath);
+				LOG.Info($"[ASSET_READER] Caching assets enabled at {_cacheFolder.FullName}");
+			}
+
+			// Set up server handlers
+			_assetServers = new List<IAssetServer>();
+
+			// Read in a config list that lists the priority order of servers and their settings.
+			var sources = config?.GetString("Servers", string.Empty).Split(',').Where(source => !string.IsNullOrWhiteSpace(source)).Select(source => source.Trim());
+
+			if (sources != null && sources.Count() > 0) {
+				foreach (var source in sources) {
+					var sourceConfig = configSource.Configs[source];
+					IAssetServer serverConnector = null;
+					var type = sourceConfig?.GetString("Type", string.Empty).ToLower();
+					switch (type) {
+						case "whip":
+							serverConnector = new AssetServerWHIP();
+						break;
+						case "cf":
+							LOG.Error($"[ASSET_READER] CloudFiles asset servers not yet supported. Found in section [{source}].");
+						break;
+						default:
+							LOG.Warn($"[ASSET_READER] Unknown asset server type in section [{source}].");
+						break;
+					}
+					if (serverConnector != null) {
+						serverConnector.Initialize(sourceConfig);
+						_assetServers.Add(serverConnector);
+					}
+				}
+			}
+			else {
+				LOG.Warn("[ASSET_READER] Assets:Servers empty or not specified. No asset server sections configured. Only pre-determined texture colors will be used for drawing.");
+			}
+		}
+
+		public AssetBase GetAsset(UUID assetId) {
+			AssetBase result;
+
+			// Hit up the cache first.
+			if (TryGetCachedAsset(assetId, out result)) {
+				return result;
+			}
+
+			// Got to go try the servers now.
+			foreach (var server in _assetServers) {
+				result = server.RequestAssetSync(assetId);
+				if (result != null) {
+					CacheAsset(result);
+					return result;
+				}
+			}
+
+			return null;
+		}
+
+		private bool TryGetCachedAsset(UUID assetId, out AssetBase asset) {
+			if (_cacheFolder == null) { // Caching is disabled.
+				asset = null;
+				return false;
+			}
+
+			// Convert the UUID into a path.
+			var path = UuidToCachePath(assetId);
+
+			// Attempt to read and return that file.
+			try {
+				using (var file = File.OpenRead(path)) {
+					asset = Serializer.Deserialize<AssetBase>(file);
+				}
+				return true;
+			}
+			catch (PathTooLongException e) {
+				_cacheFolder = null;
+				LOG.Error("[ASSET_READER] Attempted to read a cached asset, but the path was too long for the filesystem.  Disabling caching.", e);
+			}
+			catch (DirectoryNotFoundException) {
+				// Kinda expected if that's an item that's not been cached.
+			}
+			catch (UnauthorizedAccessException e) {
+				_cacheFolder = null;
+				LOG.Error("[ASSET_READER] Attempted to read a cached asset, but this user is not allowed access.  Disabling caching.", e);
+			}
+			catch (FileNotFoundException) {
+				// Kinda expected if that's an item that's not been cached.
+			}
+			catch (IOException e) {
+				// This could be temporary.
+				LOG.Error("[ASSET_READER] Attempted to read a cached asset, but there was an IO error.", e);
+			}
+
+			// Nope, no ability to get the asset.
+			asset = null;
+			return false;
+		}
+
+		private void CacheAsset(AssetBase asset) {
+			if (_cacheFolder == null || asset == null) { // Caching is disabled or stupidity.
+				return;
+			}
+
+			var path = UuidToCachePath(asset.Id);
+
+			try {
+				// Since UuidToCachePath always returns a path underneath the cache folder, this will only attempt to create folders there.
+				Directory.CreateDirectory(Directory.GetParent(path).FullName);
+				using (var file = File.Create(path)) {
+					Serializer.Serialize(file, asset);
+				}
+			}
+			catch (UnauthorizedAccessException e) {
+				_cacheFolder = null;
+				LOG.Error("[ASSET_READER] Attempted to write an asset to cache, but this user is not allowed access.  Disabling caching.", e);
+			}
+			catch (PathTooLongException e) {
+				_cacheFolder = null;
+				LOG.Error("[ASSET_READER] Attempted to write an asset to cache, but the path was too long for the filesystem.  Disabling caching.", e);
+			}
+			catch (DirectoryNotFoundException e) {
+				_cacheFolder = null;
+				LOG.Error("[ASSET_READER] Attempted to write an asset to cache, but cache folder was not found.  Disabling caching.", e);
+			}
+			catch (IOException e) {
+				// This could be temporary.
+				LOG.Error("[ASSET_READER] Attempted to write an asset to cache, but there was an IO error.", e);
+			}
+		}
+
+		/// <summary>
+		/// Converts a UUID to a path based on the cache location.
+		/// </summary>
+		/// <returns>The path.</returns>
+		/// <param name="id">Asset identifier.</param>
+		private string UuidToCachePath(UUID id) {
+			return UuidToCachePath(id.Guid);
+		}
+
+		/// <summary>
+		/// Converts a GUID to a path based on the cache location.
+		/// </summary>
+		/// <returns>The path.</returns>
+		/// <param name="id">Asset identifier.</param>
+		private string UuidToCachePath(Guid id) {
+			var noPunctuationAssetId = id.ToString("N");
+			var path = _cacheFolder.FullName;
+			for (var index = 0; index < noPunctuationAssetId.Length; index += 2) {
+				path = Path.Combine(path, noPunctuationAssetId.Substring(index, 2));
+			}
+			return path + ".pbasset";
 		}
 	}
 }

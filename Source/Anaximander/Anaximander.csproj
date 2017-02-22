@@ -56,13 +56,15 @@
     <Reference Include="OpenMetaverse">
       <HintPath>..\packages\OpenMetaverse.0.9.3.3318\lib\net35\OpenMetaverse.dll</HintPath>
     </Reference>
+    <Reference Include="CSJ2K">
+      <HintPath>..\packages\CSJ2K.2.0.0.1\lib\net40-client\CSJ2K.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HeightmapDrawing\TexturedMapTileRenderer.cs" />
     <Compile Include="Texture\DirectBitmap.cs" />
-    <Compile Include="Texture\CommonTextures.cs" />
     <Compile Include="Texture\Texture.cs" />
     <Compile Include="HeightmapDrawing\TerrainUtil.cs" />
     <Compile Include="TileMapping\TileImageWriter.cs" />

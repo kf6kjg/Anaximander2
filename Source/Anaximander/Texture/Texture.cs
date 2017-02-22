@@ -22,41 +22,112 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using OpenMetaverse;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Reflection;
+using AssetReader;
+using log4net;
+using OpenMetaverse;
 
 namespace Anaximander {
 	/// <summary>
 	/// An immutable representation of a texture.
 	/// </summary>
 	public class Texture {
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		#region Constants
+
+		public static readonly string BLANK_TEXTURE_ID = "5748decc-f629-461c-9a36-a35a221fe21f";
+		public static readonly Color BLANK_TEXTURE_COLOR = Color.White;
+
+		// some hardcoded terrain UUIDs that work with SL 1.20 (the four default textures and "Blank").
+		// The color-values were chosen by someone in old OpenSim code because they "look right"
+		public static readonly string TERRAIN_TEXTURE_1_ID = "0bc58228-74a0-7e83-89bc-5c23464bcec5";
+		public static readonly string TERRAIN_TEXTURE_2_ID = "63338ede-0037-c4fd-855b-015d77112fc8";
+		public static readonly string TERRAIN_TEXTURE_3_ID = "303cd381-8560-7579-23f1-f0a880799740";
+		public static readonly string TERRAIN_TEXTURE_4_ID = "53a2f406-4895-1d13-d541-d2e3b86bc19c";
+		public static readonly Color TERRAIN_TEXTURE_1_COLOR = Color.FromArgb(165, 137, 118);
+		public static readonly Color TERRAIN_TEXTURE_2_COLOR = Color.FromArgb(69, 89, 49);
+		public static readonly Color TERRAIN_TEXTURE_3_COLOR = Color.FromArgb(162, 154, 141);
+		public static readonly Color TERRAIN_TEXTURE_4_COLOR = Color.FromArgb(200, 200, 200);
+
+		public static readonly Texture DEFAULT = new Texture();
+
+		#endregion
+
+		private static AssetReader.AssetReader _assetReader = null;
+
+		private static readonly Dictionary<UUID, Texture> _memoryCache = new Dictionary<UUID, Texture>();
+
+		public static void Initialize(AssetReader.AssetReader assetReader) {
+			if (_assetReader == null) {
+				_assetReader = assetReader;
+			}
+			else {
+				LOG.Warn($"[TEXTURE] Attempt to inialize the asset reader in the Texture class more than once! Re-initialization ignored.");
+			}
+
+			CSJ2K.Util.BitmapImageCreator.Register();
+		}
+
+		public static Texture GetByUUID(UUID id, Color? defaultColor = null) {
+			Texture texture;
+
+			if (_memoryCache.TryGetValue(id, out texture)) {
+				return texture;
+			}
+
+			if (_assetReader == null && defaultColor == null) {
+				return DEFAULT;
+			}
+
+			var asset = _assetReader?.GetAsset(id);
+
+			if (asset == null) {
+				texture = new Texture(color: defaultColor);
+			}
+			else {
+				texture = new Texture(asset);
+			}
+
+			return texture;
+		}
+
 		#region Properties
 
-		public UUID UUID { get; private set; }
+		public Color AverageColor { get; private set; } = BLANK_TEXTURE_COLOR;
 
-		private Color _averageColor;
-		private bool _averageColorHasBeenSet = false;
-		public Color AverageColor {
-			get {
-				if (!_averageColorHasBeenSet) {
-					AverageColor = computeAverageColor(UUID, _averageColor);
-				}
-				return _averageColor;
-			}
-			private set {
-				_averageColor = value;
-				_averageColorHasBeenSet = true;
-			}
-		}
+		public Image Image { get; private set; } = null;
 
 		#endregion
 
 		#region Constructors
 
-		public Texture(UUID id, Color defaultAverageColor) {
-			UUID = id;
-			_averageColor = defaultAverageColor;
+		private Texture() {
+			// No need to chain defaults if all defaults are assigned in the properties.
+		}
+
+		private Texture(AssetBase asset) {
+			if (asset.IsImageAsset) {
+				var tex = asset.ToTexture();
+				var jp2k = CSJ2K.J2kImage.FromBytes(tex.AssetData);
+				var bitmap = jp2k.As<Bitmap>();
+
+				Image = bitmap;
+				AverageColor = computeAverageColor(bitmap);
+			}
+		}
+
+		private Texture(Bitmap image = null, Color? color = null) {
+			if (image != null) {
+				Image = new Bitmap(image); // Deep copy that image to make sure we don't lose immutability.
+				AverageColor = computeAverageColor(image);
+			}
+
+			if (color != null) {
+				AverageColor = (Color) color;
+			}
 		}
 
 		#endregion
@@ -83,15 +154,6 @@ namespace Anaximander {
 
 			int pixels = bmp.Width * bmp.Height;
 			return Color.FromArgb(r / pixels, g / pixels, b / pixels);
-		}
-
-		// return either the average color of the texture, or the defaultColor if the texturID is invalid
-		// or the texture couldn't be found
-		private static Color computeAverageColor(UUID textureID, Color defaultColor) {
-			if (textureID == UUID.Zero) return defaultColor; // not set
-
-			Bitmap bmp = null; // TODO fetchTexture(textureID);
-			return bmp == null ? defaultColor : computeAverageColor(bmp);
 		}
 
 		#endregion

@@ -244,10 +244,10 @@ namespace Anaximander {
 
 		public static void TerrainToBitmap(DataReader.Region region, DirectBitmap mapbmp) {
 			var textures = new Texture[4];
-			textures[0] = new Texture(UUID.Parse(region.terrainTexture1), CommonTextures.TERRAIN_TEXTURE_1.AverageColor);
-			textures[1] = new Texture(UUID.Parse(region.terrainTexture2), CommonTextures.TERRAIN_TEXTURE_2.AverageColor);
-			textures[2] = new Texture(UUID.Parse(region.terrainTexture3), CommonTextures.TERRAIN_TEXTURE_3.AverageColor);
-			textures[3] = new Texture(UUID.Parse(region.terrainTexture4), CommonTextures.TERRAIN_TEXTURE_4.AverageColor);
+			textures[0] = Texture.GetByUUID(UUID.Parse(region.terrainTexture1), Texture.TERRAIN_TEXTURE_1_COLOR);
+			textures[1] = Texture.GetByUUID(UUID.Parse(region.terrainTexture2), Texture.TERRAIN_TEXTURE_2_COLOR);
+			textures[2] = Texture.GetByUUID(UUID.Parse(region.terrainTexture3), Texture.TERRAIN_TEXTURE_3_COLOR);
+			textures[3] = Texture.GetByUUID(UUID.Parse(region.terrainTexture4), Texture.TERRAIN_TEXTURE_4_COLOR);
 
 			int tc = Environment.TickCount;
 			LOG.Info("[TERRAIN]: Generating Maptile Terrain (Textured)");
