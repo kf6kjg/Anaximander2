@@ -29,6 +29,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using DataReader;
 using log4net;
@@ -79,7 +80,7 @@ namespace Anaximander {
 			}
 
 			// Configure nIni aliases and localles
-			System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US", true);
+			Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US", true);
 
 			configSource.Alias.AddAlias("On", true);
 			configSource.Alias.AddAlias("Off", false);
@@ -135,8 +136,13 @@ namespace Anaximander {
 #else
 				Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), (region_id) => {
 #endif
+					var oldPriority = Thread.CurrentThread.Priority;
+					Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+
 					//foreach(var region_id in rdb_map.GetRegionUUIDsAsStrings()) {
 					UpdateRegionTile(region_id);
+
+					Thread.CurrentThread.Priority = oldPriority;
 				});
 
 				watch.Stop();

@@ -200,6 +200,9 @@ namespace DataReader {
 			#else
 			Parallel.ForEach(regions_by_rdb.Keys.ToList(), (rdb_connection_string) => {
 			#endif
+				var oldPriority = Thread.CurrentThread.Priority;
+				Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+
 				RegionTerrainData data;
 				string region_id;
 
@@ -263,6 +266,8 @@ namespace DataReader {
 						}
 					}
 				}
+
+				Thread.CurrentThread.Priority = oldPriority;
 			});
 
 			LOG.Debug("[RDB_MAP] Loading prim data from DB.");

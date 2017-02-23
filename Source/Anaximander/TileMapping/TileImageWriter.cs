@@ -30,6 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using log4net;
 using Nini.Config;
@@ -230,6 +231,9 @@ namespace Anaximander {
 #else
 			Parallel.ForEach(files, (filename) => {
 #endif
+				var oldPriority = Thread.CurrentThread.Priority;
+				Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+
 				var match = region_tile_regex.Match(filename);
 
 				if (!match.Success) {
@@ -307,6 +311,8 @@ namespace Anaximander {
 						}
 					}
 				}
+
+				Thread.CurrentThread.Priority = oldPriority;
 			});
 
 			if (counter > 0) {
