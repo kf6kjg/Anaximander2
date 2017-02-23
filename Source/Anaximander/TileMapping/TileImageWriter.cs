@@ -224,7 +224,7 @@ namespace Anaximander {
 			var counter = 0;
 
 #if DEBUG
-			var options = new ParallelOptions { MaxDegreeOfParallelism = 1 }; // -1 means full parallel.  1 means non-parallel.
+			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
 
 			Parallel.ForEach(files, options, (filename) => {
 #else
