@@ -120,6 +120,7 @@ namespace DataReader {
 			RegionInfo new_entry;
 			Dictionary<string, RegionInfo> region_list;
 
+			LOG.Debug("[RDB_MAP] Loading region to host map from DB.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
 				using (var cmd = conn.CreateCommand()) {
 					/* Gets the full list of what regions are on what host.
@@ -191,6 +192,7 @@ namespace DataReader {
 				}
 			}
 
+			LOG.Debug("[RDB_MAP] Loading terrain data from DB.");
 			#if DEBUG
 			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
 
@@ -263,6 +265,7 @@ namespace DataReader {
 				}
 			});
 
+			LOG.Debug("[RDB_MAP] Loading prim data from DB.");
 			#if DEBUG
 			Parallel.ForEach(regions_by_rdb.Keys.ToList(), options, (rdb_connection_string) => {
 			#else

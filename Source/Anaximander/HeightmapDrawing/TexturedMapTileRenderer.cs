@@ -155,7 +155,7 @@ namespace Anaximander {
 	}
 
 	public static class TexturedMapTileRenderer {
-		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private static Color _waterColor;
 		private static Color _beachColor;
@@ -250,7 +250,6 @@ namespace Anaximander {
 			textures[3] = Texture.GetByUUID(UUID.Parse(region.terrainTexture4), Texture.TERRAIN_TEXTURE_4_COLOR);
 
 			int tc = Environment.TickCount;
-			LOG.Info("[TERRAIN]: Generating Maptile Terrain (Textured)");
 
 			// the four terrain colors as HSVs for interpolation
 			var hsv1 = new HSV(textures[0].AverageColor);
@@ -376,7 +375,6 @@ namespace Anaximander {
 					mapbmp.Bitmap.SetPixel(x, yr, hsv.ToColor());
 				}
 			}
-			LOG.Info("[TERRAIN]: Done in " + (Environment.TickCount - tc) + " ms");
 		}
 
 	}

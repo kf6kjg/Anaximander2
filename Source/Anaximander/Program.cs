@@ -116,14 +116,17 @@ namespace Anaximander {
 			 */
 
 			{
+				LOG.Debug("Initializing writer and generator.");
 				_tileWriter = new TileImageWriter(configSource);
 				_tileGenerator = new TileGenerator(configSource);
 
+				LOG.Debug("Writing ocean tile.");
 				// Generate & replace ocean tile
 				using (var ocean_tile = _tileGenerator.GenerateOceanTile()) {
 					_tileWriter.WriteOceanTile(ocean_tile.Bitmap);
 				}
 
+				LOG.Debug("Generating a full batch of region tiles.");
 				// Generate region tiles - all existing are nearly guaranteed to be out of date.
 #if DEBUG
 				var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
@@ -303,17 +306,20 @@ namespace Anaximander {
 				// Assume that during bootup the tile is out of date and rebuild everything.
 
 				if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.isRegionCurrentlyUp) {
+					LOG.Info($"Generating a full region tile for {region_id}.");
 					using (var tile_image = _tileGenerator.RenderRegionTile(region)) {
 						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
 					}
 				}
 				else {
 					if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
+						LOG.Info($"Generating a crashed-style imaged based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
 						var filename = defaultTiles?.GetString("CrashedRegionImage", Constants.CrashedRegionImage) ?? Constants.CrashedRegionImage;
 
 						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
 					}
 					else if (crashedTechnique == RegionErrorDisplayTechnique.COLOR) {
+						LOG.Info($"Generating a crashed-style color based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
 						var colorR = defaultTiles?.GetInt("CrashedRegionRed", Constants.CrashedRegionColor.R) ?? Constants.CrashedRegionColor.R;
 						var colorG = defaultTiles?.GetInt("CrashedRegionGreen", Constants.CrashedRegionColor.G) ?? Constants.CrashedRegionColor.G;
 						var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
@@ -322,9 +328,13 @@ namespace Anaximander {
 							_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
 						}
 					}
+					else {
+						LOG.Debug($"No render of crashed regions enabled. {region_id} is reported by the DB as online, but the region itself is not responding.");
+					}
 				}
 			}
 			else if (offlineTechnique != RegionErrorDisplayTechnique.IGNORE) {
+				LOG.Debug($"Region {region_id} was reported by the DB to be offline.");
 				// Go looking for the backup technique to find the coordinates of a region that has gone offline.
 				var folderinfo = _configSource.Configs["Folders"];
 				var tilepath = folderinfo?.GetString("MapTilePath", Constants.MapTilePath) ?? Constants.MapTilePath;
@@ -334,6 +344,7 @@ namespace Anaximander {
 					coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id));
 				}
 				catch (SystemException) { // All IO errors just mean skippage.
+					LOG.Info($"Offline region {region_id} has not been seen before so the coordinates cannot be found and no tile will be rendered.");
 				}
 
 				if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
@@ -343,11 +354,13 @@ namespace Anaximander {
 					region.locationY = coordsList[1];
 
 					if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
+						LOG.Info($"Generating an offline-style imaged based region tile for {region_id} as the DB reports it as offline.");
 						var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
 
 						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
 					}
 					else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
+						LOG.Info($"Generating an offline-style color based region tile for {region_id} as the DB reports it as offline.");
 						var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
 						var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
 						var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
@@ -357,6 +370,9 @@ namespace Anaximander {
 						}
 					}
 				}
+			}
+			else {
+				LOG.Debug($"No render of offline regions enabled. {region_id} is reported by the DB as offline.");
 			}
 		}
 

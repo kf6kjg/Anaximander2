@@ -22,12 +22,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
 using System.Drawing;
+using System.Reflection;
+using log4net;
 using Nini.Config;
 
 namespace Anaximander {
 	public class TileGenerator {
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private readonly int _pixelSize;
 
 		public TileGenerator(IConfigSource config) {
@@ -52,13 +55,25 @@ namespace Anaximander {
 		}
 
 		public DirectBitmap RenderRegionTile(DataReader.Region region) {
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
+			watch.Stop();
+			LOG.Debug($"[RENDER]: Init'd image for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			// Draw the terrain.
+			LOG.Debug($"[RENDER]: Generating Maptile Terrain (Textured) for {region.regionId}");
+			watch.Restart();
 			TexturedMapTileRenderer.TerrainToBitmap(region, bitmap);
+			watch.Stop();
+			LOG.Info($"[RENDER]: Completed terrain {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			// Draw the prims.
+			LOG.Debug($"[RENDER]: Rendering OBB prims for {region.regionId}");
+			watch.Restart();
 			PrimColoredOBBRenderer.DrawObjects(region.prims, region.heightmapData, bitmap);
+			watch.Stop();
+			LOG.Debug($"[RENDER]: Completed OBB prims for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			return bitmap;
 		}
