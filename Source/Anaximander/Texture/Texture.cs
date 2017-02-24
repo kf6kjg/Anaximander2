@@ -22,7 +22,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Drawing;
 using System.Reflection;
 using AssetReader;
@@ -58,7 +58,7 @@ namespace Anaximander {
 
 		private static AssetReader.AssetReader _assetReader = null;
 
-		private static readonly Dictionary<UUID, Texture> _memoryCache = new Dictionary<UUID, Texture>();
+		private static readonly ConcurrentDictionary<UUID, Texture> _memoryCache = new ConcurrentDictionary<UUID, Texture>();
 
 		public static void Initialize(AssetReader.AssetReader assetReader) {
 			if (_assetReader == null) {
@@ -80,15 +80,19 @@ namespace Anaximander {
 
 			if (_assetReader == null && defaultColor == null) {
 				return DEFAULT;
+				// No cache needed for default.
 			}
 
 			var asset = _assetReader?.GetAsset(id);
 
 			if (asset == null) {
 				texture = new Texture(color: defaultColor);
+				// No cache when the asset was not found: maybe next time it will be.
 			}
 			else {
 				texture = new Texture(asset);
+
+				_memoryCache.TryAdd(id, texture);
 			}
 
 			return texture;
