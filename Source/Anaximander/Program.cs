@@ -65,18 +65,25 @@ namespace Anaximander {
 			var configSource = new ArgvConfigSource(args);
 			_configSource = configSource;
 
-			// Configure Log4Net
+			// Commandline switches
+			configSource.AddSwitch("Startup", "inifile");
 			configSource.AddSwitch("Startup", "logconfig");
-			var logConfigFile = configSource.Configs["Startup"].GetString("logconfig", String.Empty);
-			if (String.IsNullOrEmpty(logConfigFile)) {
+			configSource.AddSwitch("Startup", "MaxParallism", "p");
+			configSource.AddSwitch("Startup", "ServerMode");
+
+			var startupConfig = _configSource.Configs["Startup"];
+
+			// Configure Log4Net
+			var logConfigFile = startupConfig.GetString("logconfig", String.Empty);
+			if (string.IsNullOrEmpty(logConfigFile)) {
 				XmlConfigurator.Configure();
 				LogBootMessage();
-				LOG.Info("[MAIN]: Configured log4net using ./Anaximander.exe.config as the default.");
+				LOG.Info("[MAIN] Configured log4net using ./Anaximander.exe.config as the default.");
 			}
 			else {
 				XmlConfigurator.Configure(new FileInfo(logConfigFile));
 				LogBootMessage();
-				LOG.Info($"[MAIN]: Configured log4net using \"{logConfigFile}\" as configuration file.");
+				LOG.Info($"[MAIN] Configured log4net using \"{logConfigFile}\" as configuration file.");
 			}
 
 			// Configure nIni aliases and localles
@@ -89,11 +96,10 @@ namespace Anaximander {
 			configSource.Alias.AddAlias("Yes", true);
 			configSource.Alias.AddAlias("No", false);
 
-			configSource.AddSwitch("Startup", "inifile");
-			configSource.AddSwitch("Startup", "ServerMode");
-
 			// Read in the ini file
 			ReadConfigurationFromINI(configSource);
+
+			LOG.Info($"[MAIN] Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
 
 			Texture.Initialize(new AssetReader.AssetReader(configSource));
 
@@ -129,13 +135,8 @@ namespace Anaximander {
 
 				LOG.Debug("Generating a full batch of region tiles.");
 				// Generate region tiles - all existing are nearly guaranteed to be out of date.
-#if DEBUG
-				var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
-
+				var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
 				Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), options, (region_id) => {
-#else
-				Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), (region_id) => {
-#endif
 					var oldPriority = Thread.CurrentThread.Priority;
 					Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
@@ -179,7 +180,7 @@ namespace Anaximander {
 			}
 
 			// Activate server process
-			if (configSource.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
+			if (startupConfig.GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
 				var server_config = configSource.Configs["Server"];
 
 				var domain = server_config?.GetString("UseSSL", Constants.ServerDomain) ?? Constants.ServerDomain;

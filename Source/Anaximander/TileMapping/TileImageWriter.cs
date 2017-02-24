@@ -46,6 +46,8 @@ namespace Anaximander {
 		private readonly string _tileNameFormat;
 		private readonly string _oceanTileName;
 
+		private readonly ParallelOptions PARALLELISM_OPTIONS;
+
 		public TileImageWriter(IConfigSource config) {
 			var tileinfo = config.Configs["MapTileInfo"];
 
@@ -77,7 +79,9 @@ namespace Anaximander {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 			}
 
-			if (config.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
+			var startupConfig = config.Configs["Startup"];
+
+				if (startupConfig.GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
 				try {
 					_rawImageFolder = Directory.CreateDirectory(Path.Combine(_tileFolder.FullName, Constants.RawImagePath));
 				}
@@ -86,6 +90,8 @@ namespace Anaximander {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 				}
 			}
+
+			PARALLELISM_OPTIONS = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
 		}
 
 		public DateTimeOffset? GetTileModDate(int locationX, int locationY, int locationZ) {
@@ -224,13 +230,7 @@ namespace Anaximander {
 
 			var counter = 0;
 
-#if DEBUG
-			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
-
-			Parallel.ForEach(files, options, (filename) => {
-#else
-			Parallel.ForEach(files, (filename) => {
-#endif
+			Parallel.ForEach(files, PARALLELISM_OPTIONS, (filename) => {
 				var oldPriority = Thread.CurrentThread.Priority;
 				Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
@@ -326,11 +326,7 @@ namespace Anaximander {
 
 				var uuid_regex = new Regex("/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 				files = Directory.EnumerateFiles(_reverseLookupFolder.FullName);
-#if DEBUG
-				Parallel.ForEach(files, options, (filename) => {
-#else
-				Parallel.ForEach(files, (filename) => {
-#endif
+				Parallel.ForEach(files, PARALLELISM_OPTIONS, (filename) => {
 					var match = uuid_regex.Match(filename);
 
 					if (!match.Success) {
@@ -363,11 +359,7 @@ namespace Anaximander {
 
 				var raw_image_regex = new Regex("/[^/]+.tiff$");
 				files = Directory.EnumerateFiles(_rawImageFolder.FullName);
-#if DEBUG
-				Parallel.ForEach(files, options, (filename) => {
-#else
-				Parallel.ForEach(files, (filename) => {
-#endif
+				Parallel.ForEach(files, PARALLELISM_OPTIONS, (filename) => {
 					var match = raw_image_regex.Match(filename);
 
 					if (!match.Success) {

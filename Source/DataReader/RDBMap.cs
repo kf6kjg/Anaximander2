@@ -46,6 +46,8 @@ namespace DataReader {
 		private readonly string CONNECTION_STRING;
 		private readonly string RDB_CONNECTION_STRING_PARTIAL;
 
+		private readonly ParallelOptions PARALLELISM_OPTIONS;
+
 		#region Constructors
 
 		public RDBMap(IConfigSource config) {
@@ -72,6 +74,8 @@ namespace DataReader {
 			if (MAP.Count > 0) { // No sense in trying to remove old entries when there are no entries!
 				DeleteOldMapEntries();
 			}
+
+			PARALLELISM_OPTIONS = new ParallelOptions { MaxDegreeOfParallelism = config.Configs["Startup"].GetInt("MaxParallism", -1) }; // -1 means full parallel.  1 means non-parallel.
 
 			UpdateMap();
 		}
@@ -193,13 +197,7 @@ namespace DataReader {
 			}
 
 			LOG.Debug("[RDB_MAP] Loading terrain data from DB.");
-			#if DEBUG
-			var options = new ParallelOptions { MaxDegreeOfParallelism = -1 }; // -1 means full parallel.  1 means non-parallel.
-
-			Parallel.ForEach(regions_by_rdb.Keys.ToList(), options, (rdb_connection_string) => {
-			#else
-			Parallel.ForEach(regions_by_rdb.Keys.ToList(), (rdb_connection_string) => {
-			#endif
+			Parallel.ForEach(regions_by_rdb.Keys.ToList(), PARALLELISM_OPTIONS, (rdb_connection_string) => {
 				var oldPriority = Thread.CurrentThread.Priority;
 				Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
@@ -271,11 +269,7 @@ namespace DataReader {
 			});
 
 			LOG.Debug("[RDB_MAP] Loading prim data from DB.");
-			#if DEBUG
-			Parallel.ForEach(regions_by_rdb.Keys.ToList(), options, (rdb_connection_string) => {
-			#else
-			Parallel.ForEach(regions_by_rdb.Keys.ToList(), (rdb_connection_string) => {
-			#endif
+			Parallel.ForEach(regions_by_rdb.Keys.ToList(), PARALLELISM_OPTIONS, (rdb_connection_string) => {
 				string region_id;
 				Region region;
 

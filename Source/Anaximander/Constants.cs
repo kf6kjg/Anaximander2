@@ -30,40 +30,43 @@ namespace Anaximander {
 		// Please keep constants sorted by category and name.
 
 		// Operations
-		public static bool KeepRunningDefault = false;
+		public const bool KeepRunningDefault = false;
+
+		// Startup
+		public const int MaxDegreeParallism = -1;
 
 		// Server
-		public static bool ServerUseSSL = false;
-		public static string ServerDomain = "localhost";
-		public static int ServerPort = 6473;
+		public const bool ServerUseSSL = false;
+		public const string ServerDomain = "localhost";
+		public const int ServerPort = 6473;
 
 		// Folders
-		public static string MapTilePath = "./maptiles";
-		public static string RawImagePath = "raw"; // relative to MapTilePath
-		public static string ReverseLookupPath = "by_uuid"; // relative to MapTilePath
+		public const string MapTilePath = "./maptiles";
+		public const string RawImagePath = "raw"; // relative to MapTilePath
+		public const string ReverseLookupPath = "by_uuid"; // relative to MapTilePath
 
 		// MapTileInfo
-		public static ImageFormats ImageFormat = ImageFormats.JPEG;
+		public const ImageFormats ImageFormat = ImageFormats.JPEG;
 
-		public static Color BeachColor = Color.FromArgb(0, 255, 255);
-		public static Color OceanColor = Color.FromArgb(0, 0, 255);
-		public static string OceanTileName = "ocean";
+		public static readonly Color BeachColor = Color.FromArgb(0, 255, 255);
+		public static readonly Color OceanColor = Color.FromArgb(0, 0, 255);
+		public const string OceanTileName = "ocean";
 
-		public static int PixelScale = 256;
+		public const int PixelScale = 256;
 
-		public static string TileNameFormat = "map-{Z}-{X}-{Y}-objects";
+		public const string TileNameFormat = "map-{Z}-{X}-{Y}-objects";
 
 		// TileZooming
-		public static int HighestZoomLevel = 8;
+		public const int HighestZoomLevel = 8;
 
 		// DefaultTiles
-		public static RegionErrorDisplayTechnique OfflineRegion = RegionErrorDisplayTechnique.IGNORE;
-		public static Color OfflineRegionColor = Color.FromArgb(0, 0, 0);
-		public static string OfflineRegionImage = "./images/offline.jpg";
+		public const RegionErrorDisplayTechnique OfflineRegion = RegionErrorDisplayTechnique.IGNORE;
+		public static readonly Color OfflineRegionColor = Color.FromArgb(0, 0, 0);
+		public const string OfflineRegionImage = "./images/offline.jpg";
 
-		public static RegionErrorDisplayTechnique CrashedRegion = RegionErrorDisplayTechnique.IGNORE;
-		public static Color CrashedRegionColor = Color.FromArgb(0, 0, 0);
-		public static string CrashedRegionImage = "./images/crashed.jpg";
+		public const RegionErrorDisplayTechnique CrashedRegion = RegionErrorDisplayTechnique.IGNORE;
+		public static readonly Color CrashedRegionColor = Color.FromArgb(0, 0, 0);
+		public const string CrashedRegionImage = "./images/crashed.jpg";
 	}
 
 	public enum ImageFormats {
