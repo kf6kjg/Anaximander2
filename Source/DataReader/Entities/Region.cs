@@ -42,31 +42,6 @@ namespace DataReader {
 		public string regionName { get { return _info.regionName; } private set { _info.regionName = value; } }
 
 		/// <summary>
-		/// Queries the region server simstatus to detect if the region is online and accessable at this moment.
-		/// </summary>
-		/// <value><c>true</c> if this instance is region currently up; otherwise, <c>false</c>.</value>
-		public bool isRegionCurrentlyUp {
-			get {
-				if (serverIP != null) {
-					var wrGETURL = WebRequest.Create($"http://{serverIP}:{serverPort}/simstatus/");
-					try {
-						// Total time for 1000 passing tests against a server on the Internet: 42352ms, for an avg of 42.352 ms per check.
-						var objStream = wrGETURL.GetResponse().GetResponseStream();
-						var objReader = new StreamReader(objStream);
-						return objReader.ReadLine() == "OK";
-					}
-					catch (WebException) {
-						// Total time for 1000 fail tests against localhost: 848ms, for an avg of 0.848 ms per check.
-						return false;
-					}
-				}
-
-				// Total time for 1000 False tests against nothing: 2ms, for an avg of 0.002 ms per check.
-				return false;
-			}
-		}
-
-		/// <summary>
 		/// Gets or sets the location x.  Please use the RDBMap's UpdateRegionLocation method instead of setting this.
 		/// </summary>
 		/// <value>The location x.</value>
@@ -133,6 +108,37 @@ namespace DataReader {
 
 		public void AddPrim(Prim prim) {
 			_primData.Add(prim);
+		}
+
+		/// <summary>
+		/// Queries the region server simstatus to detect if the region is online and accessable at this moment.
+		/// </summary>
+		/// <returns><c>true</c> if this instance is region currently up; otherwise, <c>false</c>.</returns>
+		public bool IsCurrentlyAccessable() {
+			if (serverIP != null) {
+				var wrGETURL = WebRequest.Create($"http://{serverIP}:{serverPort}/simstatus/");
+				try {
+					// Total time for 1000 passing tests against a server on the Internet: 42352ms, for an avg of 42.352 ms per check.
+					var objStream = wrGETURL.GetResponse().GetResponseStream();
+					var objReader = new StreamReader(objStream);
+					return objReader.ReadLine() == "OK";
+				}
+				catch (WebException) {
+					// Total time for 1000 fail tests against localhost: 848ms, for an avg of 0.848 ms per check.
+					return false;
+				}
+			}
+
+			// Total time for 1000 False tests against nothing: 2ms, for an avg of 0.002 ms per check.
+			return false;
+		}
+
+		/// <summary>
+		/// Is the region marked in the database as online.  Does not mean the region is actually online as it could have crashed or locked up.
+		/// </summary>
+		/// <returns><c>true</c>, if region is listed as online, <c>false</c> otherwise.</returns>
+		public bool IsListedAsOnline() {
+			return regionName != null;
 		}
 
 		#endregion

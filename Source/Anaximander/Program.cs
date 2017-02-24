@@ -309,10 +309,10 @@ namespace Anaximander {
 
 			var region = _rdbMap.GetRegionByUUID(region_id);
 
-			if (region.locationX != null) {
+			if (region.IsListedAsOnline()) {
 				// Assume that during bootup the tile is out of date and rebuild everything.
 
-				if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.isRegionCurrentlyUp) {
+				if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.IsCurrentlyAccessable()) {
 					LOG.Info($"Generating a full region tile for {region_id}.");
 					using (var tile_image = _tileGenerator.RenderRegionTile(region)) {
 						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
