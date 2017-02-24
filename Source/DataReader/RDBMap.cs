@@ -253,7 +253,7 @@ namespace DataReader {
 
 								MAP.Add(region_id, region);
 
-								// Not all regions returned have a position, after all some could be in a crashed state.
+								// Not all regions returned have a position, after all some could be in an offline state and never been seen before.
 								if (info.locationX != null) {
 									COORD_MAP.Add(CoordToIndex((int)info.locationX, (int)info.locationY), region);
 								}
@@ -550,7 +550,7 @@ ORDER BY
 
 			MAP[region_id] = region; // Add or update.
 
-			// Not all regions returned have a position, after all some could be in a crashed state.
+			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
 				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
 			}
@@ -630,7 +630,7 @@ ORDER BY
 
 			MAP[region_id] = region; // Add or update.
 
-			// Not all regions returned have a position, after all some could be in a crashed state.
+			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
 				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
 			}
@@ -697,7 +697,7 @@ ORDER BY
 
 			MAP[region_id] = region; // Add or update.
 
-			// Not all regions returned have a position, after all some could be in a crashed state.
+			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
 				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
 			}
@@ -790,7 +790,7 @@ ORDER BY
 
 			MAP[region_id] = region; // Add or update.
 
-			// Not all regions returned have a position, after all some could be in a crashed state.
+			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
 				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
 			}

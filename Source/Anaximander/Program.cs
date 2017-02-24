@@ -357,8 +357,7 @@ namespace Anaximander {
 				if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
 					var coordsList = coords.Split(',').Select(coord => int.Parse(coord)).ToArray();
 
-					region.locationX = coordsList[0];
-					region.locationY = coordsList[1];
+					_rdbMap.UpdateRegionLocation(region_id, coordsList[0], coordsList[1]);
 
 					if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
 						LOG.Info($"Generating an offline-style imaged based region tile for {region_id} as the DB reports it as offline.");
