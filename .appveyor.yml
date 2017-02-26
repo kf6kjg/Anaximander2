@@ -3,7 +3,6 @@ version: 2.0.{build}
 image: Visual Studio 2015
 
 nuget:
-  account_feed: true
   project_feed: true
 
 configuration: Release
