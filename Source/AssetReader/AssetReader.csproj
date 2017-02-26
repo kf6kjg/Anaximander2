@@ -50,7 +50,7 @@
       <HintPath>..\packages\protobuf-net.2.1.0\lib\net45\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="InWorldz.Whip.Client">
-      <HintPath>..\packages\InWorldz.Whip.Client.1.0.0\lib\net45\InWorldz.Whip.Client.dll</HintPath>
+      <HintPath>..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
