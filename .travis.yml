@@ -43,6 +43,6 @@ deploy:
     tags: true
 
 after_deploy:
-  - export LOCAL_USERNAME=`git log -n 1 --pretty=format:"%an"`
-  - export REVISION=`git log -n 1 --pretty=format:"%H"`
-  - curl https://api.rollbar.com/api/1/deploy/ -F access_token=$ACCESS_TOKEN -F environment=$ENVIRONMENT -F revision=$REVISION -F local_username=$LOCAL_USERNAME
+  - export LOCAL_USERNAME="`git log -n 1 --pretty=format:"%an"`"
+  - export REVISION="`git log -n 1 --pretty=format:"%H"`"
+  - curl https://api.rollbar.com/api/1/deploy/ -F access_token="$ACCESS_TOKEN" -F environment="$ENVIRONMENT" -F revision="$REVISION" -F local_username="$LOCAL_USERNAME"
