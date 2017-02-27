@@ -73,7 +73,7 @@ namespace AssetReader {
 							serverConnector = new AssetServerWHIP();
 						break;
 						case "cf":
-							LOG.Error($"[ASSET_READER] CloudFiles asset servers not yet supported. Found in section [{source}].");
+							serverConnector = new AssetServerCF();
 						break;
 						default:
 							LOG.Warn($"[ASSET_READER] Unknown asset server type in section [{source}].");

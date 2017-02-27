@@ -52,6 +52,21 @@
     <Reference Include="InWorldz.Whip.Client">
       <HintPath>..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
     </Reference>
+    <Reference Include="Flurl">
+      <HintPath>..\packages\Flurl.Signed.1.0.10\lib\portable-net40+sl50+win+wpa81+wp80+MonoAndroid10+MonoTouch10\Flurl.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Flurl.Http">
+      <HintPath>..\packages\Flurl.Http.Signed.0.7.0\lib\net45\Flurl.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="Marvin.JsonPatch">
+      <HintPath>..\packages\Marvin.JsonPatch.Signed.0.7.0\lib\portable-net40+win+wpa81\Marvin.JsonPatch.dll</HintPath>
+    </Reference>
+    <Reference Include="openstacknet">
+      <HintPath>..\packages\openstack.net.1.7.6\lib\net45\openstacknet.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssetReader.cs" />
@@ -60,9 +75,16 @@
     <Compile Include="Util.cs" />
     <Compile Include="IAssetServer.cs" />
     <Compile Include="AssetServerWHIP.cs" />
+    <Compile Include="AssetServerCF.cs" />
+    <Compile Include="CloudFilesProvider\ExtendedCloudFilesProvider.cs" />
+    <Compile Include="CloudFilesProvider\ExtendedJsonRestServices.cs" />
+    <Compile Include="CloudFilesProvider\StratusAsset.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="CloudFilesProvider\" />
   </ItemGroup>
 </Project>
