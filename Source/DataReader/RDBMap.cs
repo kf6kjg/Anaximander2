@@ -23,25 +23,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.Contracts;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
 using log4net;
-using MySql.Data.MySqlClient;
 using Nini.Config;
-using System.Diagnostics.Contracts;
 
 namespace DataReader {
 	public class RDBMap {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly Dictionary<string, Region> MAP = new Dictionary<string, Region>();
-		private readonly Dictionary<long, Region> COORD_MAP = new Dictionary<long, Region>();
-		private readonly List<string> DEAD_REGION_IDS = new List<string>();
+		private readonly ConcurrentDictionary<string, Region> MAP = new ConcurrentDictionary<string, Region>();
+		private readonly ConcurrentDictionary<long, Region> COORD_MAP = new ConcurrentDictionary<long, Region>();
+		private readonly ConcurrentBag<string> DEAD_REGION_IDS = new ConcurrentBag<string>();
 
 		private readonly string CONNECTION_STRING;
 		private readonly string RDB_CONNECTION_STRING_PARTIAL;
@@ -56,15 +56,17 @@ namespace DataReader {
 			CONNECTION_STRING = data_config.GetString("MasterDatabaseConnectionString", CONNECTION_STRING).Trim();
 
 			if (string.IsNullOrWhiteSpace(CONNECTION_STRING)) {
-				// Analysis disable once NotResolvedInText
+#pragma warning disable RECS0143 // Cannot resolve symbol in text argument
 				throw new ArgumentNullException("MasterDatabaseConnectionString", "Missing or empty key in section [Database] of the ini file.");
+#pragma warning restore RECS0143 // Cannot resolve symbol in text argument
 			}
 
 			RDB_CONNECTION_STRING_PARTIAL = data_config.GetString("RDBConnectionStringPartial", RDB_CONNECTION_STRING_PARTIAL).Trim();
 
 			if (string.IsNullOrWhiteSpace(RDB_CONNECTION_STRING_PARTIAL)) {
-				// Analysis disable once NotResolvedInText
+#pragma warning disable RECS0143 // Cannot resolve symbol in text argument
 				throw new ArgumentNullException("RDBConnectionStringPartial", "Missing or empty key in section [Database] of the ini file.");
+#pragma warning restore RECS0143 // Cannot resolve symbol in text argument
 			}
 
 			if (!RDB_CONNECTION_STRING_PARTIAL.Contains("Data Source")) {
@@ -113,20 +115,21 @@ namespace DataReader {
 				DEAD_REGION_IDS.Add(id);
 				Region reg;
 				if (MAP.TryGetValue(id, out reg) && reg.locationX != null && reg.locationY != null) {
-					COORD_MAP.Remove(CoordToIndex((int)reg.locationX, (int)reg.locationY));
+					COORD_MAP.TryRemove(CoordToIndex((int)reg.locationX, (int)reg.locationY), out reg);
 				}
-				MAP.Remove(id);
+				MAP.TryRemove(id, out reg);
 			});
 		}
 
 		public void UpdateMap() {
-			var regions_by_rdb = new Dictionary<string, Dictionary<string, RegionInfo>>();
-			RegionInfo new_entry;
-			Dictionary<string, RegionInfo> region_list;
+			var regions_by_rdb = new ConcurrentDictionary<string, ConcurrentDictionary<string, RegionInfo>>();
 
 			LOG.Debug("[RDB_MAP] Loading region to host map from DB.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
 				using (var cmd = conn.CreateCommand()) {
+					RegionInfo new_entry;
+					ConcurrentDictionary<string, RegionInfo> region_list;
+
 					/* Gets the full list of what regions are on what host.
 					A null host_name indicates that that region's data is on this host, otherwise contains the host for the region's data.
 					A null regionName indicates that the region is shut down, otherwise that the region is up or crashed.
@@ -149,31 +152,20 @@ namespace DataReader {
 
 					try {
 						while (reader.Read()) {
-							var rdbhost = Convert.ToString(reader["host_name"]);
+							var rdbHostName = Convert.ToString(reader["host_name"]);
+							string rdbhost = GetRDBConnectionString(rdbHostName);
 
-							if (string.IsNullOrWhiteSpace(rdbhost)) {
-								// Not on an RDB, use the main.
-								rdbhost = conn.DataSource;
-							}
-
-							// Got an RDB or the main, either way normallize the case and format.
-							rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost.ToLowerInvariant());
-
-							if (regions_by_rdb.ContainsKey(rdbhost)) {
-								region_list = regions_by_rdb[rdbhost];
-							}
-							else {
-								region_list = new Dictionary<string, RegionInfo>();
-								regions_by_rdb.Add(rdbhost, region_list);
+							if (!regions_by_rdb.TryGetValue(rdbhost, out region_list)) {
+								region_list = new ConcurrentDictionary<string, RegionInfo>();
+								regions_by_rdb.TryAdd(rdbhost, region_list);
 							}
 
 							var region_id = Convert.ToString(reader["regionID"]);
 
 							// Check to see if the map already has this entry and if the new entry is shut down.
-							if (region_list.ContainsKey(region_id) && Convert.IsDBNull(reader["regionName"])) {
-								new_entry = region_list[region_id];
-
-								new_entry.RDBConnectionString = rdbhost; // Update the RDB connection
+							if (region_list.TryGetValue(region_id, out new_entry) && Convert.IsDBNull(reader["regionName"])) {
+								// Update the RDB connection
+								new_entry.RDBConnectionString = rdbhost;
 							}
 							else { // The DB has the freshest information.  Does not imply the region is online - it could have crashed.
 								new_entry.regionId = region_id;
@@ -187,7 +179,9 @@ namespace DataReader {
 								new_entry.serverPort = GetDBValueOrNull<int>(reader, "serverPort");
 							}
 
-							region_list.Add(region_id, new_entry);
+							if (!region_list.TryAdd(region_id, new_entry)) {
+								LOG.Warn($"[RDB_MAP] Attempted to add a duplicate region entry for RDB {rdbHostName}: Region is '{new_entry.regionName}' with UUID '{region_id}'.  Check to see if you have duplicate entries in your 'regions' table, or if you have multiple entries in the 'RegionRdbMapping' for the same region UUID.");
+							}
 						}
 					}
 					finally {
@@ -213,7 +207,9 @@ namespace DataReader {
 							while (reader.Read()) {
 								region_id = GetDBValue(reader, "RegionUUID");
 
-								if (!regions_by_rdb[rdb_connection_string].ContainsKey(region_id)) {
+								ConcurrentDictionary<string, RegionInfo> region_list;
+
+								if (regions_by_rdb.TryGetValue(rdb_connection_string, out region_list) && !region_list.ContainsKey(region_id)) {
 									// Either of the regionsettings and/or terrain tables on one of the rdb hosts has an entry for a region id that does not exist in the estates table.
 									// Or the DB has entries for both the domain AND the IP that domain points to.
 									continue;
@@ -239,23 +235,30 @@ namespace DataReader {
 								data.heightmap.Initialize();
 
 								var br = new BinaryReader(new MemoryStream((byte[])reader["Heightfield"]));
-								for (int x = 0; x < data.heightmap.GetLength(0); x++)
-								{
-									for (int y = 0; y < data.heightmap.GetLength(1); y++)
-									{
+								for (int x = 0; x < data.heightmap.GetLength(0); x++) {
+									for (int y = 0; y < data.heightmap.GetLength(1); y++) {
 										data.heightmap[x, y] = br.ReadDouble();
 									}
 								}
-								LOG.Info($"[REGION DB]: Loaded data for region {region_id}");
+								LOG.Info($"[RDB_MAP] Loaded terrain data for region {region_id}");
 
 								var info = regions_by_rdb[rdb_connection_string][region_id];
 								var region = new Region(info, data);
 
-								MAP.Add(region_id, region);
+								if (!MAP.TryAdd(region_id, region)) {
+									Region orig;
+									MAP.TryGetValue(region_id, out orig);
+									LOG.Warn($"[RDB_MAP] Region '{region_id}' is a duplicate: name is '{region.regionName}' and is duplicating a region with name '{orig?.regionName}'.");
+								}
 
 								// Not all regions returned have a position, after all some could be in an offline state and never been seen before.
 								if (info.locationX != null) {
-									COORD_MAP.Add(CoordToIndex((int)info.locationX, (int)info.locationY), region);
+									var coord = CoordToIndex((int)info.locationX, (int)info.locationY);
+									if (!COORD_MAP.TryAdd(coord, region)) {
+										Region orig;
+										COORD_MAP.TryGetValue(coord, out orig);
+										LOG.Warn($"[RDB_MAP] Region {info.regionId} is trying to ocupy an already occupied position on the map: <{(int)info.locationX},{(int)info.locationY}>.  Name is '{info.regionName}' and the current occupier's name is '{orig?.regionName}'.   This implies that one of these regions is listed as online, by having a record in the 'regions' table, but is actually crashed.");
+									}
 								}
 							}
 						}
@@ -317,13 +320,11 @@ ORDER BY
 							while (reader.Read()) {
 								region_id = GetDBValue(reader, "RegionUUID");
 
-								if (!MAP.ContainsKey(region_id)) {
+								if (!MAP.TryGetValue(region_id, out region)) {
 									// The prims table on one of the rdb hosts has an entry for a region id that does not exist in the estates, regionsettings, and terrain tables.
 									// Or the DB has entries for both the domain AND the IP that domain points to.
 									continue;
 								}
-
-								region = MAP[region_id];
 
 								var data = new RegionPrimData() {
 									ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
@@ -392,17 +393,12 @@ ORDER BY
 					try {
 						if (!reader.Read()) {
 							// If there are no valid results, then the requested region does not exist and there's no point in continuing.
-							LOG.Info($"Region '{region_id}' does not exist in the database.  Aborting creation.");
+							LOG.Warn($"[RDB_MAP] Region '{region_id}' does not exist in the database.  Aborting creation.");
 							return false;
 						}
 
-						var rdbhost = Convert.ToString(reader["host_name"]);
-
-						if (string.IsNullOrWhiteSpace(rdbhost)) {
-							rdbhost = conn.DataSource;
-						}
-
-						rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost);
+						var rdbHostName = Convert.ToString(reader["host_name"]);
+						string rdbhost = GetRDBConnectionString(rdbHostName);
 
 						// Check to see if the map already has this entry and if the new entry is shut down.
 						if (Convert.IsDBNull(reader["regionName"])) {
@@ -464,7 +460,7 @@ ORDER BY
 								terrain_data.heightmap[x, y] = br.ReadDouble();
 							}
 						}
-						LOG.Info($"[REGION DB]: Loaded data for region {region_id}");
+						LOG.Info($"[RDB_MAP] Loaded terrain data for region {region_id}");
 					}
 					finally {
 						reader.Close();
@@ -548,11 +544,18 @@ ORDER BY
 				}
 			}
 
-			MAP[region_id] = region; // Add or update.
+			// Add or replace the region.
+			Region temp;
+			MAP.TryRemove(region_id, out temp); // Don't care if it fails.
+			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
-				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
+
+				// Add or replace the region.
+				COORD_MAP.TryRemove(coord, out temp); // Don't care if it fails.
+				COORD_MAP.TryAdd(coord, region); // Won't fail because of the remove just above.
 			}
 
 			return true;
@@ -596,13 +599,8 @@ ORDER BY
 
 					try {
 						reader.Read();
-						var rdbhost = Convert.ToString(reader["host_name"]);
-
-						if (string.IsNullOrWhiteSpace(rdbhost)) {
-							rdbhost = conn.DataSource;
-						}
-
-						rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbhost);
+						var rdbHostName = Convert.ToString(reader["host_name"]);
+						string rdbhost = GetRDBConnectionString(rdbHostName);
 
 						// Check to see if the map already has this entry and if the new entry is shut down.
 						if (Convert.IsDBNull(reader["regionName"])) {
@@ -628,11 +626,18 @@ ORDER BY
 
 			region = new Region(region, info);
 
-			MAP[region_id] = region; // Add or update.
+			// Add or replace the region.
+			Region temp;
+			MAP.TryRemove(region_id, out temp); // Don't care if it fails.
+			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
-				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
+
+				// Add or replace the region.
+				COORD_MAP.TryRemove(coord, out temp); // Don't care if it fails.
+				COORD_MAP.TryAdd(coord, region); // Won't fail because of the remove just above.
 			}
 		}
 
@@ -685,7 +690,7 @@ ORDER BY
 								terrain_data.heightmap[x, y] = br.ReadDouble();
 							}
 						}
-						LOG.Info($"[REGION DB]: Loaded data for region {region_id}");
+						LOG.Info($"[RDB_MAP] Loaded terrain data for region {region_id}");
 					}
 					finally {
 						reader.Close();
@@ -695,16 +700,23 @@ ORDER BY
 
 			region = new Region(region, terrain_data);
 
-			MAP[region_id] = region; // Add or update.
+			// Add or replace the region.
+			Region temp;
+			MAP.TryRemove(region_id, out temp); // Don't care if it fails.
+			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
-				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
+
+				// Add or replace the region.
+				COORD_MAP.TryRemove(coord, out temp); // Don't care if it fails.
+				COORD_MAP.TryAdd(coord, region); // Won't fail because of the remove just above.
 			}
 		}
 
 		public void UpdateRegionPrimData(string region_id) {
-			var region = new Region(GetRegionByUUID(region_id), wipe_prims:true);
+			var region = new Region(GetRegionByUUID(region_id), wipe_prims: true);
 
 			if (region == null) {
 				// This region is missing...
@@ -788,11 +800,18 @@ ORDER BY
 				}
 			}
 
-			MAP[region_id] = region; // Add or update.
+			// Add or replace the region.
+			Region temp;
+			MAP.TryRemove(region_id, out temp); // Don't care if it fails.
+			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
 			if (region.locationX != null) {
-				COORD_MAP[CoordToIndex((int)region.locationX, (int)region.locationY)] = region; // Add or update.
+				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
+
+				// Add or replace the region.
+				COORD_MAP.TryRemove(coord, out temp); // Don't care if it fails.
+				COORD_MAP.TryAdd(coord, region); // Won't fail because of the remove just above.
 			}
 		}
 
@@ -825,50 +844,68 @@ ORDER BY
 			var region = GetRegionByUUID(region_id);
 			var coord_index = CoordToIndex(locationX, locationY);
 
-			if (region.locationX != null) {
-				// Clean up the reverse lookup.
-				COORD_MAP.Remove(coord_index);
-			}
+			// Clean up the reverse lookup.
+			Region temp;
+			COORD_MAP.TryRemove(coord_index, out temp);
 
 			region.locationX = locationX;
 			region.locationY = locationY;
 
-			COORD_MAP.Add(coord_index, region);
+			COORD_MAP.TryAdd(coord_index, region);
 		}
 
 		#endregion
+
+		private string GetRDBConnectionString(string rdbHostName) {
+			string rdbhost;
+
+			// The RDB connection string could have different user, table, or password than the main.
+			if (string.IsNullOrWhiteSpace(rdbHostName)) {
+				// Not on an RDB, use the main. Data Source=127.0.0.1;Port=3307;Database=gwdata;User ID=GWDBUser;password=WorldManager;Pooling=True;Min Pool Size=0;
+				rdbHostName = CONNECTION_STRING.ToLowerInvariant();
+				rdbHostName = rdbHostName.Split(';').FirstOrDefault(stanza => stanza.StartsWith("data source", StringComparison.InvariantCulture))?.Substring(12);
+				rdbhost = CONNECTION_STRING;
+			}
+			else {
+				rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbHostName.ToLowerInvariant());
+			}
+
+			return rdbhost;
+		}
 
 		private static long CoordToIndex(int x, int y) {
 			return (long)x << 32 + y;
 		}
 
-		private static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T: struct {
+		private static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T : struct {
 			Contract.Ensures(Contract.Result<T?>() != null);
 			var result = new T?();
 			try {
 				var ordinal = reader.GetOrdinal(name);
 				if (!reader.IsDBNull(ordinal)) {
-					result = (T) Convert.ChangeType(reader.GetValue(ordinal), typeof(T));
+					result = (T)Convert.ChangeType(reader.GetValue(ordinal), typeof(T));
 				}
 			}
-			// Analysis disable once EmptyGeneralCatchClause
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			catch {
 			}
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
 			return result;
 		}
 
-		private static T GetDBValue<T>(IDataRecord reader, string name) where T: struct {
+		private static T GetDBValue<T>(IDataRecord reader, string name) where T : struct {
 			var result = new T();
 			try {
 				var ordinal = reader.GetOrdinal(name);
 				if (!reader.IsDBNull(ordinal)) {
-					result = (T) Convert.ChangeType(reader.GetValue(ordinal), typeof(T));
+					result = (T)Convert.ChangeType(reader.GetValue(ordinal), typeof(T));
 				}
 			}
-			// Analysis disable once EmptyGeneralCatchClause
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			catch {
 			}
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
 			return result;
 		}

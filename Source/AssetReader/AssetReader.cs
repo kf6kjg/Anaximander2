@@ -23,6 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -39,6 +40,8 @@ namespace AssetReader {
 		private List<IAssetServer> _assetServers;
 
 		private DirectoryInfo _cacheFolder = null;
+
+		private readonly ConcurrentDictionary<string, AssetBase> _assetsBeingWritten = new ConcurrentDictionary<string, AssetBase>();
 
 		public AssetReader(IConfigSource configSource) {
 			var config = configSource.Configs["Assets"];
@@ -119,10 +122,16 @@ namespace AssetReader {
 			// Convert the UUID into a path.
 			var path = UuidToCachePath(assetId);
 
-			// Attempt to read and return that file.
+			if (_assetsBeingWritten.TryGetValue(path, out asset)) {
+				LOG.Debug($"[ASSET_READER] Attempted to read an asset from cache, but another thread is writing it.  Shortcutting read of {path}");
+				// Asset is currently being pushed to disk, so might as well return it now since I have it in memory.
+				return true;
+			}
+
+			// Attempt to read and return that file.  This needs to handle happening from multiple threads in case a given asset is read from multiple threads at the same time.
 			try {
-				using (var file = File.OpenRead(path)) {
-					asset = Serializer.Deserialize<AssetBase>(file);
+				using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+					asset = Serializer.Deserialize<AssetBase>(stream);
 				}
 				return true;
 			}
@@ -157,12 +166,22 @@ namespace AssetReader {
 
 			var path = UuidToCachePath(asset.Id);
 
+			if (!_assetsBeingWritten.TryAdd(path, asset)) {
+				LOG.Debug($"[ASSET_READER] Attempted to write an asset to cache, but another thread is already doing so.  Skipping write of {path}");
+				// Can't add it, which means it's already being written to disk by another thread.  No need to continue.
+				return;
+			}
+
 			try {
 				// Since UuidToCachePath always returns a path underneath the cache folder, this will only attempt to create folders there.
 				Directory.CreateDirectory(Directory.GetParent(path).FullName);
 				using (var file = File.Create(path)) {
 					Serializer.Serialize(file, asset);
 				}
+				// Writing is done, remove it from the work list.
+				AssetBase temp;
+				_assetsBeingWritten.TryRemove(path, out temp);
+				LOG.Debug($"[ASSET_READER] Wrote an asset to cache: {path}");
 			}
 			catch (UnauthorizedAccessException e) {
 				_cacheFolder = null;
