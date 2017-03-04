@@ -28,6 +28,10 @@ namespace DataReader {
 	public class Prim {
 		#region Public Properties and Accessors
 
+		public Guid Id { get { return _primData.PrimId; } }
+
+		public Guid RegionId { get { return _primData.RegionId; } }
+
 		public int ObjectFlags { get { return _primData.ObjectFlags; } }
 
 		public int State { get { return _primData.State; } }

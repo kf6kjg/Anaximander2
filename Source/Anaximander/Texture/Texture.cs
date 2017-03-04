@@ -123,7 +123,7 @@ namespace Anaximander {
 			}
 		}
 
-		private Texture(Bitmap image = null, Color? color = null) {
+		public Texture(Bitmap image = null, Color? color = null) {
 			if (image != null) {
 				Image = new Bitmap(image); // Deep copy that image to make sure we don't lose immutability.
 				AverageColor = computeAverageColor(image);

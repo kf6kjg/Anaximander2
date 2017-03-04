@@ -26,6 +26,10 @@ using System;
 
 namespace DataReader {
 	public struct RegionPrimData {
+		public Guid RegionId { get; set; }
+
+		public Guid PrimId { get; set; }
+
 		public int ObjectFlags { get; set; }
 
 		public int State { get; set; }

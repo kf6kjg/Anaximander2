@@ -34,7 +34,7 @@ using System.Reflection;
 
 namespace Anaximander {
 	public static class PrimColoredOBBRenderer {
-		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		public struct DrawStruct {
 			public float sort_order;
@@ -459,7 +459,16 @@ namespace Anaximander {
 			// GetFace throws a generic exception if the parameter is greater than MAX_FACES.
 
 			// Compute a color from the texture data AND the color applied.  The operation is "Multiplication" aka per-pixel (A*B)/255 or if float in domain 0-1: (A*B)
-			var texture = Texture.GetByUUID(facetexture.TextureID);
+			Texture texture;
+			try {
+				texture = Texture.GetByUUID(facetexture.TextureID);
+			}
+			catch (InvalidOperationException e) {
+				var location = ComputeWorldPosition(prim);
+				LOG.Warn($"Error decoding image asset {facetexture.TextureID} on face {face} of prim {prim.Id} at {location} in region {prim.RegionId}, continuing using default texture.", e);
+
+				texture = Texture.DEFAULT;
+			}
 
 			return new SolidBrush(Color.FromArgb(
 				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.R * 255f) * texture.AverageColor.R / 255)),
@@ -474,7 +483,7 @@ namespace Anaximander {
 			// let B = R - P
 			// Vz = AxBy - AyBx
 			//    = (Qx - Px)(Ry - Py) - (Qy - Py)(Rx - Px)
-			return (Q.X - P.X)* (R.Y - P.Y) - (Q.Y - P.Y) * (R.X - P.X);
+			return (Q.X - P.X) * (R.Y - P.Y) - (Q.Y - P.Y) * (R.X - P.X);
 		}
 
 		/// <summary>

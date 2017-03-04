@@ -155,7 +155,7 @@ namespace Anaximander {
 	}
 
 	public static class TexturedMapTileRenderer {
-		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private static Color _waterColor;
 		private static Color _beachColor;
@@ -244,10 +244,41 @@ namespace Anaximander {
 
 		public static void TerrainToBitmap(DataReader.Region region, DirectBitmap mapbmp) {
 			var textures = new Texture[4];
-			textures[0] = Texture.GetByUUID(UUID.Parse(region.terrainTexture1), Texture.TERRAIN_TEXTURE_1_COLOR);
-			textures[1] = Texture.GetByUUID(UUID.Parse(region.terrainTexture2), Texture.TERRAIN_TEXTURE_2_COLOR);
-			textures[2] = Texture.GetByUUID(UUID.Parse(region.terrainTexture3), Texture.TERRAIN_TEXTURE_3_COLOR);
-			textures[3] = Texture.GetByUUID(UUID.Parse(region.terrainTexture4), Texture.TERRAIN_TEXTURE_4_COLOR);
+			try {
+				textures[0] = Texture.GetByUUID(UUID.Parse(region.terrainTexture1), Texture.TERRAIN_TEXTURE_1_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture1} for terrain texture 1 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[0] = new Texture(color: Texture.TERRAIN_TEXTURE_1_COLOR);
+			}
+
+			try {
+				textures[1] = Texture.GetByUUID(UUID.Parse(region.terrainTexture2), Texture.TERRAIN_TEXTURE_2_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture2} for terrain texture 2 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[1] = new Texture(color: Texture.TERRAIN_TEXTURE_2_COLOR);
+			}
+
+			try {
+				textures[2] = Texture.GetByUUID(UUID.Parse(region.terrainTexture3), Texture.TERRAIN_TEXTURE_3_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture3} for terrain texture 3 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[2] = new Texture(color: Texture.TERRAIN_TEXTURE_3_COLOR);
+			}
+
+			try {
+				textures[3] = Texture.GetByUUID(UUID.Parse(region.terrainTexture4), Texture.TERRAIN_TEXTURE_4_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture4} for terrain texture 4 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[3] = new Texture(color: Texture.TERRAIN_TEXTURE_4_COLOR);
+			}
 
 			int tc = Environment.TickCount;
 

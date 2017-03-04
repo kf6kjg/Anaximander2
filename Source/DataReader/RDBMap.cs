@@ -280,6 +280,7 @@ namespace DataReader {
 					using (var cmd = conn.CreateCommand()) {
 						cmd.CommandText = @"SELECT
 	RegionUUID,
+	UUID,
 	ObjectFlags,
 	State,
 	PositionX, PositionY, PositionZ,
@@ -327,6 +328,8 @@ ORDER BY
 								}
 
 								var data = new RegionPrimData() {
+									RegionId = new Guid(region_id),
+									PrimId = new Guid(GetDBValue(reader, "UUID")),
 									ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
 									State = GetDBValue<int>(reader, "State"),
 									PositionX = GetDBValue<double>(reader, "PositionX"),
@@ -471,6 +474,7 @@ ORDER BY
 
 				using (var cmd = conn.CreateCommand()) {
 					cmd.CommandText = @"SELECT
+							UUID,
 							ObjectFlags,
 							State,
 							PositionX, PositionY, PositionZ,
@@ -513,6 +517,8 @@ ORDER BY
 					try {
 						while (reader.Read()) {
 							var prim_data = new RegionPrimData() {
+								RegionId = new Guid(region_id),
+								PrimId = new Guid(GetDBValue(reader, "UUID")),
 								ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
 								State = GetDBValue<int>(reader, "State"),
 								PositionX = GetDBValue<double>(reader, "PositionX"),
@@ -727,6 +733,7 @@ ORDER BY
 			using (var conn = DBHelpers.GetConnection(region.rdbConnectionString)) {
 				using (var cmd = conn.CreateCommand()) {
 					cmd.CommandText = @"SELECT
+							UUID,
 							ObjectFlags,
 							State,
 							PositionX, PositionY, PositionZ,
@@ -769,6 +776,8 @@ ORDER BY
 					try {
 						while (reader.Read()) {
 							var prim_data = new RegionPrimData() {
+								RegionId = new Guid(region_id),
+								PrimId = new Guid(GetDBValue(reader, "UUID")),
 								ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
 								State = GetDBValue<int>(reader, "State"),
 								PositionX = GetDBValue<double>(reader, "PositionX"),
