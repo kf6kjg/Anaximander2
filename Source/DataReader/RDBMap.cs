@@ -257,7 +257,7 @@ namespace DataReader {
 									if (!COORD_MAP.TryAdd(coord, region)) {
 										Region orig;
 										COORD_MAP.TryGetValue(coord, out orig);
-										LOG.Warn($"[RDB_MAP] Region {info.regionId} is trying to ocupy an already occupied position on the map: <{(int)info.locationX},{(int)info.locationY}>.  Name is '{info.regionName}' and the current occupier's name is '{orig?.regionName}'.   This implies that one of these regions is listed as online, by having a record in the 'regions' table, but is actually crashed.");
+										LOG.Warn($"[RDB_MAP] Region {info.regionId} named '{info.regionName}' at <{info.locationX},{info.locationY}> at same location as {orig?.regionId} named '{orig?.regionName}' at <{orig?.locationX},{orig?.locationY}>. Both of these regions are listed as online in the 'regions' table.");
 									}
 								}
 							}
