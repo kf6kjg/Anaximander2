@@ -48,6 +48,9 @@ namespace AssetReader {
 
 		private RemoteServer _provider = null;
 
+		public AssetServerWHIP(AssetServerWHIPConfig config) : this(config.Name, config.Host, config.Port, config.Password) {
+		}
+
 		public AssetServerWHIP(string serverTitle, string host, int port, string password) {
 			_serverHandle = serverTitle;
 

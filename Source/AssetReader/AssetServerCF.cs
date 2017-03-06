@@ -55,6 +55,9 @@ namespace AssetReader {
 
 		private InWorldz.Data.Assets.Stratus.CoreExt.ExtendedCloudFilesProvider _provider = null;
 
+		public AssetServerCF(AssetServerCFConfig config) : this(config.Name, config.Username, config.APIKey, config.DefaultRegion, config.UseInternalURL, config.ContainerPrefix) {
+		}
+
 		public AssetServerCF(string serverTitle, string username, string apiKey, string defaultRegion, bool useInternalUrl, string containerPrefix) {
 			_serverHandle = serverTitle;
 

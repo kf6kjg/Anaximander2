@@ -44,6 +44,61 @@ namespace AssetReader {
 
 		private readonly ConcurrentDictionary<string, StratusAsset> _assetsBeingWritten = new ConcurrentDictionary<string, StratusAsset>();
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:AssetReader.AssetReader"/> class.
+		/// If the cachePath is null, empty, or references a folder that doesn't exist or doesn't have write access, the cache will be disabled.
+		/// The serialParallelServerConfigs parameter allows you to specify server groups that shoudl be accessed serially with subgroups that should be accessed in parallel.
+		/// Eg. if you have a new server you want to be hit for all operations, but to fallback to whichever of two older servers returns first, then set up a pattern like [ [ primary ], [ second1, second2 ] ].
+		/// </summary>
+		/// <param name="cachePath">Cache folder path.  Folder must exist or caching will be disabled.</param>
+		/// <param name="serialParallelServerConfigs">Serially-accessed parallel server configs.</param>
+		public AssetReader(string cachePath = null, List<List<IAssetServerConfig>> serialParallelServerConfigs = null) {
+			// Set up caching
+			if (string.IsNullOrWhiteSpace(cachePath)) {
+				LOG.Info($"[ASSET_READER] CachePath is empty, caching assets disabled.");
+			}
+			else if (!Directory.Exists(cachePath)) {
+				LOG.Info($"[ASSET_READER] CachePath folder does not exist, caching assets disabled.");
+			}
+			else {
+				_cacheFolder = new DirectoryInfo(cachePath);
+				LOG.Info($"[ASSET_READER] Caching assets enabled at {_cacheFolder.FullName}");
+			}
+
+			// Set up server handlers
+			if (serialParallelServerConfigs != null && serialParallelServerConfigs.Count > 0) {
+				foreach (var parallelConfigs in serialParallelServerConfigs) {
+					var parallelServerConnectors = new List<IAssetServer>();
+					foreach (var config in parallelConfigs) {
+						IAssetServer serverConnector = null;
+
+						switch (config.Type) {
+							case AssetServerType.WHIP:
+								serverConnector = new AssetServerWHIP((AssetServerWHIPConfig)config);
+							break;
+							case AssetServerType.CF:
+								serverConnector = new AssetServerCF((AssetServerCFConfig)config);
+							break;
+							default:
+								LOG.Warn($"[ASSET_READER] Unknown asset server type {config.Type} with name {config.Name}.");
+							break;
+						}
+
+						if (serverConnector != null) {
+							parallelServerConnectors.Add(serverConnector);
+						}
+					}
+
+					if (parallelServerConnectors.Count > 0) {
+						_serialParallelAssetServers.Add(parallelServerConnectors);
+					}
+				}
+			}
+			else {
+				LOG.Warn("[ASSET_READER] Servers empty or not specified. No asset servers connectors configured. Only pre-determined texture colors will be used for drawing.");
+			}
+		}
+
 		public AssetReader(IConfigSource configSource) {
 			var config = configSource.Configs["Assets"];
 
