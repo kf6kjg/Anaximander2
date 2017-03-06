@@ -156,7 +156,7 @@ namespace AssetReader {
 				LOG.Warn("[ASSET_READER] Attempted to read a cached asset, but there was an IO error.", e);
 			}
 			catch (ProtoException e) {
-				LOG.Warn("[ASSET_READER] Attempted to read a cached asset, but there was a protobuf decoding error.  Removing the offending cache file as it is either corrupt or from an older installation.", e);
+				LOG.Warn($"[ASSET_READER] Attempted to read a cached asset, but there was a protobuf decoding error.  Removing the offending cache file as it is either corrupt or from an older installation: {path}", e);
 				removeFile = true;
 			}
 
