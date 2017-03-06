@@ -44,9 +44,23 @@ namespace AssetReader {
 		public int Port { get; private set; }
 		public string Password { get; private set; }
 
-		private string _configSectionName { get; set; }
+		private string _serverHandle { get; set; }
 
 		private RemoteServer _provider = null;
+
+		public AssetServerWHIP(string serverTitle, string host, int port, string password) {
+			_serverHandle = serverTitle;
+
+			Host = host;
+			Port = port;
+			Password = password;
+
+			_provider = new RemoteServer(Host, (ushort)Port, Password);
+			_provider.Start(); // TODO: this needs to be started when needed, and shutdown after no usage for a period of time.  Noted that the library doesn't like repeated start stops, it seems to not keep up the auth info, so the whole _whipServer instance would need to be scrapped and reinitialized.
+			var status = _provider.GetServerStatus();
+
+			LOG.Info($"[WHIP_SERVER] [{_serverHandle}] WHIP connection prepared for host {Host}:{Port}\n'{status}'.");
+		}
 
 		public void Dispose() {
 			try {
@@ -60,20 +74,6 @@ namespace AssetReader {
 			_provider = null;
 		}
 
-		public void Initialize(IConfig settings) {
-			_configSectionName = settings.Name;
-
-			Host = settings.GetString("Host", string.Empty);
-			Port = settings.GetInt("Port", 32700);
-			Password = settings.GetString("Password", "changeme"); // Yes, that's the default password for WHIP.
-
-			_provider = new RemoteServer(Host, (ushort) Port, Password);
-			_provider.Start(); // TODO: this needs to be started when needed, and shutdown after no usage for a period of time.  Noted that the library doesn't like repeated start stops, it seems to not keep up the auth info, so the whole _whipServer instance would need to be scrapped and reinitialized.
-			var status = _provider.GetServerStatus();
-
-			LOG.Info($"[WHIP_SERVER] [{_configSectionName}] WHIP connection prepared for host {Host}:{Port}\n'{status}'.");
-		}
-
 		public async Task<StratusAsset> RequestAssetAsync(UUID assetID) {
 			return null;
 		}
@@ -85,11 +85,11 @@ namespace AssetReader {
 				asset = _provider.GetAsset(assetID.ToString());
 			}
 			catch (AssetServerError e) {
-				LOG.Error($"[WHIP_SERVER] [{_configSectionName}] Error getting asset from server.", e);
+				LOG.Error($"[WHIP_SERVER] [{_serverHandle}] Error getting asset from server.", e);
 				return null;
 			}
 			catch (AuthException e) {
-				LOG.Error($"[WHIP_SERVER] [{_configSectionName}] Authentication error getting asset from server.", e);
+				LOG.Error($"[WHIP_SERVER] [{_serverHandle}] Authentication error getting asset from server.", e);
 				return null;
 			}
 

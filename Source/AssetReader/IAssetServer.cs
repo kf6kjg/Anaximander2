@@ -31,8 +31,6 @@ using OpenMetaverse;
 
 namespace AssetReader {
 	public interface IAssetServer : IDisposable {
-		void Initialize(IConfig settings);
-
 		Task<StratusAsset> RequestAssetAsync(UUID assetID);
 
 		StratusAsset RequestAssetSync(UUID assetID);

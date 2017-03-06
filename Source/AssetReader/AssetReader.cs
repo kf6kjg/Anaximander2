@@ -74,17 +74,28 @@ namespace AssetReader {
 					var type = sourceConfig?.GetString("Type", string.Empty).ToLower();
 					switch (type) {
 						case "whip":
-							serverConnector = new AssetServerWHIP();
+							serverConnector = new AssetServerWHIP(
+								source,
+								sourceConfig.GetString("Host", string.Empty),
+								sourceConfig.GetInt("Port", 32700),
+								sourceConfig.GetString("Password", "changeme") // Yes, that's the default password for WHIP.
+							);
 						break;
 						case "cf":
-							serverConnector = new AssetServerCF();
+							serverConnector = new AssetServerCF(
+								source,
+								sourceConfig.GetString("Username", string.Empty),
+								sourceConfig.GetString("APIKey", string.Empty),
+								sourceConfig.GetString("DefaultRegion", string.Empty),
+								sourceConfig.GetBoolean("UseInternalURL", true),
+								sourceConfig.GetString("ContainerPrefix", string.Empty)
+							);
 						break;
 						default:
 							LOG.Warn($"[ASSET_READER] Unknown asset server type in section [{source}].");
 						break;
 					}
 					if (serverConnector != null) {
-						serverConnector.Initialize(sourceConfig);
 						_assetServers.Add(serverConnector);
 					}
 				}

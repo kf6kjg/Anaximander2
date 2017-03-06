@@ -51,22 +51,18 @@ namespace AssetReader {
 		public bool UseInternalURL { get; private set; }
 		public string ContainerPrefix { get; private set; }
 
-		private string _configSectionName { get; set;}
+		private string _serverHandle { get; set;}
 
 		private InWorldz.Data.Assets.Stratus.CoreExt.ExtendedCloudFilesProvider _provider = null;
 
-		public void Dispose() {
-			_provider = null;
-		}
+		public AssetServerCF(string serverTitle, string username, string apiKey, string defaultRegion, bool useInternalUrl, string containerPrefix) {
+			_serverHandle = serverTitle;
 
-		public void Initialize(IConfig settings) {
-			_configSectionName = settings.Name;
-
-			Username = settings.GetString("Username", string.Empty);
-			APIKey = settings.GetString("APIKey", string.Empty);
-			DefaultRegion = settings.GetString("DefaultRegion", string.Empty);
-			UseInternalURL = settings.GetBoolean("UseInternalURL", true);
-			ContainerPrefix = settings.GetString("ContainerPrefix", string.Empty);
+			Username = username;
+			APIKey = apiKey;
+			DefaultRegion = defaultRegion;
+			UseInternalURL = useInternalUrl;
+			ContainerPrefix = containerPrefix;
 
 			var identity = new CloudIdentity { Username = Username, APIKey = APIKey };
 			var restService = new InWorldz.Data.Assets.Stratus.CoreExt.ExtendedJsonRestServices(DEFAULT_READ_TIMEOUT, DEFAULT_WRITE_TIMEOUT);
@@ -75,7 +71,11 @@ namespace AssetReader {
 			//warm up
 			_provider.GetAccountHeaders(useInternalUrl: UseInternalURL, region: DefaultRegion);
 
-			LOG.Info($"[CF_SERVER] [{_configSectionName}] CF connection prepared for region {DefaultRegion} and prefix {ContainerPrefix} under user {Username}'.");
+			LOG.Info($"[CF_SERVER] [{_serverHandle}] CF connection prepared for region {DefaultRegion} and prefix {ContainerPrefix} under user {Username}'.");
+		}
+
+		public void Dispose() {
+			_provider = null;
 		}
 
 		public async Task<StratusAsset> RequestAssetAsync(UUID assetID) {
@@ -98,7 +98,7 @@ namespace AssetReader {
 				var rawAsset = ProtoBuf.Serializer.Deserialize<StratusAsset>(memStream);
 
 				if (rawAsset?.Data == null) {
-					throw new InvalidOperationException($"[CF_SERVER] [{_configSectionName}] Asset deserialization failed. Asset ID: {assetID}, Stream Len: {memStream.Length}");
+					throw new InvalidOperationException($"[CF_SERVER] [{_serverHandle}] Asset deserialization failed. Asset ID: {assetID}, Stream Len: {memStream.Length}");
 				}
 
 				return rawAsset;
@@ -134,7 +134,7 @@ namespace AssetReader {
 			stopwatch.Stop();
 
 			if (stopwatch.ElapsedMilliseconds >= WARNING_TIME) {
-				LOG.Warn($"[CF_SERVER] [{_configSectionName}] Slow CF operation {opName} took {stopwatch.ElapsedMilliseconds} ms.");
+				LOG.Warn($"[CF_SERVER] [{_serverHandle}] Slow CF operation {opName} took {stopwatch.ElapsedMilliseconds} ms.");
 			}
 		}
 	}
