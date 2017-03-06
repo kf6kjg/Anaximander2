@@ -40,7 +40,7 @@ namespace AssetReader {
 
 		private List<List<IAssetServer>> _serialParallelAssetServers;
 
-		private DirectoryInfo _cacheFolder = null;
+		private DirectoryInfo _cacheFolder;
 
 		private readonly ConcurrentDictionary<string, StratusAsset> _assetsBeingWritten = new ConcurrentDictionary<string, StratusAsset>();
 
@@ -151,7 +151,7 @@ namespace AssetReader {
 						break;
 					}
 					if (serverConnector != null) {
-						_serialParallelAssetServers.Add(new List<IAssetServer>() { serverConnector });
+						_serialParallelAssetServers.Add(new List<IAssetServer> { serverConnector });
 					}
 				}
 			}
@@ -164,7 +164,7 @@ namespace AssetReader {
 			StratusAsset result;
 
 			// Hit up the cache first.
-			if (TryGetCachedAssetSync(assetId, out result)) {
+			if (TryGetCachedAsset(assetId, out result)) {
 				return result;
 			}
 
@@ -178,7 +178,7 @@ namespace AssetReader {
 				}
 
 				if (result != null) {
-					CacheAssetSync(result);
+					CacheAsset(result);
 					return result;
 				}
 			}
@@ -186,7 +186,7 @@ namespace AssetReader {
 			return null;
 		}
 
-		private bool TryGetCachedAssetSync(UUID assetId, out StratusAsset asset) {
+		private bool TryGetCachedAsset(UUID assetId, out StratusAsset asset) {
 			if (_cacheFolder == null) { // Caching is disabled.
 				asset = null;
 				return false;
@@ -249,7 +249,7 @@ namespace AssetReader {
 			return false;
 		}
 
-		private void CacheAssetSync(StratusAsset asset) {
+		private void CacheAsset(StratusAsset asset) {
 			if (_cacheFolder == null || asset == null) { // Caching is disabled or stupidity.
 				return;
 			}

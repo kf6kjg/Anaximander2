@@ -26,11 +26,9 @@
 using System;
 using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
 using InWorldz.Data.Assets.Stratus;
 using log4net;
 using net.openstack.Core.Domain;
-using Nini.Config;
 using OpenMetaverse;
 
 namespace AssetReader {
@@ -79,10 +77,6 @@ namespace AssetReader {
 
 		public void Dispose() {
 			_provider = null;
-		}
-
-		public async Task<StratusAsset> RequestAssetAsync(UUID assetID) {
-			return null;
 		}
 
 		public StratusAsset RequestAssetSync(UUID assetID) {

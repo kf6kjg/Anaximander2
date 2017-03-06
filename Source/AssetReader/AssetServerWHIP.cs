@@ -26,11 +26,9 @@
 using System;
 using System.Globalization;
 using System.Reflection;
-using System.Threading.Tasks;
 using InWorldz.Data.Assets.Stratus;
 using InWorldz.Whip.Client;
 using log4net;
-using Nini.Config;
 using OpenMetaverse;
 
 namespace AssetReader {
@@ -75,10 +73,6 @@ namespace AssetReader {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 			_provider = null;
-		}
-
-		public async Task<StratusAsset> RequestAssetAsync(UUID assetID) {
-			return null;
 		}
 
 		public StratusAsset RequestAssetSync(UUID assetID) {
