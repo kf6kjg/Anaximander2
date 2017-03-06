@@ -38,7 +38,7 @@ namespace AssetReader {
 	public class AssetReader {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private List<IAssetServer> _assetServers;
+		private List<List<IAssetServer>> _serialParallelAssetServers;
 
 		private DirectoryInfo _cacheFolder = null;
 
@@ -62,7 +62,7 @@ namespace AssetReader {
 			}
 
 			// Set up server handlers
-			_assetServers = new List<IAssetServer>();
+			_serialParallelAssetServers = new List<List<IAssetServer>>();
 
 			// Read in a config list that lists the priority order of servers and their settings.
 			var sources = config?.GetString("Servers", string.Empty).Split(',').Where(source => !string.IsNullOrWhiteSpace(source)).Select(source => source.Trim());
@@ -96,7 +96,7 @@ namespace AssetReader {
 						break;
 					}
 					if (serverConnector != null) {
-						_assetServers.Add(serverConnector);
+						_serialParallelAssetServers.Add(new List<IAssetServer>() { serverConnector });
 					}
 				}
 			}
@@ -105,19 +105,25 @@ namespace AssetReader {
 			}
 		}
 
-		public StratusAsset GetAsset(UUID assetId) {
+		public StratusAsset GetAssetSync(UUID assetId) {
 			StratusAsset result;
 
 			// Hit up the cache first.
-			if (TryGetCachedAsset(assetId, out result)) {
+			if (TryGetCachedAssetSync(assetId, out result)) {
 				return result;
 			}
 
 			// Got to go try the servers now.
-			foreach (var server in _assetServers) {
-				result = server.RequestAssetSync(assetId);
+			foreach (var parallelServers in _serialParallelAssetServers) {
+				if (parallelServers.Count == 1) {
+					result = parallelServers[0].RequestAssetSync(assetId);
+				}
+				else {
+					result = parallelServers.AsParallel().Select(server => server.RequestAssetSync(assetId)).FirstOrDefault(asset => asset != null);
+				}
+
 				if (result != null) {
-					CacheAsset(result);
+					CacheAssetSync(result);
 					return result;
 				}
 			}
@@ -125,7 +131,7 @@ namespace AssetReader {
 			return null;
 		}
 
-		private bool TryGetCachedAsset(UUID assetId, out StratusAsset asset) {
+		private bool TryGetCachedAssetSync(UUID assetId, out StratusAsset asset) {
 			if (_cacheFolder == null) { // Caching is disabled.
 				asset = null;
 				return false;
@@ -188,7 +194,7 @@ namespace AssetReader {
 			return false;
 		}
 
-		private void CacheAsset(StratusAsset asset) {
+		private void CacheAssetSync(StratusAsset asset) {
 			if (_cacheFolder == null || asset == null) { // Caching is disabled or stupidity.
 				return;
 			}

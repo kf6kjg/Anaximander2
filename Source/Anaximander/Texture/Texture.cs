@@ -84,7 +84,7 @@ namespace Anaximander {
 				// No cache needed for default.
 			}
 
-			var asset = _assetReader?.GetAsset(id);
+			var asset = _assetReader?.GetAssetSync(id);
 
 			if (asset == null) {
 				texture = new Texture(color: defaultColor);
