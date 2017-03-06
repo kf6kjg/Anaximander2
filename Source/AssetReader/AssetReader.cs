@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using InWorldz.Data.Assets.Stratus;
 using log4net;
 using Nini.Config;
 using OpenMetaverse;
@@ -41,7 +42,7 @@ namespace AssetReader {
 
 		private DirectoryInfo _cacheFolder = null;
 
-		private readonly ConcurrentDictionary<string, AssetBase> _assetsBeingWritten = new ConcurrentDictionary<string, AssetBase>();
+		private readonly ConcurrentDictionary<string, StratusAsset> _assetsBeingWritten = new ConcurrentDictionary<string, StratusAsset>();
 
 		public AssetReader(IConfigSource configSource) {
 			var config = configSource.Configs["Assets"];
@@ -93,8 +94,8 @@ namespace AssetReader {
 			}
 		}
 
-		public AssetBase GetAsset(UUID assetId) {
-			AssetBase result;
+		public StratusAsset GetAsset(UUID assetId) {
+			StratusAsset result;
 
 			// Hit up the cache first.
 			if (TryGetCachedAsset(assetId, out result)) {
@@ -113,7 +114,7 @@ namespace AssetReader {
 			return null;
 		}
 
-		private bool TryGetCachedAsset(UUID assetId, out AssetBase asset) {
+		private bool TryGetCachedAsset(UUID assetId, out StratusAsset asset) {
 			if (_cacheFolder == null) { // Caching is disabled.
 				asset = null;
 				return false;
@@ -129,9 +130,10 @@ namespace AssetReader {
 			}
 
 			// Attempt to read and return that file.  This needs to handle happening from multiple threads in case a given asset is read from multiple threads at the same time.
+			var removeFile = false;
 			try {
 				using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-					asset = Serializer.Deserialize<AssetBase>(stream);
+					asset = Serializer.Deserialize<StratusAsset>(stream);
 				}
 				return true;
 			}
@@ -151,7 +153,23 @@ namespace AssetReader {
 			}
 			catch (IOException e) {
 				// This could be temporary.
-				LOG.Error("[ASSET_READER] Attempted to read a cached asset, but there was an IO error.", e);
+				LOG.Warn("[ASSET_READER] Attempted to read a cached asset, but there was an IO error.", e);
+			}
+			catch (ProtoException e) {
+				LOG.Warn("[ASSET_READER] Attempted to read a cached asset, but there was a protobuf decoding error.  Removing the offending cache file as it is either corrupt or from an older installation.", e);
+				removeFile = true;
+			}
+
+			if (removeFile) {
+				try {
+					File.Delete(path);
+					// TODO: at some point the folder tree should be checked for folders that should be removed.
+				}
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+				catch {
+					// If there's a delete failure it'll just keep trying as the asset is called for again.
+				}
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 			}
 
 			// Nope, no ability to get the asset.
@@ -159,7 +177,7 @@ namespace AssetReader {
 			return false;
 		}
 
-		private void CacheAsset(AssetBase asset) {
+		private void CacheAsset(StratusAsset asset) {
 			if (_cacheFolder == null || asset == null) { // Caching is disabled or stupidity.
 				return;
 			}
@@ -179,7 +197,7 @@ namespace AssetReader {
 					Serializer.Serialize(file, asset);
 				}
 				// Writing is done, remove it from the work list.
-				AssetBase temp;
+				StratusAsset temp;
 				_assetsBeingWritten.TryRemove(path, out temp);
 				LOG.Debug($"[ASSET_READER] Wrote an asset to cache: {path}");
 			}

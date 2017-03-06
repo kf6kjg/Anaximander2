@@ -25,6 +25,7 @@
 
 using System;
 using System.Threading.Tasks;
+using InWorldz.Data.Assets.Stratus;
 using Nini.Config;
 using OpenMetaverse;
 
@@ -32,8 +33,8 @@ namespace AssetReader {
 	public interface IAssetServer : IDisposable {
 		void Initialize(IConfig settings);
 
-		Task<AssetBase> RequestAssetAsync(UUID assetID);
+		Task<StratusAsset> RequestAssetAsync(UUID assetID);
 
-		AssetBase RequestAssetSync(UUID assetID);
+		StratusAsset RequestAssetSync(UUID assetID);
 	}
 }

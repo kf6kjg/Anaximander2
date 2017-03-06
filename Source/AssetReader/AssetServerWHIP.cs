@@ -24,10 +24,10 @@
 // THE SOFTWARE.
 
 using System;
-using System.Net.Sockets;
+using System.Globalization;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using InWorldz.Data.Assets.Stratus;
 using InWorldz.Whip.Client;
 using log4net;
 using Nini.Config;
@@ -36,6 +36,9 @@ using OpenMetaverse;
 namespace AssetReader {
 	public class AssetServerWHIP : IAssetServer {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		// Unix-epoch starts at January 1st 1970, 00:00:00 UTC. And all our times in the server are (or at least should be) in UTC.
+		private static readonly DateTime UNIX_EPOCH = DateTime.ParseExact("1970-01-01 00:00:00 +0", "yyyy-MM-dd hh:mm:ss z", DateTimeFormatInfo.InvariantInfo).ToUniversalTime();
 
 		public string Host { get; private set; }
 		public int Port { get; private set; }
@@ -71,11 +74,11 @@ namespace AssetReader {
 			LOG.Info($"[WHIP_SERVER] [{_configSectionName}] WHIP connection prepared for host {Host}:{Port}\n'{status}'.");
 		}
 
-		public async Task<AssetBase> RequestAssetAsync(UUID assetID) {
+		public async Task<StratusAsset> RequestAssetAsync(UUID assetID) {
 			return null;
 		}
 
-		public AssetBase RequestAssetSync(UUID assetID) {
+		public StratusAsset RequestAssetSync(UUID assetID) {
 			Asset asset = null;
 
 			try {
@@ -90,7 +93,20 @@ namespace AssetReader {
 				return null;
 			}
 
-			return new AssetBase(assetID, asset.Type, asset.Data);
+			return new StratusAsset {
+				Id = assetID.Guid,
+				Type = (sbyte)asset.Type,
+				Local = asset.Local,
+				Temporary = asset.Temporary,
+				CreateTime = UnixToUTCDateTime(asset.CreateTime),
+				Name = asset.Name,
+				Description = asset.Description,
+				Data = asset.Data,
+			};
+		}
+
+		private static DateTime UnixToUTCDateTime(int seconds) {
+			return UNIX_EPOCH.AddSeconds(seconds);
 		}
 	}
 }

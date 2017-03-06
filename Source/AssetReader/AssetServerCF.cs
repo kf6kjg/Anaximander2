@@ -25,11 +25,9 @@
 
 using System;
 using System.IO;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using InWorldz.Whip.Client;
+using InWorldz.Data.Assets.Stratus;
 using log4net;
 using net.openstack.Core.Domain;
 using Nini.Config;
@@ -80,11 +78,11 @@ namespace AssetReader {
 			LOG.Info($"[CF_SERVER] [{_configSectionName}] CF connection prepared for region {DefaultRegion} and prefix {ContainerPrefix} under user {Username}'.");
 		}
 
-		public async Task<AssetBase> RequestAssetAsync(UUID assetID) {
+		public async Task<StratusAsset> RequestAssetAsync(UUID assetID) {
 			return null;
 		}
 
-		public AssetBase RequestAssetSync(UUID assetID) {
+		public StratusAsset RequestAssetSync(UUID assetID) {
 			string assetIdStr = assetID.ToString();
 
 			using (var memStream = new MemoryStream()) {
@@ -97,13 +95,13 @@ namespace AssetReader {
 
 				memStream.Position = 0;
 
-				var rawAsset = ProtoBuf.Serializer.Deserialize<InWorldz.Data.Assets.Stratus.StratusAsset>(memStream);
+				var rawAsset = ProtoBuf.Serializer.Deserialize<StratusAsset>(memStream);
 
 				if (rawAsset?.Data == null) {
 					throw new InvalidOperationException($"[CF_SERVER] [{_configSectionName}] Asset deserialization failed. Asset ID: {assetID}, Stream Len: {memStream.Length}");
 				}
 
-				return rawAsset.ToAssetBase();
+				return rawAsset;
 			}
 		}
 
@@ -123,7 +121,7 @@ namespace AssetReader {
 		/// <param name="assetId"></param>
 		/// <returns></returns>
 		private static string GenerateAssetObjectName(string assetId) {
-			return assetId.Replace("-", String.Empty).ToLower() + ".asset";
+			return assetId.Replace("-", string.Empty).ToLower() + ".asset";
 		}
 
 

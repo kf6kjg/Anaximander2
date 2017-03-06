@@ -26,6 +26,7 @@ using System.Collections.Concurrent;
 using System.Drawing;
 using System.Reflection;
 using AssetReader;
+using InWorldz.Data.Assets.Stratus;
 using log4net;
 using OpenMetaverse;
 
@@ -112,9 +113,12 @@ namespace Anaximander {
 			// No need to chain defaults if all defaults are assigned in the properties.
 		}
 
-		private Texture(AssetBase asset) {
+		private Texture(StratusAsset asset) {
 			if (asset.IsImageAsset) {
 				var tex = asset.ToTexture();
+
+				LOG.Debug($"Decoding image {asset.Id}. Notable data: Type={tex.AssetType}, Temp={tex.Temporary}, Data Length={tex.AssetData?.Length}.");
+
 				var jp2k = CSJ2K.J2kImage.FromBytes(tex.AssetData);
 				var bitmap = jp2k.As<Bitmap>();
 

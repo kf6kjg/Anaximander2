@@ -64,40 +64,75 @@ namespace InWorldz.Data.Assets.Stratus {
 		[ProtoMember(9)]
 		public uint StorageFlags;
 
-		/// <summary>
-		/// Converts from a stratus asset to an opensim asset
-		/// </summary>
-		/// <returns></returns>
-		internal AssetReader.AssetBase ToAssetBase() {
-			var asset = new AssetReader.AssetBase {
-				Data = this.Data,
-				Id = this.Id,
-				Type = this.Type,
-			};
-
-			return asset;
-		}
-
-		/// <summary>
-		/// Converts from an opensim asset to a stratus asset
-		/// </summary>
-		/// <param name="asset"></param>
-		/// <returns></returns>
-		internal static StratusAsset FromAssetBase(AssetReader.AssetBase asset) {
-			return new StratusAsset {
-				CreateTime = DateTime.Now,
-				Data = asset.Data,
-				Description = string.Empty,
-				Id = asset.Id,
-				Local = false,
-				Name = string.Empty,
-				Temporary = false,
-				Type = asset.Type
-			};
-		}
-
 		public static string GetProto() {
 			return Serializer.GetProto<StratusAsset>();
+		}
+
+		// ----
+		// Below here is where the hybridization with the old Halcyon/OpenSim AssetBase starts.
+		// ----
+
+		public bool ContainsReferences {
+			get {
+				return
+						IsTextualAsset && (
+						Type != (sbyte)OpenMetaverse.AssetType.Notecard
+						&& Type != (sbyte)OpenMetaverse.AssetType.CallingCard
+						&& Type != (sbyte)OpenMetaverse.AssetType.LSLText
+						&& Type != (sbyte)OpenMetaverse.AssetType.Landmark);
+			}
+		}
+
+		public bool IsTextualAsset {
+			get {
+				return !IsBinaryAsset;
+			}
+		}
+
+		public bool IsBinaryAsset {
+			get {
+				return
+						(Type == (sbyte)OpenMetaverse.AssetType.Animation ||
+						 Type == (sbyte)OpenMetaverse.AssetType.Gesture ||
+						 Type == (sbyte)OpenMetaverse.AssetType.Simstate ||
+						 Type == (sbyte)OpenMetaverse.AssetType.Unknown ||
+						 Type == (sbyte)OpenMetaverse.AssetType.Object ||
+						 Type == (sbyte)OpenMetaverse.AssetType.Sound ||
+						 Type == (sbyte)OpenMetaverse.AssetType.SoundWAV ||
+						 Type == (sbyte)OpenMetaverse.AssetType.Texture ||
+						 Type == (sbyte)OpenMetaverse.AssetType.TextureTGA ||
+						 Type == (sbyte)OpenMetaverse.AssetType.Folder ||
+						 Type == (sbyte)OpenMetaverse.AssetType.RootFolder ||
+						 Type == (sbyte)OpenMetaverse.AssetType.LostAndFoundFolder ||
+						 Type == (sbyte)OpenMetaverse.AssetType.SnapshotFolder ||
+						 Type == (sbyte)OpenMetaverse.AssetType.TrashFolder ||
+						 Type == (sbyte)OpenMetaverse.AssetType.ImageJPEG ||
+						 Type == (sbyte)OpenMetaverse.AssetType.ImageTGA ||
+						 Type == (sbyte)OpenMetaverse.AssetType.LSLBytecode);
+			}
+		}
+
+		public bool IsImageAsset {
+			get {
+				return (
+						 Type == (sbyte)OpenMetaverse.AssetType.Texture ||
+						 Type == (sbyte)OpenMetaverse.AssetType.TextureTGA ||
+						 Type == (sbyte)OpenMetaverse.AssetType.ImageJPEG ||
+						 Type == (sbyte)OpenMetaverse.AssetType.ImageTGA
+						 );
+			}
+		}
+
+		// ----
+		// And below here is where pure custom stuff lives.
+		// ----
+
+		public OpenMetaverse.Assets.AssetTexture ToTexture() {
+			if (IsImageAsset) {
+				return new OpenMetaverse.Assets.AssetTexture(new OpenMetaverse.UUID(Id), Data);
+			}
+
+			return null;
 		}
 	}
 }

@@ -71,7 +71,6 @@
   <ItemGroup>
     <Compile Include="AssetReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="AssetBase.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="IAssetServer.cs" />
     <Compile Include="AssetServerWHIP.cs" />
