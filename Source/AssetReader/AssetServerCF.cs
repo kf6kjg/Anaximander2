@@ -126,14 +126,15 @@ namespace AssetReader {
 
 
 		private void WarnIfLongOperation(string opName, Action operation) {
-			const ulong WARNING_TIME = 5000;
+			const long WARNING_TIME = 5000; // ms
 
-			ulong startTime = Util.GetLongTickCount();
+			var stopwatch = new System.Diagnostics.Stopwatch();
+			stopwatch.Start();
 			operation();
-			ulong time = Util.GetLongTickCount() - startTime;
+			stopwatch.Stop();
 
-			if (time >= WARNING_TIME) {
-				LOG.Warn($"[CF_SERVER] [{_configSectionName}] Slow CF operation {opName} took {time} ms.");
+			if (stopwatch.ElapsedMilliseconds >= WARNING_TIME) {
+				LOG.Warn($"[CF_SERVER] [{_configSectionName}] Slow CF operation {opName} took {stopwatch.ElapsedMilliseconds} ms.");
 			}
 		}
 	}
