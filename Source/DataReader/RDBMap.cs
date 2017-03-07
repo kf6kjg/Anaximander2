@@ -883,7 +883,7 @@ ORDER BY
 		}
 
 		private static long CoordToIndex(int x, int y) {
-			return (long)x << 32 + y;
+			return ((long)x << 32) + y;
 		}
 
 		private static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T : struct {
