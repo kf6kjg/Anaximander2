@@ -59,6 +59,27 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.7\lib\net45-full\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Flurl">
+      <HintPath>..\packages\Flurl.Signed.1.0.10\lib\portable-net40+sl50+win+wpa81+wp80+MonoAndroid10+MonoTouch10\Flurl.dll</HintPath>
+    </Reference>
+    <Reference Include="InWorldz.Whip.Client">
+      <HintPath>..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Flurl.Http">
+      <HintPath>..\packages\Flurl.Http.Signed.0.7.0\lib\net45\Flurl.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="Marvin.JsonPatch">
+      <HintPath>..\packages\Marvin.JsonPatch.Signed.0.7.0\lib\portable-net40+win+wpa81\Marvin.JsonPatch.dll</HintPath>
+    </Reference>
+    <Reference Include="openstacknet">
+      <HintPath>..\packages\openstack.net.1.7.6\lib\net45\openstacknet.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.1.0\lib\net45\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="Chattel">
+      <HintPath>..\packages\Chattel.1.0.0.9\lib\net45\Chattel.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -101,10 +122,6 @@
     <ProjectReference Include="..\log4net.RollbarNET\log4net.RollbarNET.csproj">
       <Project>{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}</Project>
       <Name>log4net.RollbarNET</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\AssetReader\AssetReader.csproj">
-      <Project>{2EEF5095-2220-4A49-BFF1-4022C62FD762}</Project>
-      <Name>AssetReader</Name>
     </ProjectReference>
     <ProjectReference Include="..\DataReader\DataReader.csproj">
       <Project>{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}</Project>

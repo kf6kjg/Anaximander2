@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "log4net.RollbarNET", "log4n
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RollbarCrashReporter", "RollbarCrashReporter\RollbarCrashReporter.csproj", "{E083B367-9134-4CF5-9F9B-69E5EAF202FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetReader", "AssetReader\AssetReader.csproj", "{2EEF5095-2220-4A49-BFF1-4022C62FD762}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataReader", "DataReader\DataReader.csproj", "{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestApi", "RestApi\RestApi.csproj", "{2C3738D2-2790-453C-88AC-D75F977E61C7}"
@@ -32,10 +30,6 @@ Global
 		{2C3738D2-2790-453C-88AC-D75F977E61C7}.Debug|x64.Build.0 = Debug|Any CPU
 		{2C3738D2-2790-453C-88AC-D75F977E61C7}.Release|x64.ActiveCfg = Release|Any CPU
 		{2C3738D2-2790-453C-88AC-D75F977E61C7}.Release|x64.Build.0 = Release|Any CPU
-		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Debug|x64.Build.0 = Debug|Any CPU
-		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Release|x64.ActiveCfg = Release|Any CPU
-		{2EEF5095-2220-4A49-BFF1-4022C62FD762}.Release|x64.Build.0 = Release|Any CPU
 		{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}.Debug|x64.Build.0 = Debug|Any CPU
 		{6B27BAB4-6FFA-48BD-AC12-5A508B036EF0}.Release|x64.ActiveCfg = Release|Any CPU
@@ -71,7 +65,8 @@ Global
 		$1.EolMarker = Unix
 		$1.inheritsSet = null
 		$1.inheritsScope = text/plain
-		$1.scope = text/x-csharp
+		$1.scope = text/x-markdown
+		$1.NoTabsAfterNonTabs = True
 		$0.CSharpFormattingPolicy = $2
 		$2.IndentSwitchBody = True
 		$2.IndentBreakStatements = False

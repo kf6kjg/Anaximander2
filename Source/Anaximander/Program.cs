@@ -31,6 +31,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Chattel;
 using DataReader;
 using log4net;
 using log4net.Config;
@@ -101,7 +102,7 @@ namespace Anaximander {
 
 			LOG.Info($"[MAIN] Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
 
-			Texture.Initialize(new AssetReader.AssetReader(configSource));
+			Texture.Initialize(new ChattelReader(configSource));
 
 			watch.Stop();
 			LOG.Info($"[MAIN] Read configuration in {watch.ElapsedMilliseconds} ms.");

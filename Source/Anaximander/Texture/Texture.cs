@@ -25,7 +25,7 @@
 using System.Collections.Concurrent;
 using System.Drawing;
 using System.Reflection;
-using AssetReader;
+using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using log4net;
 using OpenMetaverse;
@@ -57,11 +57,11 @@ namespace Anaximander {
 
 		#endregion
 
-		private static AssetReader.AssetReader _assetReader = null;
+		private static ChattelReader _assetReader = null;
 
 		private static readonly ConcurrentDictionary<UUID, Texture> _memoryCache = new ConcurrentDictionary<UUID, Texture>();
 
-		public static void Initialize(AssetReader.AssetReader assetReader) {
+		public static void Initialize(ChattelReader assetReader) {
 			if (_assetReader == null) {
 				_assetReader = assetReader;
 			}
