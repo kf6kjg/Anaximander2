@@ -327,6 +327,15 @@ ORDER BY
 									continue;
 								}
 
+								if (!region.HasKnownCoordinates()) {
+									// Hey, the region is KNOWN to not have any clue as to where it is located.  Skippage.
+
+									// ISSUE: since the region location info is pulled from disk sometime much later this will result in offline regions that don't have their prim data.
+									// Not an issue ATM, but at some point offline with prims will be wanted.
+
+									continue;
+								}
+
 								var data = new RegionPrimData() {
 									RegionId = new Guid(region_id),
 									PrimId = new Guid(GetDBValue(reader, "UUID")),
