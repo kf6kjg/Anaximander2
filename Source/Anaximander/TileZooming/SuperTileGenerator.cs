@@ -79,7 +79,7 @@ namespace Anaximander {
 			// Preload the base layer as given.
 			foreach (var region_id in region_ids) {
 				var region = _rdbMap.GetRegionByUUID(region_id);
-				if (region.locationX == null) {
+				if (!region.HasKnownCoordinates()) {
 					continue; // Skip over the regions that have no known location.
 				}
 

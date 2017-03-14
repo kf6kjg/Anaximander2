@@ -141,6 +141,15 @@ namespace DataReader {
 			return regionName != null;
 		}
 
+		/// <summary>
+		/// Whether or not the region is listed as online or not, were we able to dig up some coordinates for this region?
+		/// </summary>
+		/// <returns><c>true</c>, if region has good coordinates, <c>false</c> otherwise.</returns>
+		public bool HasKnownCoordinates() {
+			return locationX != null && locationY != null;
+		}
+
+
 		#endregion
 
 		#region Constructors

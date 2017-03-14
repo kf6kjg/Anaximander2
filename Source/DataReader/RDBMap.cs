@@ -114,7 +114,7 @@ namespace DataReader {
 			Parallel.ForEach(MAP.Keys.Except(active_regions).ToList(), (id) => {
 				DEAD_REGION_IDS.Add(id);
 				Region reg;
-				if (MAP.TryGetValue(id, out reg) && reg.locationX != null && reg.locationY != null) {
+				if (MAP.TryGetValue(id, out reg) && reg.HasKnownCoordinates()) {
 					COORD_MAP.TryRemove(CoordToIndex((int)reg.locationX, (int)reg.locationY), out reg);
 				}
 				MAP.TryRemove(id, out reg);
@@ -556,7 +556,7 @@ ORDER BY
 			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
-			if (region.locationX != null) {
+			if (region.HasKnownCoordinates()) {
 				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
 
 				// Add or replace the region.
@@ -638,7 +638,7 @@ ORDER BY
 			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
-			if (region.locationX != null) {
+			if (region.HasKnownCoordinates()) {
 				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
 
 				// Add or replace the region.
@@ -712,7 +712,7 @@ ORDER BY
 			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
-			if (region.locationX != null) {
+			if (region.HasKnownCoordinates()) {
 				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
 
 				// Add or replace the region.
@@ -815,7 +815,7 @@ ORDER BY
 			MAP.TryAdd(region_id, region); // Won't fail because of the remove just above.
 
 			// Not all regions returned have a position, after all some could be in an offline state and not yet been seen.
-			if (region.locationX != null) {
+			if (region.HasKnownCoordinates()) {
 				var coord = CoordToIndex((int)region.locationX, (int)region.locationY);
 
 				// Add or replace the region.
