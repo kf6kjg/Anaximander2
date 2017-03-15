@@ -63,11 +63,9 @@ namespace Anaximander {
 					Single.IsNaN(pos.X) || Single.IsNaN(pos.Y) ||
 					Single.IsInfinity(pos.X) || Single.IsInfinity(pos.Y) ||
 
-					// skip prim outside of region (REVISIT: prims can be outside of region and still overlap into the region.)
-					pos.X < 0f || pos.X >= 256f || pos.Y < 0f || pos.Y >= 256f ||
-
-					// skip prim Z at or above 256m above the terrain at that position.
-					pos.Z >= (getHeight(heightMap, pos.X, pos.Y) + 256f))
+					// skip prim Z at or above 256m above the terrain at that position, but only if actually above terrain.
+					// BUG: will still cause discrepencies when the terrain changes height drastically between regions and the prim is in the high "iffy" area.
+					(pos.X >= 0f && pos.X < 256f && pos.Y >= 0f && pos.Y < 256f && pos.Z >= (getHeight(heightMap, pos.X, pos.Y) + 256f)))
 					return null;
 
 				var rot = ComputeWorldRotation(prim);

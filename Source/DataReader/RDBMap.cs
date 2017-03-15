@@ -362,6 +362,23 @@ ORDER BY
 								};
 
 								region.AddPrim(new Prim(ref data));
+
+								// North-West
+								AddPrimToRegionAtOffsetFrom(data, region, -1, -1);
+								// North
+								AddPrimToRegionAtOffsetFrom(data, region,  0, -1);
+								// Nor-East
+								AddPrimToRegionAtOffsetFrom(data, region,  1, -1);
+								// East
+								AddPrimToRegionAtOffsetFrom(data, region,  1,  0);
+								// South-East
+								AddPrimToRegionAtOffsetFrom(data, region,  1,  1);
+								// South
+								AddPrimToRegionAtOffsetFrom(data, region,  0,  1);
+								// South-West
+								AddPrimToRegionAtOffsetFrom(data, region, -1,  1);
+								// West
+								AddPrimToRegionAtOffsetFrom(data, region, -1,  0);
 							}
 						}
 						finally {
@@ -931,6 +948,22 @@ ORDER BY
 		private static string GetDBValue(IDataRecord reader, string name) {
 			var ordinal = reader.GetOrdinal(name);
 			return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+		}
+
+		private void AddPrimToRegionAtOffsetFrom(RegionPrimData primData, Region origin, int offsetX, int offsetY) {
+			// Since RegionPrimData is a struct it's already been shallowly copied getting here.
+
+			Region secondaryRegion;
+
+			if (COORD_MAP.TryGetValue(CoordToIndex((int)origin.locationX + offsetX, (int)origin.locationY + offsetY), out secondaryRegion)) {
+				// Ok, so there's a region there. Add the prim to it without too much thought about whether the prim'll actually overlap that space for now.
+
+				// Offset the prim into the space of the other region.
+				primData.GroupPositionX = -256.0 * offsetX + primData.GroupPositionX;
+				primData.GroupPositionY = -256.0 * offsetY + primData.GroupPositionY;
+
+				secondaryRegion.AddPrim(new Prim(ref primData));
+			}
 		}
 	}
 }
