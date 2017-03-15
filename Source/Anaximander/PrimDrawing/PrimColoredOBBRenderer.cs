@@ -419,11 +419,13 @@ namespace Anaximander {
 		#region Utility Helpers
 
 		private static Vector3 ComputeWorldPosition(Prim prim) {
-			if (prim.RootRotationX == null) {
-				var position = new Vector3(prim.GroupPositionX, prim.GroupPositionY, prim.GroupPositionZ);
+			var groupPosition = new Vector3(prim.GroupPositionX, prim.GroupPositionY, prim.GroupPositionZ);
 
-				return position/*GroupPosition*/;
+			if (prim.RootRotationX == null) {
+				// Is a root or childless prim.
+				return groupPosition;
 			}
+			// Is a child prim.
 
 			var parentRot = new Quaternion((float)prim.RootRotationX, (float)prim.RootRotationY, (float)prim.RootRotationZ, (float)prim.RootRotationW); //ParentGroup.RootPart.RotationOffset;
 
@@ -431,20 +433,20 @@ namespace Anaximander {
 			axPos *= parentRot;
 			var translationOffsetPosition = axPos;
 
-			var groupPosition = new Vector3(prim.GroupPositionX, prim.GroupPositionY, prim.GroupPositionZ);
-
 			return groupPosition/*GroupPosition*/ + translationOffsetPosition;
 		}
 		
 		private static Quaternion ComputeWorldRotation(Prim prim) {
+			var rotationOffset = new Quaternion(prim.RotationX, prim.RotationY, prim.RotationZ, prim.RotationW); // RotationOffset;
+
 			if (prim.RootRotationX == null) {
-				var rot = new Quaternion(prim.RotationX, prim.RotationY, prim.RotationZ, prim.RotationW); // RotationOffset;
-				return rot;
+				// Is a root or childless prim.
+				return rotationOffset;
 			}
+			// Is a child prim.
 
 			var parentRot = new Quaternion((float)prim.RootRotationX, (float)prim.RootRotationY, (float)prim.RootRotationZ, (float)prim.RootRotationW); //ParentGroup.RootPart.RotationOffset;
-			var oldRot = new Quaternion(prim.RotationX, prim.RotationY, prim.RotationZ, prim.RotationW); // RotationOffset;
-			return parentRot * oldRot;
+			return parentRot * rotationOffset;
 		}
 
 		private static readonly SolidBrush DefaultBrush = new SolidBrush(Color.Black);
