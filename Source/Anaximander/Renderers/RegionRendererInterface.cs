@@ -1,9 +1,9 @@
-﻿// OceanMapTileRenderer.cs
+﻿// TileRendererInterface.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
 //
-// Copyright (c) 2016 Richard Curtice
+// Copyright (c) 2017 Richard Curtice
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.Drawing;
-using Nini.Config;
 
 namespace Anaximander {
-	public static class OceanMapTileRenderer {
-		private static IConfig _tileInfo;
-
-		public static void SetConfig(IConfigSource config) {
-			_tileInfo = config.Configs["MapTileInfo"];
-		}
-
-		public static DirectBitmap TerrainToBitmap(DirectBitmap mapbmp) {
-			return TerrainToBitmap(Color.FromArgb(
-				_tileInfo?.GetInt("OceanColorRed", Constants.OceanColor.R) ?? Constants.OceanColor.R,
-				_tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
-				_tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
-			), mapbmp);
-		}
-
-		public static DirectBitmap TerrainToBitmap(Color color, DirectBitmap mapbmp) {
-			using (var gfx = Graphics.FromImage(mapbmp.Bitmap))
-			using (var brush = new SolidBrush(color)) {
-				gfx.FillRectangle(brush, 0, 0, mapbmp.Width, mapbmp.Height);
-			}
-			return mapbmp;
-		}
+	public interface RegionRendererInterface {
+		DirectBitmap RenderTileFrom(DataReader.Region region, DirectBitmap bitmap);
+	}
 }
-}
-

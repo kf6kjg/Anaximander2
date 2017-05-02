@@ -33,24 +33,27 @@ namespace Anaximander {
 
 		private readonly int _pixelSize;
 
+		private readonly RegionRendererInterface _regionRenderer;
+
+		private readonly FlatTileRenderer _flatRenderer;
+
 		public TileGenerator(IConfigSource config) {
 			var tileInfo = config.Configs["MapTileInfo"];
 			_pixelSize = tileInfo?.GetInt("PixelScale", Constants.PixelScale) ?? Constants.PixelScale;
 
-			OceanMapTileRenderer.SetConfig(config);
-			TexturedMapTileRenderer.SetConfig(config);
-			PrimColoredOBBRenderer.SetConfig(config);
+			_flatRenderer = new FlatTileRenderer(config);
+			_regionRenderer = new OBBRenderer(config);
 		}
 
 		public DirectBitmap GenerateOceanTile() {
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
-			OceanMapTileRenderer.TerrainToBitmap(bitmap);
+			_flatRenderer.RenderToBitmap(bitmap);
 			return bitmap;
 		}
 
 		public DirectBitmap GenerateConstantColorTile(Color color) {
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
-			OceanMapTileRenderer.TerrainToBitmap(color, bitmap);
+			_flatRenderer.RenderToBitmap(color, bitmap);
 			return bitmap;
 		}
 
@@ -62,18 +65,11 @@ namespace Anaximander {
 			LOG.Debug($"[RENDER]: Init'd image for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			// Draw the terrain.
-			LOG.Debug($"[RENDER]: Generating Maptile Terrain (Textured) for {region.regionId}");
+			LOG.Debug($"[RENDER]: Rendering region {region.regionId}");
 			watch.Restart();
-			TexturedMapTileRenderer.TerrainToBitmap(region, bitmap);
+			_regionRenderer.RenderTileFrom(region, bitmap);
 			watch.Stop();
-			LOG.Info($"[RENDER]: Completed terrain {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
-
-			// Draw the prims.
-			LOG.Debug($"[RENDER]: Rendering OBB prims for {region.regionId}");
-			watch.Restart();
-			PrimColoredOBBRenderer.DrawObjects(region.prims, region.heightmapData, bitmap);
-			watch.Stop();
-			LOG.Debug($"[RENDER]: Completed OBB prims for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Info($"[RENDER]: Completed render for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			return bitmap;
 		}

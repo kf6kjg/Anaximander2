@@ -22,19 +22,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Reflection;
 using DataReader;
 using log4net;
 using Nini.Config;
 using OpenMetaverse;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
 
 namespace Anaximander {
-	public static class PrimColoredOBBRenderer {
+	public class OBBRenderer : RegionRendererInterface {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		private static Color _waterColor;
+		private static Color _beachColor;
 
 		public struct DrawStruct {
 			public float sort_order;
@@ -42,10 +44,208 @@ namespace Anaximander {
 			public Point[] vertices;
 		}
 
-		public static void SetConfig(IConfigSource config) {
+		public OBBRenderer(IConfigSource config) {
+			var tileInfo = config.Configs["MapTileInfo"];
+
+			_waterColor = Color.FromArgb(
+				tileInfo?.GetInt("OceanColorRed", Constants.OceanColor.R) ?? Constants.OceanColor.R,
+				tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
+				tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
+			);
+			_beachColor = Color.FromArgb(
+				tileInfo?.GetInt("BeachColorRed", Constants.BeachColor.R) ?? Constants.BeachColor.R,
+				tileInfo?.GetInt("BeachColorGreen", Constants.BeachColor.G) ?? Constants.BeachColor.G,
+				tileInfo?.GetInt("BeachColorBlue", Constants.BeachColor.B) ?? Constants.BeachColor.B
+			);
 		}
 
-		public static DirectBitmap DrawObjects(IEnumerable<Prim> prims, double[,] heightMap, DirectBitmap mapbmp) {
+		public DirectBitmap RenderTileFrom(DataReader.Region region, DirectBitmap bitmap) {
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+
+			// Draw the terrain.
+			LOG.Debug($"[RENDER]: Rendering Maptile Terrain (Textured) for {region.regionId}");
+			watch.Restart();
+			TerrainToBitmap(region, bitmap);
+			watch.Stop();
+			LOG.Info($"[RENDER]: Completed terrain {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
+
+			// Draw the prims.
+			LOG.Debug($"[RENDER]: Rendering OBB prims for {region.regionId}");
+			watch.Restart();
+			DrawObjects(region.prims, region.heightmapData, bitmap);
+			watch.Stop();
+			LOG.Debug($"[RENDER]: Completed OBB prims for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
+
+			return bitmap;
+		}
+
+		private void TerrainToBitmap(DataReader.Region region, DirectBitmap mapbmp) {
+			var textures = new Texture[4];
+			try {
+				textures[0] = Texture.GetByUUID(UUID.Parse(region.terrainTexture1), Texture.TERRAIN_TEXTURE_1_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture1} for terrain texture 1 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[0] = new Texture(color: Texture.TERRAIN_TEXTURE_1_COLOR);
+			}
+
+			try {
+				textures[1] = Texture.GetByUUID(UUID.Parse(region.terrainTexture2), Texture.TERRAIN_TEXTURE_2_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture2} for terrain texture 2 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[1] = new Texture(color: Texture.TERRAIN_TEXTURE_2_COLOR);
+			}
+
+			try {
+				textures[2] = Texture.GetByUUID(UUID.Parse(region.terrainTexture3), Texture.TERRAIN_TEXTURE_3_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture3} for terrain texture 3 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[2] = new Texture(color: Texture.TERRAIN_TEXTURE_3_COLOR);
+			}
+
+			try {
+				textures[3] = Texture.GetByUUID(UUID.Parse(region.terrainTexture4), Texture.TERRAIN_TEXTURE_4_COLOR);
+			}
+			catch (InvalidOperationException e) {
+				LOG.Warn($"Error decoding image asset {region.terrainTexture4} for terrain texture 4 in region {region.regionId}, continuing using default texture color.", e);
+
+				textures[3] = new Texture(color: Texture.TERRAIN_TEXTURE_4_COLOR);
+			}
+
+			int tc = Environment.TickCount;
+
+			// the four terrain colors as HSVs for interpolation
+			var hsv1 = new HSV(textures[0].AverageColor);
+			var hsv2 = new HSV(textures[1].AverageColor);
+			var hsv3 = new HSV(textures[2].AverageColor);
+			var hsv4 = new HSV(textures[3].AverageColor);
+
+			var levelNElow = region.elevation1NE;
+			var levelNEhigh = region.elevation2NE;
+
+			var levelNWlow = region.elevation1NW;
+			var levelNWhigh = region.elevation2NW;
+
+			var levelSElow = region.elevation1SE;
+			var levelSEhigh = region.elevation2SE;
+
+			var levelSWlow = region.elevation1SW;
+			var levelSWhigh = region.elevation2SW;
+
+			var waterHeight = region.waterHeight;
+
+			for (int x = 0; x < mapbmp.Width; x++) {
+				var columnRatio = (double)x / (mapbmp.Width - 1); // 0 - 1, for interpolation
+
+				for (int y = 0; y < mapbmp.Height; y++) {
+					var rowRatio = (double)y / (mapbmp.Height - 1); // 0 - 1, for interpolation
+
+					// Y flip the cordinates for the bitmap: hf origin is lower left, bm origin is upper left
+					var yr = (mapbmp.Height - 1) - y;
+
+					var heightvalue = mapbmp.Width == 256 ?
+						MathUtilities.GetBlendedHeight(region.heightmapData, x, y) :
+						MathUtilities.GetBlendedHeight(region.heightmapData, 255 * columnRatio, 255 * rowRatio);
+
+					if (Double.IsInfinity(heightvalue) || Double.IsNaN(heightvalue))
+						heightvalue = 0d;
+
+					var tileScalarX = 256f / mapbmp.Width; // Used to hack back in those constants that were hand-tuned to 256px tiles.
+					var tileScalarY = 256f / mapbmp.Height; // Used to hack back in those constants that were hand-tuned to 256px tiles.
+
+					// add a bit noise for breaking up those flat colors:
+					// - a large-scale noise, for the "patches" (using an doubled s-curve for sharper contrast)
+					// - a small-scale noise, for bringing in some small scale variation
+					//float bigNoise = (float)TerrainUtil.InterpolatedNoise(x / 8.0, y / 8.0) * .5f + .5f; // map to 0.0 - 1.0
+					//float smallNoise = (float)TerrainUtil.InterpolatedNoise(x + 33, y + 43) * .5f + .5f;
+					//float hmod = heightvalue + smallNoise * 3f + S(S(bigNoise)) * 10f;
+					var hmod =
+						heightvalue +
+						TerrainUtil.InterpolatedNoise(tileScalarX * (x + 33 + (int)region.locationX * mapbmp.Width), tileScalarY * (y + 43 + (int)region.locationY * mapbmp.Height)) * 1.5f + 1.5f + // 0 - 3
+						MathUtilities.SCurve(MathUtilities.SCurve(TerrainUtil.InterpolatedNoise(tileScalarX * (x + (int)region.locationX * mapbmp.Width) / 8.0, tileScalarY * (y + (int)region.locationY * mapbmp.Height) / 8.0) * .5f + .5f)) * 10f; // 0 - 10
+
+					// find the low/high values for this point (interpolated bilinearily)
+					// (and remember, x=0,y=0 is SW)
+					var low = levelSWlow * (1f - rowRatio) * (1f - columnRatio) +
+										 levelSElow * (1f - rowRatio) * columnRatio +
+										 levelNWlow * rowRatio * (1f - columnRatio) +
+										 levelNElow * rowRatio * columnRatio;
+					var high = levelSWhigh * (1f - rowRatio) * (1f - columnRatio) +
+											levelSEhigh * (1f - rowRatio) * columnRatio +
+											levelNWhigh * rowRatio * (1f - columnRatio) +
+											levelNEhigh * rowRatio * columnRatio;
+					if (high < low) {
+						// someone tried to fool us. High value should be higher than low every time
+						var tmp = high;
+						high = low;
+						low = tmp;
+					}
+
+					HSV hsv;
+					if (heightvalue > waterHeight) {
+						// Above water
+						if (hmod <= low)
+							hsv = hsv1; // too low
+						else if (hmod >= high)
+							hsv = hsv4; // too high
+						else {
+							// HSV-interpolate along the colors
+							// first, rescale h to 0.0 - 1.0
+							hmod = (hmod - low) / (high - low);
+							// now we have to split: 0.00 => color1, 0.33 => color2, 0.67 => color3, 1.00 => color4
+							if (hmod < 1d / 3d)
+								hsv = hsv1.InterpolateHSV(ref hsv2, (float)(hmod * 3d));
+							else if (hmod < 2d / 3d)
+								hsv = hsv2.InterpolateHSV(ref hsv3, (float)((hmod * 3d) - 1d));
+							else
+								hsv = hsv3.InterpolateHSV(ref hsv4, (float)((hmod * 3d) - 2d));
+						}
+					}
+					else {
+						// Under water.
+						var deepwater = new HSV(_waterColor);
+						var beachwater = new HSV(_beachColor);
+
+						var water = deepwater.InterpolateHSV(ref beachwater, (float)MathUtilities.SCurve(heightvalue / waterHeight));
+
+						hsv = water;
+					}
+
+					// Shade the terrain for shadows
+					//if (x < (mapbmp.Width - 1) && y < (mapbmp.Height - 1)) {
+					//	var hfvaluecompare = getHeight(region.heightmapData, (x + 1) / (mapbmp.Width - 1), (y + 1) / (mapbmp.Height - 1)); // light from north-east => look at land height there
+					//	if (Double.IsInfinity(hfvaluecompare) || Double.IsNaN(hfvaluecompare))
+					//		hfvaluecompare = 0d;
+					//
+					//	var hfdiff = heightvalue - hfvaluecompare;  // => positive if NE is lower, negative if here is lower
+					//	hfdiff *= 0.06d; // some random factor so "it looks good"
+					//	if (hfdiff > 0.02d) {
+					//		var highlightfactor = 0.18d;
+					//		// NE is lower than here
+					//		// We have to desaturate and lighten the land at the same time
+					//		hsv.s = (hsv.s - (hfdiff * highlightfactor) > 0d) ? (float)(hsv.s - (hfdiff * highlightfactor)) : 0f;
+					//		hsv.v = (hsv.v + (hfdiff * highlightfactor) < 1d) ? (float)(hsv.v + (hfdiff * highlightfactor)) : 1f;
+					//	}
+					//	else if (hfdiff < -0.02f) {
+					//		var highlightfactor = 1.0d;
+					//		// here is lower than NE:
+					//		// We have to desaturate and blacken the land at the same time
+					//		hsv.s = (hsv.s + (hfdiff * highlightfactor) > 0f) ? (float)(hsv.s + (hfdiff * highlightfactor)) : 0f;
+					//		hsv.v = (hsv.v + (hfdiff * highlightfactor) > 0f) ? (float)(hsv.v + (hfdiff * highlightfactor)) : 0f;
+					//	}
+					//}
+
+					mapbmp.Bitmap.SetPixel(x, yr, hsv.ToColor());
+				}
+			}
+		}
+
+		private DirectBitmap DrawObjects(IEnumerable<Prim> prims, double[,] heightMap, DirectBitmap mapbmp) {
 			float scale_factor = (float)mapbmp.Height / 256f;
 
 			var drawdata_for_sorting = new List<DrawStruct>();
@@ -56,7 +256,7 @@ namespace Anaximander {
 
 				var vertices = new Vector3[8];
 
-				var pos = ComputeWorldPosition(prim);
+				var pos = MathUtilities.ComputeWorldPosition(prim);
 
 				if (
 					// skip prim in non-finite position
@@ -65,10 +265,10 @@ namespace Anaximander {
 
 					// skip prim Z at or above 256m above the terrain at that position, but only if actually above terrain.
 					// BUG: will still cause discrepencies when the terrain changes height drastically between regions and the prim is in the high "iffy" area.
-					(pos.X >= 0f && pos.X < 256f && pos.Y >= 0f && pos.Y < 256f && pos.Z >= (getHeight(heightMap, pos.X, pos.Y) + 256f)))
+					(pos.X >= 0f && pos.X < 256f && pos.Y >= 0f && pos.Y < 256f && pos.Z >= (MathUtilities.GetBlendedHeight(heightMap, pos.X, pos.Y) + 256f)))
 					return null;
 
-				var rot = ComputeWorldRotation(prim);
+				var rot = MathUtilities.ComputeWorldRotation(prim);
 
 				var radial_scale = new Vector3() {
 					X = (float)prim.ScaleX * 0.5f,
@@ -185,7 +385,7 @@ namespace Anaximander {
 				// Compute face 0 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[1], vertices[0]), Vector3.Subtract(vertices[3], vertices[0])).Z > 0)
-				if (ZOfCrossDiff(ref vertices[0], ref vertices[1], ref vertices[3]) > 0)
+				if (MathUtilities.ZOfCrossDiff(ref vertices[0], ref vertices[1], ref vertices[3]) > 0)
 				{
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
@@ -220,7 +420,7 @@ namespace Anaximander {
 				// Compute face 1 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[5], vertices[4]), Vector3.Subtract(vertices[0], vertices[4])).Z > 0)
-				if (ZOfCrossDiff(ref vertices[4], ref vertices[5], ref vertices[0]) > 0)
+				if (MathUtilities.ZOfCrossDiff(ref vertices[4], ref vertices[5], ref vertices[0]) > 0)
 				{
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
@@ -255,7 +455,7 @@ namespace Anaximander {
 				// Compute face 2 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[6], vertices[5]), Vector3.Subtract(vertices[1], vertices[5])).Z > 0)
-				if (ZOfCrossDiff(ref vertices[5], ref vertices[6], ref vertices[1]) > 0)
+				if (MathUtilities.ZOfCrossDiff(ref vertices[5], ref vertices[6], ref vertices[1]) > 0)
 				{
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
@@ -290,7 +490,7 @@ namespace Anaximander {
 				// Compute face 3 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[7], vertices[6]), Vector3.Subtract(vertices[2], vertices[6])).Z > 0)
-				if (ZOfCrossDiff(ref vertices[6], ref vertices[7], ref vertices[2]) > 0)
+				if (MathUtilities.ZOfCrossDiff(ref vertices[6], ref vertices[7], ref vertices[2]) > 0)
 				{
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
@@ -325,7 +525,7 @@ namespace Anaximander {
 				// Compute face 4 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[4], vertices[7]), Vector3.Subtract(vertices[3], vertices[7])).Z > 0)
-				if (ZOfCrossDiff(ref vertices[7], ref vertices[4], ref vertices[3]) > 0)
+				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[4], ref vertices[3]) > 0)
 				{
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
@@ -360,7 +560,7 @@ namespace Anaximander {
 				// Compute face 5 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[6], vertices[7]), Vector3.Subtract(vertices[4], vertices[7])).Z > 0)
-				if (ZOfCrossDiff(ref vertices[7], ref vertices[6], ref vertices[4]) > 0)
+				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[6], ref vertices[4]) > 0)
 				{
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
@@ -416,37 +616,6 @@ namespace Anaximander {
 
 		#region Utility Helpers
 
-		private static Vector3 ComputeWorldPosition(Prim prim) {
-			var groupPosition = new Vector3(prim.GroupPositionX, prim.GroupPositionY, prim.GroupPositionZ);
-
-			if (prim.RootRotationX == null) {
-				// Is a root or childless prim.
-				return groupPosition;
-			}
-			// Is a child prim.
-
-			var parentRot = new Quaternion((float)prim.RootRotationX, (float)prim.RootRotationY, (float)prim.RootRotationZ, (float)prim.RootRotationW); //ParentGroup.RootPart.RotationOffset;
-
-			var axPos = new Vector3(prim.PositionX, prim.PositionY, prim.PositionZ); //OffsetPosition;
-			axPos *= parentRot;
-			var translationOffsetPosition = axPos;
-
-			return groupPosition/*GroupPosition*/ + translationOffsetPosition;
-		}
-		
-		private static Quaternion ComputeWorldRotation(Prim prim) {
-			var rotationOffset = new Quaternion(prim.RotationX, prim.RotationY, prim.RotationZ, prim.RotationW); // RotationOffset;
-
-			if (prim.RootRotationX == null) {
-				// Is a root or childless prim.
-				return rotationOffset;
-			}
-			// Is a child prim.
-
-			var parentRot = new Quaternion((float)prim.RootRotationX, (float)prim.RootRotationY, (float)prim.RootRotationZ, (float)prim.RootRotationW); //ParentGroup.RootPart.RotationOffset;
-			return parentRot * rotationOffset;
-		}
-
 		private static readonly SolidBrush DefaultBrush = new SolidBrush(Color.Black);
 		private static SolidBrush GetFaceBrush(Prim prim, uint face)
 		{
@@ -464,7 +633,7 @@ namespace Anaximander {
 				texture = Texture.GetByUUID(facetexture.TextureID);
 			}
 			catch (InvalidOperationException e) {
-				var location = ComputeWorldPosition(prim);
+				var location = MathUtilities.ComputeWorldPosition(prim);
 				LOG.Warn($"Error decoding image asset {facetexture.TextureID} on face {face} of prim {prim.Id} at {location} in region {prim.RegionId}, continuing using default texture.", e);
 
 				texture = Texture.DEFAULT;
@@ -476,49 +645,6 @@ namespace Anaximander {
 				Math.Max(0, Math.Min(255, (int)(facetexture.RGBA.B * 255f) * texture.AverageColor.B / 255))
 			));
 			// FromARGB can throw an exception if a parameter is outside 0-255, but that is prevented.
-		}
-
-		private static float ZOfCrossDiff(ref Vector3 P, ref Vector3 Q, ref Vector3 R) {
-			// let A = Q - P
-			// let B = R - P
-			// Vz = AxBy - AyBx
-			//    = (Qx - Px)(Ry - Py) - (Qy - Py)(Rx - Px)
-			return (Q.X - P.X) * (R.Y - P.Y) - (Q.Y - P.Y) * (R.X - P.X);
-		}
-
-		/// <summary>
-		/// Gets the height at the specified location, blending the value depending on the proximity to the pixel center.
-		/// AKA: bilinear filtering.
-		/// </summary>
-		/// <returns>The height in meters.</returns>
-		/// <param name="hm">The heightmap array.</param>
-		/// <param name="x">The x coordinate.</param>
-		/// <param name="y">The y coordinate.</param>
-		private static double getHeight(double[,] hm, double x, double y) {
-			int x_0 = (int)x, y_0 = (int)y;
-			int x_1 = x_0 + 1, y_1 = y_0 + 1;
-
-			var x_ratio = x - x_0; // The fractional part gives the 0-1 ratio needed.
-			var y_ratio = y - y_0;
-
-			// Unit square interpretation of bilinear filtering.
-			if (x_0 < hm.GetLength(0) - 1 && y_0 < hm.GetLength(1) - 1)
-				return
-					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
-					hm[x_1, y_0] * x_ratio * (1 - y_ratio) +
-					hm[x_0, y_1] * (1 - x_ratio) * y_ratio +
-					hm[x_1, y_1] * x_ratio * y_ratio;
-			else if (x_0 < hm.GetLength(0) - 1)
-				return
-					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
-					hm[x_1, y_0] * x_ratio * (1 - y_ratio);
-			else if (y_0 < hm.GetLength(1) - 1)
-				return
-					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
-					hm[x_0, y_1] * (1 - x_ratio) * y_ratio;
-			else
-				return
-					hm[x_0, y_0];
 		}
 
 		#endregion
