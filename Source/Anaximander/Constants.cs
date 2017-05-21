@@ -46,6 +46,7 @@ namespace Anaximander {
 		public const string ReverseLookupPath = "by_uuid"; // relative to MapTilePath
 
 		// MapTileInfo
+		public const string RenderTechnique = "obbrenderer";
 		public const ImageFormats ImageFormat = ImageFormats.JPEG;
 
 		public static readonly Color BeachColor = Color.FromArgb(0, 255, 255);

@@ -33,6 +33,8 @@ namespace Anaximander {
 
 		private readonly int _pixelSize;
 
+		private readonly string _rendererName;
+
 		private readonly RegionRendererInterface _regionRenderer;
 
 		private readonly FlatTileRenderer _flatRenderer;
@@ -40,9 +42,19 @@ namespace Anaximander {
 		public TileGenerator(IConfigSource config) {
 			var tileInfo = config.Configs["MapTileInfo"];
 			_pixelSize = tileInfo?.GetInt("PixelScale", Constants.PixelScale) ?? Constants.PixelScale;
+			_rendererName = tileInfo?.GetString("RenderTechnique", Constants.RenderTechnique) ?? Constants.RenderTechnique;
+
+			switch (_rendererName.ToLowerInvariant()) {
+				case "obbrenderer":
+					_regionRenderer = new OBBRenderer(config);
+				break;
+				default:
+					LOG.Error($"[RENDER] Unknown renderer '{_rendererName}', defaulting to 'OBBRenderer'.");
+					_regionRenderer = new OBBRenderer(config);
+				break;
+			}
 
 			_flatRenderer = new FlatTileRenderer(config);
-			_regionRenderer = new OBBRenderer(config);
 		}
 
 		public DirectBitmap GenerateOceanTile() {
