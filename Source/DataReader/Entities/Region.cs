@@ -117,6 +117,7 @@ namespace DataReader {
 		public bool IsCurrentlyAccessable() {
 			if (serverIP != null) {
 				var wrGETURL = WebRequest.Create($"http://{serverIP}:{serverPort}/simstatus/");
+				wrGETURL.Timeout = 10000; // Limit to something reasonable.  If the region can't respond in that time, it's not really accessable ATM.
 				try {
 					// Total time for 1000 passing tests against a server on the Internet: 42352ms, for an avg of 42.352 ms per check.
 					var objStream = wrGETURL.GetResponse().GetResponseStream();
