@@ -37,18 +37,12 @@
       <HintPath>..\packages\Trove.Nini.1.1.0.0\lib\net20\Nini.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="Nancy">
       <HintPath>..\packages\Nancy.1.4.3\lib\net40\Nancy.dll</HintPath>
     </Reference>
     <Reference Include="CSJ2K">
       <HintPath>..\packages\CSJ2K.2.0.0.1\lib\net40-client\CSJ2K.dll</HintPath>
-    </Reference>
-    <Reference Include="Flurl">
-      <HintPath>..\packages\Flurl.Signed.1.0.10\lib\portable-net40+sl50+win+wpa81+wp80+MonoAndroid10+MonoTouch10\Flurl.dll</HintPath>
     </Reference>
     <Reference Include="InWorldz.Whip.Client">
       <HintPath>..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
@@ -59,17 +53,26 @@
     <Reference Include="Marvin.JsonPatch">
       <HintPath>..\packages\Marvin.JsonPatch.Signed.0.7.0\lib\portable-net40+win+wpa81\Marvin.JsonPatch.dll</HintPath>
     </Reference>
-    <Reference Include="openstacknet">
-      <HintPath>..\packages\openstack.net.1.7.6\lib\net45\openstacknet.dll</HintPath>
-    </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\packages\protobuf-net.2.1.0\lib\net45\protobuf-net.dll</HintPath>
-    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="OpenGL.Net">
+      <HintPath>..\packages\OpenGL.Net.0.4.2\lib\net35\OpenGL.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="Flurl">
+      <HintPath>..\packages\Flurl.Signed.2.3.0\lib\portable40-net40+sl5+win8+wp8+wpa81\Flurl.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="openstacknet">
+      <HintPath>..\packages\openstack.net.1.7.7\lib\net45\openstacknet.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.2.0\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="LibreMetaverse.Types">
-      <HintPath>..\packages\LibreMetaverse.Types.1.0.2.24\lib\net40\LibreMetaverse.Types.dll</HintPath>
+      <HintPath>..\packages\LibreMetaverse.Types.1.0.4.40\lib\net40\LibreMetaverse.Types.dll</HintPath>
     </Reference>
     <Reference Include="XmlRpcCs">
       <HintPath>..\packages\XmlRpcCS.2.0.1.8\lib\net40\XmlRpcCs.dll</HintPath>
@@ -78,13 +81,10 @@
       <HintPath>..\packages\zlib.net.1.0.4.0\lib\zlib.net.dll</HintPath>
     </Reference>
     <Reference Include="LibreMetaverse">
-      <HintPath>..\packages\LibreMetaverse.1.0.2.24\lib\net40\LibreMetaverse.dll</HintPath>
+      <HintPath>..\packages\LibreMetaverse.1.0.4.40\lib\net40\LibreMetaverse.dll</HintPath>
     </Reference>
     <Reference Include="Chattel">
-      <HintPath>..\packages\Chattel.1.1.0.11\lib\net45\Chattel.dll</HintPath>
-    </Reference>
-    <Reference Include="OpenGL.Net">
-      <HintPath>..\packages\OpenGL.Net.0.4.2\lib\net35\OpenGL.Net.dll</HintPath>
+      <HintPath>..\packages\Chattel.1.1.1.14\lib\net45\Chattel.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
