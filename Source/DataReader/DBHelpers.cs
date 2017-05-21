@@ -23,35 +23,49 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using MySql.Data.MySqlClient;
 using System.Data;
+using System.Reflection;
+using log4net;
+using MySql.Data.MySqlClient;
 
 namespace DataReader {
 	public static class DBHelpers {
-		public static MySqlConnection GetConnection(string connection_string) {
-			var conn = new MySqlConnection(connection_string);
-			conn.Open();
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-			return conn;
+		public static MySqlConnection GetConnection(string connection_string) {
+			try {
+				var conn = new MySqlConnection(connection_string);
+				conn.Open();
+
+				return conn;
+			}
+			catch (MySqlException e) {
+				throw new DatabaseException("MySQL server refused connection or is not running.", e);
+			}
 		}
 
 		public static IDataReader ExecuteReader(IDbCommand c) {
 			IDataReader r = null;
 			bool errorSeen = false;
 
-			while (true) {
-				try {
-					r = c.ExecuteReader();
-				}
-				catch (Exception) {
-					if (!errorSeen) {
-						errorSeen = true;
-						continue;
+			try {
+				while (true) {
+					try {
+						r = c.ExecuteReader();
 					}
-					throw;
-				}
+					catch (Exception) {
+						if (!errorSeen) {
+							errorSeen = true;
+							continue;
+						}
+						throw;
+					}
 
-				break;
+					break;
+				}
+			}
+			catch (MySqlException e) {
+				LOG.Error($"[DATABASE] MySQL query failed or the MySQL server was not available.", e);
 			}
 
 			return r;

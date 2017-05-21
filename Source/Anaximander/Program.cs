@@ -55,7 +55,7 @@ namespace Anaximander {
 
 		private static TileImageWriter _tileWriter;
 
-		public static void Main(string[] args) {
+		public static int Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
 			// Analysis disable once RedundantDelegateCreation // The "new" is required.
 			AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
@@ -109,11 +109,18 @@ namespace Anaximander {
 			watch.Restart();
 
 			// Load the RDB map
-			var rdb_map = new RDBMap(configSource);
-			_rdbMap = rdb_map;
+			try {
+				var rdb_map = new RDBMap(configSource);
+				_rdbMap = rdb_map;
+			}
+			catch (DatabaseException e) {
+				LOG.Error($"[MAIN] Unable to continue without database connection. Aborting.", e);
+
+				return 1;
+			}
 
 			watch.Stop();
-			LOG.Info($"[MAIN] Loaded region DB in {watch.ElapsedMilliseconds} ms for a total of {rdb_map.GetRegionCount()} regions, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
+			LOG.Info($"[MAIN] Loaded region DB in {watch.ElapsedMilliseconds} ms for a total of {_rdbMap.GetRegionCount()} regions, resulting in an average of {(float)watch.ElapsedMilliseconds / _rdbMap.GetRegionCount()} ms / region.");
 			watch.Restart();
 
 			/* Issues to watch for:
@@ -137,7 +144,7 @@ namespace Anaximander {
 				LOG.Debug("Generating a full batch of region tiles.");
 				// Generate region tiles - all existing are nearly guaranteed to be out of date.
 				var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
-				Parallel.ForEach(rdb_map.GetRegionUUIDsAsStrings(), options, (region_id) => {
+				Parallel.ForEach(_rdbMap.GetRegionUUIDsAsStrings(), options, (region_id) => {
 					var oldPriority = Thread.CurrentThread.Priority;
 					Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
@@ -148,16 +155,16 @@ namespace Anaximander {
 				});
 
 				watch.Stop();
-				LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / rdb_map.GetRegionCount()} ms / region.");
+				LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / _rdbMap.GetRegionCount()} ms / region.");
 				watch.Restart();
 
 
 				// Generate zoom level tiles.
 				// Just quickly build the tile tree so that lookups of the super tiles can be done.
 
-				var superGen = new SuperTileGenerator(configSource, rdb_map);
+				var superGen = new SuperTileGenerator(configSource, _rdbMap);
 
-				superGen.PreloadTileTrees(rdb_map.GetRegionUUIDsAsStrings());
+				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDsAsStrings());
 
 				watch.Stop();
 				LOG.Info($"[MAIN] Preloaded tile tree in {watch.ElapsedMilliseconds} ms.");
@@ -165,7 +172,7 @@ namespace Anaximander {
 
 
 				// Remove all tiles that do not have a corresponding entry in the map.
-				_tileWriter.RemoveDeadTiles(rdb_map, superGen.AllNodesById);
+				_tileWriter.RemoveDeadTiles(_rdbMap, superGen.AllNodesById);
 
 				watch.Stop();
 				LOG.Info($"[MAIN] Removed all old tiles in {watch.ElapsedMilliseconds} ms.");
@@ -208,6 +215,7 @@ namespace Anaximander {
 
 			// I don't care what's still connected or keeping things running, it's time to die!
 			Environment.Exit(0);
+			return 0;
 		}
 
 		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) {

@@ -49,6 +49,7 @@
     <Compile Include="Entities\RegionTerrainData.cs" />
     <Compile Include="Entities\RegionPrimData.cs" />
     <Compile Include="Entities\Prim.cs" />
+    <Compile Include="DatabaseException.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -90,6 +90,9 @@ namespace DataReader {
 			var active_regions = new List<string>();
 
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				if (conn == null) {
+					return;
+				}
 				using (var cmd = conn.CreateCommand()) {
 					/* Gets the full list of known regions.  Any region IDs that are not in this list are to be removed. */
 					cmd.CommandText = @"SELECT
@@ -99,6 +102,9 @@ namespace DataReader {
 					ORDER BY
 						region_id";
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return;
+					}
 
 					try {
 						while (reader.Read()) {
@@ -126,6 +132,9 @@ namespace DataReader {
 
 			LOG.Debug("[RDB_MAP] Loading region to host map from DB.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				if (conn == null) {
+					return;
+				}
 				using (var cmd = conn.CreateCommand()) {
 					RegionInfo new_entry;
 					ConcurrentDictionary<string, RegionInfo> region_list;
@@ -149,6 +158,9 @@ namespace DataReader {
 					ORDER BY
 						host_name, region_id";
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return;
+					}
 
 					try {
 						while (reader.Read()) {
@@ -199,9 +211,15 @@ namespace DataReader {
 				string region_id;
 
 				using (var conn = DBHelpers.GetConnection(rdb_connection_string)) {
+					if (conn == null) {
+						return;
+					}
 					using (var cmd = conn.CreateCommand()) {
 						cmd.CommandText = @"SELECT RegionUUID, terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield FROM regionsettings natural join terrain;";
 						var reader = DBHelpers.ExecuteReader(cmd);
+						if (reader == null) {
+							return;
+						}
 
 						try {
 							while (reader.Read()) {
@@ -277,6 +295,9 @@ namespace DataReader {
 				Region region;
 
 				using (var conn = DBHelpers.GetConnection(rdb_connection_string)) {
+					if (conn == null) {
+						return;
+					}
 					using (var cmd = conn.CreateCommand()) {
 						cmd.CommandText = @"SELECT
 	RegionUUID,
@@ -316,6 +337,9 @@ ORDER BY
 	GroupPositionZ, PositionZ
 ;";
 						var reader = DBHelpers.ExecuteReader(cmd);
+						if (reader == null) {
+							return;
+						}
 
 						try {
 							while (reader.Read()) {
@@ -395,6 +419,9 @@ ORDER BY
 			Region region;
 
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				if (conn == null) {
+					return false;
+				}
 				using (var cmd = conn.CreateCommand()) {
 					/* Gets the full list of what regions are on what host.
 					A null host_name indicates that that region's data is on this host, otherwise contains the host for the region's data.
@@ -418,6 +445,9 @@ ORDER BY
 					cmd.Parameters.AddWithValue("region_id", region_id);
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return false;
+					}
 
 					try {
 						if (!reader.Read()) {
@@ -452,6 +482,9 @@ ORDER BY
 			}
 
 			using (var conn = DBHelpers.GetConnection(info.RDBConnectionString)) {
+				if (conn == null) {
+					return false;
+				}
 				using (var cmd = conn.CreateCommand()) {
 					cmd.CommandText = @"SELECT terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield
 						FROM regionsettings NATURAL JOIN terrain
@@ -460,6 +493,9 @@ ORDER BY
 					cmd.Parameters.AddWithValue("region_id", region_id);
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return false;
+					}
 
 					try {
 						reader.Read();
@@ -539,6 +575,9 @@ ORDER BY
 					cmd.Parameters.AddWithValue("region_id", region_id);
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return false;
+					}
 
 					try {
 						while (reader.Read()) {
@@ -605,6 +644,9 @@ ORDER BY
 			var info = new RegionInfo();
 
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
+				if (conn == null) {
+					return;
+				}
 				using (var cmd = conn.CreateCommand()) {
 					/* Gets the full list of what regions are on what host.
 					A null host_name indicates that that region's data is on this host, otherwise contains the host for the region's data.
@@ -628,6 +670,9 @@ ORDER BY
 					cmd.Parameters.AddWithValue("region_id", region_id);
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return;
+					}
 
 					try {
 						reader.Read();
@@ -685,6 +730,9 @@ ORDER BY
 			RegionTerrainData terrain_data;
 
 			using (var conn = DBHelpers.GetConnection(region.rdbConnectionString)) {
+				if (conn == null) {
+					return;
+				}
 				using (var cmd = conn.CreateCommand()) {
 					cmd.CommandText = @"SELECT terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield
 						FROM regionsettings NATURAL JOIN terrain
@@ -693,6 +741,9 @@ ORDER BY
 					cmd.Parameters.AddWithValue("region_id", region_id);
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return;
+					}
 
 					try {
 						reader.Read();
@@ -757,6 +808,9 @@ ORDER BY
 			}
 
 			using (var conn = DBHelpers.GetConnection(region.rdbConnectionString)) {
+				if (conn == null) {
+					return;
+				}
 				using (var cmd = conn.CreateCommand()) {
 					cmd.CommandText = @"SELECT
 							UUID,
@@ -798,6 +852,9 @@ ORDER BY
 					cmd.Parameters.AddWithValue("region_id", region_id);
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return;
+					}
 
 					try {
 						while (reader.Read()) {
