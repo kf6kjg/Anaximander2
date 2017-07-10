@@ -102,7 +102,8 @@ namespace Anaximander {
 
 			LOG.Info($"[MAIN] Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
 
-			Texture.Initialize(new ChattelReader(configSource));
+			var chattelConfig = new ChattelConfiguration(configSource, configSource.Configs["Assets"]);
+			Texture.Initialize(new ChattelReader(chattelConfig));
 
 			watch.Stop();
 			LOG.Info($"[MAIN] Read configuration in {watch.ElapsedMilliseconds} ms.");
