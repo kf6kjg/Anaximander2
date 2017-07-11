@@ -25,6 +25,8 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Reflection;
 using DataReader;
 using log4net;
@@ -37,6 +39,7 @@ namespace Anaximander {
 
 		private static Color _waterColor;
 		private static Color _beachColor;
+		private static DirectBitmap _waterOverlay;
 
 		public struct DrawStruct {
 			public float sort_order;
@@ -57,6 +60,39 @@ namespace Anaximander {
 				tileInfo?.GetInt("BeachColorGreen", Constants.BeachColor.G) ?? Constants.BeachColor.G,
 				tileInfo?.GetInt("BeachColorBlue", Constants.BeachColor.B) ?? Constants.BeachColor.B
 			);
+
+			var waterOverlayPath = tileInfo?.GetString("WaterOverlay", Constants.WaterOverlay) ?? Constants.WaterOverlay;
+
+			var pixelScale = tileInfo?.GetInt("PixelScale", Constants.PixelScale) ?? Constants.PixelScale;
+
+			if (!string.IsNullOrWhiteSpace(waterOverlayPath)) {
+				try {
+					var overlay = new Bitmap(Image.FromFile(waterOverlayPath));
+					//overlay.MakeTransparent();
+
+					_waterOverlay = new DirectBitmap(pixelScale, pixelScale);
+					using (var gfx = Graphics.FromImage(_waterOverlay.Bitmap)) {
+						gfx.CompositingMode = CompositingMode.SourceCopy;
+						gfx.DrawImage(overlay, 0, 0, pixelScale, pixelScale);
+					}
+				}
+				catch (Exception e) {
+					LOG.Warn($"Error loading water overlay file '{waterOverlayPath}', skipping.", e);
+				}
+
+				// Convert to premultiplied alpha
+				for (int y = 0; y < _waterOverlay.Bitmap.Height; y++) {
+					for (int x = 0; x < _waterOverlay.Bitmap.Width; x++) {
+						var c = _waterOverlay.Bitmap.GetPixel(x, y);
+
+						var r = c.R * c.A / 255;
+						var g = c.G * c.A / 255;
+						var b = c.B * c.A / 255;
+
+						_waterOverlay.Bitmap.SetPixel(x, y, Color.FromArgb(c.A, r, g, b));
+					}
+				}
+			}
 		}
 
 		public DirectBitmap RenderTileFrom(DataReader.Region region, DirectBitmap bitmap) {
@@ -186,8 +222,9 @@ namespace Anaximander {
 						low = tmp;
 					}
 
-					HSV hsv;
+					Color result;
 					if (heightvalue > waterHeight) {
+						HSV hsv;
 						// Above water
 						if (hmod <= low)
 							hsv = hsv1; // too low
@@ -205,6 +242,8 @@ namespace Anaximander {
 							else
 								hsv = hsv3.InterpolateHSV(ref hsv4, (float)((hmod * 3d) - 2d));
 						}
+
+						result = hsv.ToColor();
 					}
 					else {
 						// Under water.
@@ -213,7 +252,21 @@ namespace Anaximander {
 
 						var water = deepwater.InterpolateHSV(ref beachwater, (float)MathUtilities.SCurve(heightvalue / waterHeight));
 
-						hsv = water;
+						if (_waterOverlay == null) {
+							result = water.ToColor();
+						}
+						else {
+							// Overlay the water image
+							var baseColor = water.ToColor();
+
+							var overlayColor = _waterOverlay.Bitmap.GetPixel(x, y);
+
+							var resultR = overlayColor.R + (baseColor.R * (255 - overlayColor.A) / 255);
+							var resultG = overlayColor.G + (baseColor.G * (255 - overlayColor.A) / 255);
+							var resultB = overlayColor.B + (baseColor.B * (255 - overlayColor.A) / 255);
+
+							result = Color.FromArgb(resultR, resultG, resultB);
+						}
 					}
 
 					// Shade the terrain for shadows
@@ -240,7 +293,7 @@ namespace Anaximander {
 					//	}
 					//}
 
-					mapbmp.Bitmap.SetPixel(x, yr, hsv.ToColor());
+					mapbmp.Bitmap.SetPixel(x, yr, result);
 				}
 			}
 		}

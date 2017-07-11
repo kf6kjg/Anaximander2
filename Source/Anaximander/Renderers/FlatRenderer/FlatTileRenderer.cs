@@ -22,9 +22,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
 using System.Drawing;
-using DataReader;
+using System.Drawing.Drawing2D;
 using Nini.Config;
 
 namespace Anaximander {
@@ -35,18 +34,27 @@ namespace Anaximander {
 			_tileInfo = config.Configs["MapTileInfo"];
 		}
 
-		public DirectBitmap RenderToBitmap(DirectBitmap mapbmp) {
-			return RenderToBitmap(Color.FromArgb(
+		public DirectBitmap RenderToBitmap(DirectBitmap mapbmp, Bitmap overlay = null) {
+			var dbitmap = RenderToBitmap(Color.FromArgb(
 				_tileInfo?.GetInt("OceanColorRed", Constants.OceanColor.R) ?? Constants.OceanColor.R,
 				_tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
 				_tileInfo?.GetInt("OceanColorBlue", Constants.OceanColor.B) ?? Constants.OceanColor.B
 			), mapbmp);
+
+			if (overlay != null) {
+				using (var gfx = Graphics.FromImage(dbitmap.Bitmap)) {
+					gfx.DrawImage(overlay, 0, 0, dbitmap.Width, dbitmap.Height);
+				}
+			}
+
+			return dbitmap;
 		}
 
 		public DirectBitmap RenderToBitmap(Color color, DirectBitmap mapbmp) {
-			using (var gfx = Graphics.FromImage(mapbmp.Bitmap))
-			using (var brush = new SolidBrush(color)) {
-				gfx.FillRectangle(brush, 0, 0, mapbmp.Width, mapbmp.Height);
+			using (var gfx = Graphics.FromImage(mapbmp.Bitmap)) {
+				using (var brush = new SolidBrush(color)) {
+					gfx.FillRectangle(brush, 0, 0, mapbmp.Width, mapbmp.Height);
+				}
 			}
 			return mapbmp;
 		}

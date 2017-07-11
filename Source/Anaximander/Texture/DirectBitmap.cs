@@ -47,7 +47,7 @@ namespace Anaximander {
 		public DirectBitmap(int width, int height) {
 			Width = width;
 			Height = height;
-			Bits = new Int32[width * height];
+			Bits = new int[width * height];
 			BitsHandle = GCHandle.Alloc(Bits, GCHandleType.Pinned);
 			Bitmap = new Bitmap(width, height, width * 4, PixelFormat.Format32bppPArgb, BitsHandle.AddrOfPinnedObject());
 		}

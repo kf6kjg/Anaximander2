@@ -22,7 +22,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Reflection;
 using log4net;
 using Nini.Config;
@@ -38,6 +40,8 @@ namespace Anaximander {
 		private readonly RegionRendererInterface _regionRenderer;
 
 		private readonly FlatTileRenderer _flatRenderer;
+
+		private static Bitmap _oceanOverlay;
 
 		public TileGenerator(IConfigSource config) {
 			var tileInfo = config.Configs["MapTileInfo"];
@@ -55,11 +59,31 @@ namespace Anaximander {
 			}
 
 			_flatRenderer = new FlatTileRenderer(config);
+
+			var oceanOverlayPath = tileInfo?.GetString("OceanOverlay", Constants.OceanOverlay) ?? Constants.OceanOverlay;
+
+			var pixelScale = tileInfo?.GetInt("PixelScale", Constants.PixelScale) ?? Constants.PixelScale;
+
+			if (!string.IsNullOrWhiteSpace(oceanOverlayPath)) {
+				try {
+					var overlay = new Bitmap(Image.FromFile(oceanOverlayPath));
+					//overlay.MakeTransparent();
+
+					_oceanOverlay = new Bitmap(pixelScale, pixelScale);
+					using (var gfx = Graphics.FromImage(_oceanOverlay)) {
+						gfx.CompositingMode = CompositingMode.SourceCopy;
+						gfx.DrawImage(overlay, 0, 0, pixelScale, pixelScale);
+					}
+				}
+				catch (Exception e) {
+					LOG.Warn($"Error loading ocean overlay file '{oceanOverlayPath}', skipping.", e);
+				}
+			}
 		}
 
 		public DirectBitmap GenerateOceanTile() {
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
-			_flatRenderer.RenderToBitmap(bitmap);
+			_flatRenderer.RenderToBitmap(bitmap, _oceanOverlay);
 			return bitmap;
 		}
 

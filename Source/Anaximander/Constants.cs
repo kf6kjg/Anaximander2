@@ -51,11 +51,16 @@ namespace Anaximander {
 
 		public static readonly Color BeachColor = Color.FromArgb(0, 255, 255);
 		public static readonly Color OceanColor = Color.FromArgb(0, 0, 255);
+
+		public const string OceanOverlay = "";
+
 		public const string OceanTileName = "ocean";
 
 		public const int PixelScale = 256;
 
 		public const string TileNameFormat = "map-{Z}-{X}-{Y}-objects";
+
+		public const string WaterOverlay = "";
 
 		// TileZooming
 		public const int HighestZoomLevel = 8;
