@@ -259,7 +259,7 @@ namespace DataReader {
 										data.heightmap[x, y] = br.ReadDouble();
 									}
 								}
-								LOG.Info($"[RDB_MAP] Loaded terrain data for region {region_id} on {GetHostNameFromConnectionString(rdb_connection_string)}");
+								LOG.Info($"[RDB_MAP] Loaded terrain data for region {region_id} on {GetHostNameFromConnectionString(rdb_connection_string)} in database {GetDatabaseNameFromConnectionString(rdb_connection_string)}");
 
 								var info = regions_by_rdb[rdb_connection_string][region_id];
 								var region = new Region(info, data);
@@ -404,9 +404,9 @@ ORDER BY
 								AddPrimToRegionAtOffsetFrom(data, region, -1,  1);
 								// West
 								AddPrimToRegionAtOffsetFrom(data, region, -1,  0);
-
-								LOG.Info($"[RDB_MAP] Loaded prim data for region {region_id} on {GetHostNameFromConnectionString(rdb_connection_string)}");
 							}
+
+							LOG.Info($"[RDB_MAP] Loaded prim data for all regions on {GetHostNameFromConnectionString(rdb_connection_string)} in database {GetDatabaseNameFromConnectionString(rdb_connection_string)}");
 						}
 						finally {
 							reader.Close();
@@ -969,6 +969,11 @@ ORDER BY
 		private string GetHostNameFromConnectionString(string connstr) {
 			// Format: Data Source=127.0.0.1;Port=3307;Database=TABLENAME;User ID=USERNAME;password=PASSWORD;Pooling=True;Min Pool Size=0;
 			return connstr.ToLowerInvariant().Split(';').FirstOrDefault(stanza => stanza.StartsWith("data source", StringComparison.InvariantCulture))?.Substring(12);
+		}
+
+		private string GetDatabaseNameFromConnectionString(string connstr) {
+			// Format: Data Source=127.0.0.1;Port=3307;Database=TABLENAME;User ID=USERNAME;password=PASSWORD;Pooling=True;Min Pool Size=0;
+			return connstr.ToLowerInvariant().Split(';').FirstOrDefault(stanza => stanza.StartsWith("database", StringComparison.InvariantCulture))?.Substring(9);
 		}
 
 		private static long CoordToIndex(int x, int y) {
