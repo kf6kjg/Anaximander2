@@ -39,8 +39,8 @@ namespace UnitTests {
 		private static readonly string _protocol = _useSSL ? "https" : "http";
 
 		private static string _regionUUID;
-		private static RulesModel MapRulesDelegate(string uuid = null) {
-			_regionUUID = uuid;
+		private static RulesModel MapRulesDelegate(Guid uuid = new Guid()) {
+			_regionUUID = uuid.ToString();
 			return new RulesModel
 			{
 				Info = new GeneralRulesModel {
@@ -52,20 +52,20 @@ namespace UnitTests {
 			};
 		}
 
-		private static void UpdateRegionDelegate(string uuid, ChangeInfo changeData) {
+		private static void UpdateRegionDelegate(Guid uuid, ChangeInfo changeData) {
 			var change = changeData.Changes?.Contains(ChangeCategory.TerrainTexture);
 
 			if (change ?? false) {
-				_regionUUID = uuid;
+				_regionUUID = uuid.ToString();
 			}
 			else {
 				_regionUUID = "failed to get change.";
 			}
 		}
 
-		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) {
-			_regionUUID = uuid;
-			return apiKey == uuid;
+		private static bool CheckAPIKeyDelegate(string apiKey, Guid uuid) {
+			_regionUUID = uuid.ToString();
+			return apiKey == uuid.ToString();
 		}
 
 		[TestFixtureSetUp]

@@ -113,10 +113,10 @@ namespace Anaximander {
 		/// <param name="locationZ">Region location z.</param>
 		/// <param name="regionId">Region UUID.</param>
 		/// <param name="bitmap">Bitmap of the region.</param>
-		public void WriteTile(int locationX, int locationY, int locationZ, string regionId, Bitmap bitmap) {
-			if (locationZ == 1 && _reverseLookupFolder != null && !string.IsNullOrWhiteSpace(regionId)) { // Only if a region.
+		public void WriteTile(int locationX, int locationY, int locationZ, Guid regionId, Bitmap bitmap) {
+			if (locationZ == 1 && _reverseLookupFolder != null && Guid.Empty != regionId) { // Only if a region.
 				try { // Store the reverse lookup file.
-					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId), $"{locationX},{locationY}");
+					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId.ToString()), $"{locationX},{locationY}");
 				}
 				// Analysis disable once EmptyGeneralCatchClause
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
@@ -136,10 +136,10 @@ namespace Anaximander {
 		/// <param name="locationZ">Region location z.</param>
 		/// <param name="regionId">Region UUID.</param>
 		/// <param name="file">File to be copied.</param>
-		public void WriteTile(int locationX, int locationY, int locationZ, string regionId, string file) {
-			if (locationZ == 1 && _reverseLookupFolder != null && !string.IsNullOrWhiteSpace(regionId)) { // Only if a region.
+		public void WriteTile(int locationX, int locationY, int locationZ, Guid regionId, string file) {
+			if (locationZ == 1 && _reverseLookupFolder != null && Guid.Empty != regionId) { // Only if a region.
 				try { // Store the reverse lookup file.
-					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId), $"{locationX},{locationY}");
+					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId.ToString()), $"{locationX},{locationY}");
 				}
 				// Analysis disable once EmptyGeneralCatchClause
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
@@ -334,8 +334,8 @@ namespace Anaximander {
 					}
 
 					// Delete all uuid lookup files for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.
-					var uuid = match.Value.Substring(1);
-					if (!rdbMap.GetRegionUUIDsAsStrings().Contains(uuid)) {
+					var uuid = Guid.Parse(match.Value.Substring(1));
+					if (!rdbMap.GetRegionUUIDs().Contains(uuid)) {
 						// Remove the file.
 						try {
 							File.Delete(filename);

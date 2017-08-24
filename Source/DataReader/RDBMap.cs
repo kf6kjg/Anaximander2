@@ -39,9 +39,9 @@ namespace DataReader {
 	public class RDBMap {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly ConcurrentDictionary<string, Region> MAP = new ConcurrentDictionary<string, Region>();
+		private readonly ConcurrentDictionary<Guid, Region> MAP = new ConcurrentDictionary<Guid, Region>();
 		private readonly ConcurrentDictionary<long, Region> COORD_MAP = new ConcurrentDictionary<long, Region>();
-		private readonly ConcurrentBag<string> DEAD_REGION_IDS = new ConcurrentBag<string>();
+		private readonly ConcurrentBag<Guid> DEAD_REGION_IDS = new ConcurrentBag<Guid>();
 
 		private readonly string CONNECTION_STRING;
 		private readonly string RDB_CONNECTION_STRING_PARTIAL;
@@ -87,7 +87,7 @@ namespace DataReader {
 		#region Public Methods
 
 		public void DeleteOldMapEntries() {
-			var active_regions = new List<string>();
+			var active_regions = new List<Guid>();
 
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
 				if (conn == null) {
@@ -108,7 +108,7 @@ namespace DataReader {
 
 					try {
 						while (reader.Read()) {
-							active_regions.Add(Convert.ToString(reader["region_id"]));
+							active_regions.Add(Guid.Parse(Convert.ToString(reader["region_id"])));
 						}
 					}
 					finally {
@@ -128,7 +128,8 @@ namespace DataReader {
 		}
 
 		public void UpdateMap() {
-			var regions_by_rdb = new ConcurrentDictionary<string, ConcurrentDictionary<string, RegionInfo>>();
+			// Stores RDB connection strings as keys to dictionaries of region UUIDs mapped to the region data.
+			var regions_by_rdb = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, RegionInfo>>();
 
 			LOG.Debug("[RDB_MAP] Loading region to host map from DB.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
@@ -137,7 +138,7 @@ namespace DataReader {
 				}
 				using (var cmd = conn.CreateCommand()) {
 					RegionInfo new_entry;
-					ConcurrentDictionary<string, RegionInfo> region_list;
+					ConcurrentDictionary<Guid, RegionInfo> region_list;
 
 					/* Gets the full list of what regions are on what host.
 					A null host_name indicates that that region's data is on this host, otherwise contains the host for the region's data.
@@ -165,14 +166,14 @@ namespace DataReader {
 					try {
 						while (reader.Read()) {
 							var rdbHostName = Convert.ToString(reader["host_name"]);
-							string rdbhost = GetRDBConnectionString(rdbHostName);
+							var rdbhost = GetRDBConnectionString(rdbHostName);
 
 							if (!regions_by_rdb.TryGetValue(rdbhost, out region_list)) {
-								region_list = new ConcurrentDictionary<string, RegionInfo>();
+								region_list = new ConcurrentDictionary<Guid, RegionInfo>();
 								regions_by_rdb.TryAdd(rdbhost, region_list);
 							}
 
-							var region_id = Convert.ToString(reader["regionID"]);
+							var region_id = Guid.Parse(Convert.ToString(reader["regionID"]));
 
 							// Check to see if the map already has this entry and if the new entry is shut down.
 							if (region_list.TryGetValue(region_id, out new_entry) && Convert.IsDBNull(reader["regionName"])) {
@@ -208,24 +209,24 @@ namespace DataReader {
 				Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
 				RegionTerrainData data;
-				string region_id;
+				Guid region_id;
 
 				using (var conn = DBHelpers.GetConnection(rdb_connection_string)) {
 					if (conn == null) {
-						return;
+						return; // This causes everything on this RDB to be skipped.
 					}
 					using (var cmd = conn.CreateCommand()) {
 						cmd.CommandText = @"SELECT RegionUUID, terrain_texture_1, terrain_texture_2, terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne, elevation_1_sw, elevation_2_sw, elevation_1_se, elevation_2_se, water_height, Heightfield FROM regionsettings natural join terrain;";
 						var reader = DBHelpers.ExecuteReader(cmd);
 						if (reader == null) {
-							return;
+							return; // This causes everything on this RDB to be skipped.
 						}
 
 						try {
 							while (reader.Read()) {
-								region_id = GetDBValue(reader, "RegionUUID");
+								region_id = Guid.Parse(GetDBValue(reader, "RegionUUID"));
 
-								ConcurrentDictionary<string, RegionInfo> region_list;
+								ConcurrentDictionary<Guid, RegionInfo> region_list;
 
 								if (regions_by_rdb.TryGetValue(rdb_connection_string, out region_list) && !region_list.ContainsKey(region_id)) {
 									// Either of the regionsettings and/or terrain tables on one of the rdb hosts has an entry for a region id that does not exist in the estates table.
@@ -291,7 +292,7 @@ namespace DataReader {
 
 			LOG.Debug("[RDB_MAP] Loading prim data from DB.");
 			Parallel.ForEach(regions_by_rdb.Keys.ToList(), PARALLELISM_OPTIONS, (rdb_connection_string) => {
-				string region_id;
+				Guid region_id;
 				Region region;
 
 				using (var conn = DBHelpers.GetConnection(rdb_connection_string)) {
@@ -343,7 +344,7 @@ ORDER BY
 
 						try {
 							while (reader.Read()) {
-								region_id = GetDBValue(reader, "RegionUUID");
+								region_id = Guid.Parse(GetDBValue(reader, "RegionUUID"));
 
 								if (!MAP.TryGetValue(region_id, out region)) {
 									// The prims table on one of the rdb hosts has an entry for a region id that does not exist in the estates, regionsettings, and terrain tables.
@@ -361,7 +362,7 @@ ORDER BY
 								}
 
 								var data = new RegionPrimData() {
-									RegionId = new Guid(region_id),
+									RegionId = region_id,
 									PrimId = new Guid(GetDBValue(reader, "UUID")),
 									ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
 									State = GetDBValue<int>(reader, "State"),
@@ -413,7 +414,7 @@ ORDER BY
 			});
 		}
 
-		public bool CreateRegion(string region_id) {
+		public bool CreateRegion(Guid region_id) {
 			var info = new RegionInfo();
 			RegionTerrainData terrain_data;
 			Region region;
@@ -582,7 +583,7 @@ ORDER BY
 					try {
 						while (reader.Read()) {
 							var prim_data = new RegionPrimData() {
-								RegionId = new Guid(region_id),
+								RegionId = region_id,
 								PrimId = new Guid(GetDBValue(reader, "UUID")),
 								ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
 								State = GetDBValue<int>(reader, "State"),
@@ -632,7 +633,7 @@ ORDER BY
 			return true;
 		}
 
-		public void UpdateRegionInfo(string region_id) {
+		public void UpdateRegionInfo(Guid region_id) {
 			var region = GetRegionByUUID(region_id);
 
 			if (region == null) {
@@ -718,7 +719,7 @@ ORDER BY
 			}
 		}
 
-		public void UpdateRegionTerrainData(string region_id) {
+		public void UpdateRegionTerrainData(Guid region_id) {
 			var region = GetRegionByUUID(region_id);
 
 			if (region == null) {
@@ -798,7 +799,7 @@ ORDER BY
 			}
 		}
 
-		public void UpdateRegionPrimData(string region_id) {
+		public void UpdateRegionPrimData(Guid region_id) {
 			var region = new Region(GetRegionByUUID(region_id), wipe_prims: true);
 
 			if (region == null) {
@@ -859,7 +860,7 @@ ORDER BY
 					try {
 						while (reader.Read()) {
 							var prim_data = new RegionPrimData() {
-								RegionId = new Guid(region_id),
+								RegionId = region_id,
 								PrimId = new Guid(GetDBValue(reader, "UUID")),
 								ObjectFlags = GetDBValue<int>(reader, "ObjectFlags"),
 								State = GetDBValue<int>(reader, "State"),
@@ -911,11 +912,11 @@ ORDER BY
 			return MAP.Count;
 		}
 
-		public IEnumerable<string> GetRegionUUIDsAsStrings() {
+		public IEnumerable<Guid> GetRegionUUIDs() {
 			return MAP.Keys;
 		}
 
-		public Region GetRegionByUUID(string uuid) {
+		public Region GetRegionByUUID(Guid uuid) {
 			Region region;
 			if (MAP.TryGetValue(uuid, out region)) {
 				return region;
@@ -932,7 +933,7 @@ ORDER BY
 			return null;
 		}
 
-		public void UpdateRegionLocation(string region_id, int locationX, int locationY) {
+		public void UpdateRegionLocation(Guid region_id, int locationX, int locationY) {
 			var region = GetRegionByUUID(region_id);
 			var coord_index = CoordToIndex(locationX, locationY);
 
@@ -953,9 +954,7 @@ ORDER BY
 
 			// The RDB connection string could have different user, table, or password than the main.
 			if (string.IsNullOrWhiteSpace(rdbHostName)) {
-				// Not on an RDB, use the main. Data Source=127.0.0.1;Port=3307;Database=gwdata;User ID=GWDBUser;password=WorldManager;Pooling=True;Min Pool Size=0;
-				rdbHostName = CONNECTION_STRING.ToLowerInvariant();
-				rdbHostName = rdbHostName.Split(';').FirstOrDefault(stanza => stanza.StartsWith("data source", StringComparison.InvariantCulture))?.Substring(12);
+				// Not on an RDB, use the main as this implies that the region is either an invalid entry or is connected to the main DB.
 				rdbhost = CONNECTION_STRING;
 			}
 			else {

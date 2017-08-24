@@ -145,7 +145,7 @@ namespace Anaximander {
 				LOG.Debug("Generating a full batch of region tiles.");
 				// Generate region tiles - all existing are nearly guaranteed to be out of date.
 				var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
-				Parallel.ForEach(_rdbMap.GetRegionUUIDsAsStrings(), options, (region_id) => {
+				Parallel.ForEach(_rdbMap.GetRegionUUIDs(), options, (region_id) => {
 					var oldPriority = Thread.CurrentThread.Priority;
 					Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
@@ -165,7 +165,7 @@ namespace Anaximander {
 
 				var superGen = new SuperTileGenerator(configSource, _rdbMap);
 
-				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDsAsStrings());
+				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDs());
 
 				watch.Stop();
 				LOG.Info($"[MAIN] Preloaded tile tree in {watch.ElapsedMilliseconds} ms.");
@@ -219,7 +219,7 @@ namespace Anaximander {
 			return 0;
 		}
 
-		private static RestApi.RulesModel MapRulesDelegate(string uuid = null) {
+		private static RestApi.RulesModel MapRulesDelegate(Guid uuid = new Guid()) {
 			var server_config = _configSource.Configs["Server"];
 
 			var domain = server_config?.GetString("Domain", Constants.ServerDomain) ?? Constants.ServerDomain;
@@ -242,7 +242,7 @@ namespace Anaximander {
 			return rules;
 		}
 
-		private static void UpdateRegionDelegate(string uuid, RestApi.ChangeInfo changeData) {
+		private static void UpdateRegionDelegate(Guid uuid, RestApi.ChangeInfo changeData) {
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 			var redraw = false;
 
@@ -279,11 +279,11 @@ namespace Anaximander {
 				var superGen = new SuperTileGenerator(_configSource, _rdbMap);
 
 				// Only update that portion of the tree that's affected by the change.
-				superGen.PreloadTileTrees(new string[] { uuid });
+				superGen.PreloadTileTrees(new Guid[] { uuid });
 				superGen.GeneratePreloadedTree();
 
 				// Time for cleanup: make sure that we only have what we need.
-				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDsAsStrings());
+				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDs());
 				_tileWriter.RemoveDeadTiles(_rdbMap, superGen.AllNodesById);
 
 				watch.Stop();
@@ -295,7 +295,7 @@ namespace Anaximander {
 			}
 		}
 
-		private static bool CheckAPIKeyDelegate(string apiKey, string uuid) {
+		private static bool CheckAPIKeyDelegate(string apiKey, Guid uuid) {
 			return _configSource.Configs["Server"]
 				?.GetString("APIKeys", string.Empty)
 				.Split(',')
@@ -304,7 +304,7 @@ namespace Anaximander {
 				?? true;
 		}
 
-		private static void UpdateRegionTile(string region_id) {
+		private static void UpdateRegionTile(Guid region_id) {
 			var defaultTiles = _configSource.Configs["DefaultTiles"];
 			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
 			RegionErrorDisplayTechnique offlineTechnique;
@@ -358,7 +358,7 @@ namespace Anaximander {
 
 				var coords = string.Empty;
 				try {
-					coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id));
+					coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id.ToString()));
 				}
 				catch (SystemException) { // All IO errors just mean skippage.
 					LOG.Info($"Offline region {region_id} has not been seen before so the coordinates cannot be found and no tile will be rendered.");

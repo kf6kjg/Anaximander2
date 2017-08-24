@@ -72,7 +72,7 @@ namespace Anaximander {
 			_serverMode = config.Configs["Startup"].GetBoolean("ServerMode", Constants.KeepRunningDefault);
 		}
 
-		public void PreloadTileTrees(IEnumerable<string> region_ids) {
+		public void PreloadTileTrees(IEnumerable<Guid> region_ids) {
 			_rootNodeIds.Clear();
 			_allNodesById.Clear();
 
@@ -218,7 +218,7 @@ namespace Anaximander {
 						branch.CreateImage(_tilePixelSize, _tilePixelSize, branch.Image);
 
 						// Save to disk.
-						_imageWriter.WriteTile(branch.X, branch.Y, branch.Zoom, null, branch.Image);
+						_imageWriter.WriteTile(branch.X, branch.Y, branch.Zoom, Guid.Empty, branch.Image);
 					}
 
 					// Compile into parent tile.  Unless we are at the root of this tree!

@@ -30,6 +30,7 @@ using log4net;
 using MySql.Data.MySqlClient;
 using Nini.Config;
 using System.Collections.Generic;
+using System;
 
 namespace DataReader {
 	public class Region {
@@ -37,7 +38,7 @@ namespace DataReader {
 
 		#region Public Properties and Accessors
 
-		public string regionId { get { return _info.regionId; } private set { _info.regionId = value; } }
+		public Guid regionId { get { return _info.regionId; } private set { _info.regionId = value; } }
 
 		public string regionName { get { return _info.regionName; } private set { _info.regionName = value; } }
 

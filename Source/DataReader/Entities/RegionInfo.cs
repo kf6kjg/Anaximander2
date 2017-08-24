@@ -26,7 +26,7 @@ using System;
 
 namespace DataReader {
 	public struct RegionInfo {
-		public string regionId;
+		public Guid regionId;
 
 		public string RDBConnectionString;
 

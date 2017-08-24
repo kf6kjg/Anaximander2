@@ -34,9 +34,9 @@ namespace RestApi {
 	public class RestAPI : NancyModule {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public delegate void UpdateRegionDelegate(string uuid, ChangeInfo changeData);
-		public delegate RulesModel GetMapRulesDelegate(string uuid = null);
-		public delegate bool CheckAPIKeyDelegate(string apiKey, string uuid);
+		public delegate void UpdateRegionDelegate(Guid uuid, ChangeInfo changeData);
+		public delegate RulesModel GetMapRulesDelegate(Guid uuid = new Guid());
+		public delegate bool CheckAPIKeyDelegate(string apiKey, Guid uuid);
 
 		private static UpdateRegionDelegate _updateRegionDelegate;
 		private static GetMapRulesDelegate _getMapRulesDelegate;
