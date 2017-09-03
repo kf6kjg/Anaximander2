@@ -40,7 +40,7 @@ namespace DataReader {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly ConcurrentDictionary<Guid, Region> MAP = new ConcurrentDictionary<Guid, Region>();
-		private readonly ConcurrentDictionary<long, Region> COORD_MAP = new ConcurrentDictionary<long, Region>();
+		private readonly ConcurrentDictionary<Tuple<int,int>, Region> COORD_MAP = new ConcurrentDictionary<Tuple<int, int>, Region>();
 		private readonly ConcurrentBag<Guid> DEAD_REGION_IDS = new ConcurrentBag<Guid>();
 
 		private readonly string CONNECTION_STRING;
@@ -976,8 +976,8 @@ ORDER BY
 			return connstr.ToLowerInvariant().Split(';').FirstOrDefault(stanza => stanza.StartsWith("database", StringComparison.InvariantCulture))?.Substring(9);
 		}
 
-		private static long CoordToIndex(int x, int y) {
-			return ((long)x << 32) + y;
+		private static Tuple<int, int> CoordToIndex(int x, int y) {
+			return new Tuple<int, int>(x, y);
 		}
 
 		private static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T : struct {
