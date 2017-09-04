@@ -36,9 +36,9 @@ namespace Anaximander {
 	public class OBBRenderer : RegionRendererInterface {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private static Color _waterColor;
-		private static Color _beachColor;
-		private static DirectBitmap _waterOverlay;
+		private Color _waterColor;
+		private Color _beachColor;
+		private Color[,] _waterOverlay;
 
 		public struct DrawStruct {
 			public float sort_order;
@@ -64,31 +64,40 @@ namespace Anaximander {
 
 			var pixelScale = tileInfo?.GetInt("PixelScale", Constants.PixelScale) ?? Constants.PixelScale;
 
+			DirectBitmap waterOverlay;
+
 			if (!string.IsNullOrWhiteSpace(waterOverlayPath)) {
 				try {
 					var overlay = new Bitmap(Image.FromFile(waterOverlayPath));
 					//overlay.MakeTransparent();
 
-					_waterOverlay = new DirectBitmap(pixelScale, pixelScale);
-					using (var gfx = Graphics.FromImage(_waterOverlay.Bitmap)) {
+					waterOverlay = new DirectBitmap(pixelScale, pixelScale);
+					using (var gfx = Graphics.FromImage(waterOverlay.Bitmap)) {
 						gfx.CompositingMode = CompositingMode.SourceCopy;
 						gfx.DrawImage(overlay, 0, 0, pixelScale, pixelScale);
 					}
 				}
 				catch (Exception e) {
 					LOG.Warn($"Error loading water overlay file '{waterOverlayPath}', skipping.", e);
+					waterOverlay = null;
 				}
 
-				// Convert to premultiplied alpha
-				for (int y = 0; y < _waterOverlay.Bitmap.Height; y++) {
-					for (int x = 0; x < _waterOverlay.Bitmap.Width; x++) {
-						var c = _waterOverlay.Bitmap.GetPixel(x, y);
+				if (waterOverlay != null) {
+					_waterOverlay = new Color[waterOverlay.Bitmap.Width, waterOverlay.Bitmap.Height];
 
-						var r = c.R * c.A / 255;
-						var g = c.G * c.A / 255;
-						var b = c.B * c.A / 255;
+					// Convert to premultiplied alpha
+					for (int y = 0; y < waterOverlay.Bitmap.Height; y++) {
+						for (int x = 0; x < waterOverlay.Bitmap.Width; x++) {
+							var c = waterOverlay.Bitmap.GetPixel(x, y);
 
-						_waterOverlay.Bitmap.SetPixel(x, y, Color.FromArgb(c.A, r, g, b));
+							var r = c.R * c.A / 255;
+							var g = c.G * c.A / 255;
+							var b = c.B * c.A / 255;
+
+							var result = Color.FromArgb(c.A, r, g, b);
+
+							_waterOverlay[x, y] = result;
+						}
 					}
 				}
 			}
@@ -249,7 +258,7 @@ namespace Anaximander {
 							// Overlay the water image
 							var baseColor = water.ToColor();
 
-							var overlayColor = _waterOverlay.Bitmap.GetPixel(x, y);
+							var overlayColor = _waterOverlay[x, y];
 
 							var resultR = overlayColor.R + (baseColor.R * (255 - overlayColor.A) / 255);
 							var resultG = overlayColor.G + (baseColor.G * (255 - overlayColor.A) / 255);
