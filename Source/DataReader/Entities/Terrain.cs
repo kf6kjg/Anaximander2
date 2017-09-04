@@ -52,14 +52,15 @@ namespace DataReader {
 		private readonly Guid _regionId;
 		private readonly string _rdbConnectionString;
 
-		internal Terrain(string rdbConnectionString, Guid regionID) {
+		internal Terrain(string rdbConnectionString, Guid regionId) {
 			_rdbConnectionString = rdbConnectionString;
-			_regionId = regionID;
+			_regionId = regionId;
 		}
 
 		public bool Update() {
 			using (var conn = DBHelpers.GetConnection(_rdbConnectionString)) {
 				if (conn == null) {
+					LOG.Warn($"[TERRAIN] Could not get connection to DB for region '{_regionId}'.");
 					return false;
 				}
 				using (var cmd = conn.CreateCommand()) {
@@ -71,6 +72,7 @@ namespace DataReader {
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
 					if (reader == null) {
+						LOG.Warn($"[TERRAIN] No prims query DB reader returned for region '{_regionId}'.");
 						return false;
 					}
 
@@ -101,7 +103,6 @@ namespace DataReader {
 								_heightmap[x, y] = br.ReadDouble();
 							}
 						}
-						LOG.Info($"[TERRAIN] Loaded terrain data for region {_regionId}");
 					}
 					finally {
 						reader.Close();

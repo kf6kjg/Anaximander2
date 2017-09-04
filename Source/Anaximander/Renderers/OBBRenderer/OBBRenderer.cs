@@ -78,7 +78,7 @@ namespace Anaximander {
 					}
 				}
 				catch (Exception e) {
-					LOG.Warn($"Error loading water overlay file '{waterOverlayPath}', skipping.", e);
+					LOG.Warn($"[RENDER] Error loading water overlay file '{waterOverlayPath}', skipping.", e);
 					waterOverlay = null;
 				}
 
@@ -107,18 +107,18 @@ namespace Anaximander {
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 
 			// Draw the terrain.
-			LOG.Debug($"[RENDER]: Rendering Maptile Terrain (Textured) for region {region.Id} named '{region.Name}'");
+			LOG.Debug($"[RENDER] Rendering Maptile Terrain (Textured) for region {region.Id} named '{region.Name}'");
 			watch.Restart();
 			var terrain = TerrainToBitmap(region, bitmap);
 			watch.Stop();
-			LOG.Info($"[RENDER]: Completed terrain for region {region.Id} named '{region.Name}' in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Info($"[RENDER] Completed terrain for region {region.Id} named '{region.Name}' in " + (watch.ElapsedMilliseconds) + " ms");
 
 			// Draw the prims.
-			LOG.Debug($"[RENDER]: Rendering OBB prims for region {region.Id} named '{region.Name}'");
+			LOG.Debug($"[RENDER] Rendering OBB prims for region {region.Id} named '{region.Name}'");
 			watch.Restart();
 			DrawObjects(region.GetPrims(), terrain, bitmap);
 			watch.Stop();
-			LOG.Debug($"[RENDER]: Completed OBB prims for region {region.Id} named '{region.Name}' in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Debug($"[RENDER] Completed OBB prims for region {region.Id} named '{region.Name}' in " + (watch.ElapsedMilliseconds) + " ms");
 
 			return bitmap;
 		}
@@ -131,7 +131,7 @@ namespace Anaximander {
 				textures[0] = Texture.GetByUUID(terrain.TerrainTexture1, Texture.TERRAIN_TEXTURE_1_COLOR);
 			}
 			catch (InvalidOperationException e) {
-				LOG.Warn($"Error decoding image asset {terrain.TerrainTexture1} for terrain texture 1 in region {region.Id}, continuing using default texture color.", e);
+				LOG.Warn($"[RENDER] Error decoding image asset {terrain.TerrainTexture1} for terrain texture 1 in region {region.Id}, continuing using default texture color.", e);
 
 				textures[0] = new Texture(color: Texture.TERRAIN_TEXTURE_1_COLOR);
 			}
@@ -140,7 +140,7 @@ namespace Anaximander {
 				textures[1] = Texture.GetByUUID(terrain.TerrainTexture2, Texture.TERRAIN_TEXTURE_2_COLOR);
 			}
 			catch (InvalidOperationException e) {
-				LOG.Warn($"Error decoding image asset {terrain.TerrainTexture2} for terrain texture 2 in region {region.Id}, continuing using default texture color.", e);
+				LOG.Warn($"[RENDER] Error decoding image asset {terrain.TerrainTexture2} for terrain texture 2 in region {region.Id}, continuing using default texture color.", e);
 
 				textures[1] = new Texture(color: Texture.TERRAIN_TEXTURE_2_COLOR);
 			}
@@ -149,7 +149,7 @@ namespace Anaximander {
 				textures[2] = Texture.GetByUUID(terrain.TerrainTexture3, Texture.TERRAIN_TEXTURE_3_COLOR);
 			}
 			catch (InvalidOperationException e) {
-				LOG.Warn($"Error decoding image asset {terrain.TerrainTexture3} for terrain texture 3 in region {region.Id}, continuing using default texture color.", e);
+				LOG.Warn($"[RENDER] Error decoding image asset {terrain.TerrainTexture3} for terrain texture 3 in region {region.Id}, continuing using default texture color.", e);
 
 				textures[2] = new Texture(color: Texture.TERRAIN_TEXTURE_3_COLOR);
 			}
@@ -158,7 +158,7 @@ namespace Anaximander {
 				textures[3] = Texture.GetByUUID(terrain.TerrainTexture4, Texture.TERRAIN_TEXTURE_4_COLOR);
 			}
 			catch (InvalidOperationException e) {
-				LOG.Warn($"Error decoding image asset {terrain.TerrainTexture4} for terrain texture 4 in region {region.Id}, continuing using default texture color.", e);
+				LOG.Warn($"[RENDER] Error decoding image asset {terrain.TerrainTexture4} for terrain texture 4 in region {region.Id}, continuing using default texture color.", e);
 
 				textures[3] = new Texture(color: Texture.TERRAIN_TEXTURE_4_COLOR);
 			}
@@ -689,7 +689,7 @@ namespace Anaximander {
 			}
 			catch (InvalidOperationException e) {
 				var location = prim.ComputeWorldPosition();
-				LOG.Warn($"Error decoding image asset {facetexture.TextureID} on face {face} of prim {prim.Id} at {location} in region {prim.RegionId}, continuing using default texture.", e);
+				LOG.Warn($"[RENDER] Error decoding image asset {facetexture.TextureID} on face {face} of prim {prim.Id} at {location} in region {prim.RegionId}, continuing using default texture.", e);
 
 				texture = Texture.DEFAULT;
 			}

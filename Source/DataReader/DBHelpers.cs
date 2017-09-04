@@ -45,13 +45,13 @@ namespace DataReader {
 		}
 
 		public static IDataReader ExecuteReader(IDbCommand c) {
-			IDataReader r = null;
+			IDataReader reader = null;
 			bool errorSeen = false;
 
 			try {
 				while (true) {
 					try {
-						r = c.ExecuteReader();
+						reader = c.ExecuteReader();
 					}
 					catch (Exception) {
 						if (!errorSeen) {
@@ -68,7 +68,7 @@ namespace DataReader {
 				LOG.Error($"[DATABASE] MySQL query failed or the MySQL server was not available.\n{Environment.StackTrace}", e);
 			}
 
-			return r;
+			return reader;
 		}
 
 	}

@@ -53,7 +53,7 @@ namespace Anaximander {
 					_regionRenderer = new OBBRenderer(config);
 				break;
 				default:
-					LOG.Error($"[RENDER] Unknown renderer '{_rendererName}', defaulting to 'OBBRenderer'.");
+					LOG.Error($"[TILE_GENERATOR] Unknown renderer '{_rendererName}', defaulting to 'OBBRenderer'.");
 					_regionRenderer = new OBBRenderer(config);
 				break;
 			}
@@ -76,7 +76,7 @@ namespace Anaximander {
 					}
 				}
 				catch (Exception e) {
-					LOG.Warn($"Error loading ocean overlay file '{oceanOverlayPath}', skipping.", e);
+					LOG.Warn($"[TILE_GENERATOR] Error loading ocean overlay file '{oceanOverlayPath}', skipping.", e);
 				}
 			}
 		}
@@ -98,14 +98,14 @@ namespace Anaximander {
 
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
 			watch.Stop();
-			LOG.Debug($"[RENDER]: Init'd image for {region.Id} in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Debug($"[TILE_GENERATOR] Init'd image for {region.Id} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			// Draw the terrain.
-			LOG.Debug($"[RENDER]: Rendering region {region.Id}");
+			LOG.Debug($"[TILE_GENERATOR] Rendering region {region.Id}");
 			watch.Restart();
 			_regionRenderer.RenderTileFrom(region, bitmap);
 			watch.Stop();
-			LOG.Info($"[RENDER]: Completed render for {region.Id} in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Info($"[TILE_GENERATOR] Completed render for {region.Id} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			return bitmap;
 		}

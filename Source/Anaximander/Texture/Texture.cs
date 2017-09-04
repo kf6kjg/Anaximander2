@@ -117,7 +117,7 @@ namespace Anaximander {
 			if (asset.IsImageAsset) {
 				var tex = asset.ToTexture();
 
-				LOG.Debug($"Decoding image {asset.Id}. Notable data: Type={tex.AssetType}, Temp={tex.Temporary}, Data Length={tex.AssetData?.Length}.");
+				LOG.Debug($"[TEXTURE] Decoding image {asset.Id}. Notable data: Type={tex.AssetType}, Temp={tex.Temporary}, Data Length={tex.AssetData?.Length}.");
 
 				var jp2k = CSJ2K.J2kImage.FromBytes(tex.AssetData);
 				var bitmap = jp2k.As<Bitmap>();
@@ -149,18 +149,18 @@ namespace Anaximander {
 			// color-channel, so 2^24 is the maximum value we can get, adding everything.
 			// int is be big enough for that.
 			int r = 0, g = 0, b = 0;
-			for (int y = 0; y < bmp.Height; ++y)
+			for (var y = 0; y < bmp.Height; ++y)
 			{
-				for (int x = 0; x < bmp.Width; ++x)
+				for (var x = 0; x < bmp.Width; ++x)
 				{
-					Color c = bmp.GetPixel(x, y);
+					var c = bmp.GetPixel(x, y);
 					r += (int)c.R & 0xff;
 					g += (int)c.G & 0xff;
 					b += (int)c.B & 0xff;
 				}
 			}
 
-			int pixels = bmp.Width * bmp.Height;
+			var pixels = bmp.Width * bmp.Height;
 			return Color.FromArgb(r / pixels, g / pixels, b / pixels);
 		}
 

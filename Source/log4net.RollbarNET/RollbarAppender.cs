@@ -65,11 +65,11 @@ namespace log4net_RollbarNET {
 
 			_configuration.Endpoint = GetConfigSetting(Endpoint, "Rollbar.Endpoint", _configuration.Endpoint);
 			_configuration.Environment = GetConfigSetting(Environment, "Rollbar.Environment", _configuration.Environment);
-			_configuration.Framework = GetConfigSetting(Framework, "Rolllbar.Framework", _configuration.Framework);
+			_configuration.Framework = GetConfigSetting(Framework, "Rollbar.Framework", _configuration.Framework);
 			_configuration.GitSha = GetConfigSetting(GitSha, "Rollbar.GitSha");
 			_configuration.Language = GetConfigSetting(Language, "Rollbar.CodeLanguage", _configuration.Language);
 			_configuration.Platform = GetConfigSetting(Platform, "Rollbar.Platform", _configuration.Platform);
-			Asynchronous = Boolean.Parse(GetConfigSetting(Platform, "Rollbar.Asynchronous", Asynchronous.ToString()));
+			Asynchronous = bool.Parse(GetConfigSetting(Platform, "Rollbar.Asynchronous", Asynchronous.ToString()));
 
 			var scrubParams = GetConfigSetting(ScrubParams, "Rollbar.ScrubParams");
 			_configuration.ScrubParams = scrubParams == null ? RollbarNET.Configuration.DefaultScrubParams : scrubParams.Split(',');
@@ -121,9 +121,8 @@ namespace log4net_RollbarNET {
 			if (loggingEvent.ExceptionObject == null) {
 				return sendMessage(loggingEvent.RenderedMessage, null, null, null);
 			}
-			else {
-				return sendException(loggingEvent.ExceptionObject, null, null, null);
-			}
+
+			return sendException(loggingEvent.ExceptionObject, null, null, null);
 		}
 	}
 }
