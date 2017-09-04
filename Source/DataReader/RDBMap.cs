@@ -89,8 +89,10 @@ namespace DataReader {
 		public void DeleteOldMapEntries() {
 			var active_regions = new List<Guid>();
 
+			LOG.Debug("[RDB_MAP] Removing explicity removed regions, if any.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
 				if (conn == null) {
+					LOG.Warn($"[RDB_MAP] Could not get connection to main DB, cannot remove old regions from map.");
 					return;
 				}
 				using (var cmd = conn.CreateCommand()) {
@@ -103,6 +105,7 @@ namespace DataReader {
 						region_id";
 					var reader = DBHelpers.ExecuteReader(cmd);
 					if (reader == null) {
+						LOG.Warn($"[RDB_MAP] No region list query DB reader returned from main DB, cannot remove old regions from map.");
 						return;
 					}
 
@@ -134,6 +137,7 @@ namespace DataReader {
 			LOG.Debug("[RDB_MAP] Loading region-to-host map from DB.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
 				if (conn == null) {
+					LOG.Warn($"[RDB_MAP] Could not get connection to main DB, cannot update the map.");
 					return;
 				}
 				using (var cmd = conn.CreateCommand()) {
@@ -158,6 +162,7 @@ namespace DataReader {
 					cmd.CommandTimeout = 600;
 					var reader = DBHelpers.ExecuteReader(cmd);
 					if (reader == null) {
+						LOG.Warn($"[RDB_MAP] No region list query DB reader returned from main DB, cannot update the map.");
 						return;
 					}
 

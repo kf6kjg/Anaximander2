@@ -117,7 +117,7 @@ namespace Anaximander {
 			if (asset.IsImageAsset) {
 				var tex = asset.ToTexture();
 
-				LOG.Debug($"[TEXTURE] Decoding image {asset.Id}. Notable data: Type={tex.AssetType}, Temp={tex.Temporary}, Data Length={tex.AssetData?.Length}.");
+				LOG.Debug($"[TEXTURE] Decoding image {asset.Id} named '{asset.Name}'. Notable data: Type={tex.AssetType}, Temp={tex.Temporary}, Data Length={tex.AssetData?.Length}.");
 
 				var jp2k = CSJ2K.J2kImage.FromBytes(tex.AssetData);
 				var bitmap = jp2k.As<Bitmap>();

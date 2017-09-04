@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Reflection;
 using DataReader;
 using log4net;
@@ -111,14 +112,21 @@ namespace Anaximander {
 			watch.Restart();
 			var terrain = TerrainToBitmap(region, bitmap);
 			watch.Stop();
-			LOG.Info($"[RENDER] Completed terrain for region {region.Id} named '{region.Name}' in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Info($"[RENDER] Completed terrain for region {region.Id} named '{region.Name}' in {watch.ElapsedMilliseconds}ms");
+
+			// Get the prims
+			LOG.Debug($"[RENDER] Getting prims for region {region.Id} named '{region.Name}'");
+			watch.Restart();
+			var prims = region.GetPrims();
+			watch.Stop();
+			LOG.Debug($"[RENDER] Completed getting {prims.Count()} prims for region {region.Id} named '{region.Name}' in {watch.ElapsedMilliseconds}ms");
 
 			// Draw the prims.
 			LOG.Debug($"[RENDER] Rendering OBB prims for region {region.Id} named '{region.Name}'");
 			watch.Restart();
-			DrawObjects(region.GetPrims(), terrain, bitmap);
+			DrawObjects(prims, terrain, bitmap);
 			watch.Stop();
-			LOG.Debug($"[RENDER] Completed OBB prims for region {region.Id} named '{region.Name}' in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Debug($"[RENDER] Completed OBB prims for region {region.Id} named '{region.Name}' in {watch.ElapsedMilliseconds}ms");
 
 			return bitmap;
 		}
