@@ -77,6 +77,7 @@ namespace DataReader {
 							GroupPositionZ, PositionZ
 					";
 					cmd.Parameters.AddWithValue("region_id", regionId);
+					cmd.CommandTimeout = 600;
 					cmd.Prepare();
 					var reader = DBHelpers.ExecuteReader(cmd);
 					if (reader == null) {

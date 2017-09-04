@@ -155,6 +155,7 @@ namespace DataReader {
 						LEFT OUTER JOIN regions ON regionID = uuid
 					ORDER BY
 						host_name, region_id";
+					cmd.CommandTimeout = 600;
 					var reader = DBHelpers.ExecuteReader(cmd);
 					if (reader == null) {
 						return;
