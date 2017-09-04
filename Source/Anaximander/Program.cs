@@ -57,8 +57,10 @@ namespace Anaximander {
 
 		public static int Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
+#pragma warning disable RECS0164 // Explicit delegate creation expression is redundant
 			// Analysis disable once RedundantDelegateCreation // The "new" is required.
 			AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+#pragma warning restore RECS0164 // Explicit delegate creation expression is redundant
 
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 
