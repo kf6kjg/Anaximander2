@@ -222,6 +222,49 @@ namespace DataReader {
 
 				Thread.CurrentThread.Priority = oldPriority;
 			});
+
+			LOG.Debug("[RDB_MAP] Connecting adjacent regions.");
+			foreach (var region in region_list.Values) {
+				if (region.HasKnownCoordinates()) {
+					var adjacentRegions = new List<Region>();
+
+					Region north, northeast, east, southeast, south, southwest, west, northwest;
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 0,  1), out north)) {
+						adjacentRegions.Add(north);
+					}
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1,  1), out northeast)) {
+						adjacentRegions.Add(northeast);
+					}
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1,  0), out east)) {
+						adjacentRegions.Add(east);
+					}
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1, -1), out southeast)) {
+						adjacentRegions.Add(southeast);
+					}
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 0, -1), out south)) {
+						adjacentRegions.Add(south);
+					}
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1, -1), out southwest)) {
+						adjacentRegions.Add(southwest);
+					}
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1,  0), out west)) {
+						adjacentRegions.Add(west);
+					}
+
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1,  1), out northwest)) {
+						adjacentRegions.Add(northwest);
+					}
+
+					region._adjacentRegions = adjacentRegions;
+				}
+			}
 		}
 
 		public int GetRegionCount() {
