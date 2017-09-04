@@ -39,17 +39,21 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.3.0\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse.Types">
+      <HintPath>..\packages\LibreMetaverse.Types.1.1.8.107\lib\net40\LibreMetaverse.Types.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Entities\Region.cs" />
     <Compile Include="RDBMap.cs" />
     <Compile Include="DBHelpers.cs" />
-    <Compile Include="Entities\RegionInfo.cs" />
-    <Compile Include="Entities\RegionTerrainData.cs" />
-    <Compile Include="Entities\RegionPrimData.cs" />
     <Compile Include="Entities\Prim.cs" />
     <Compile Include="DatabaseException.cs" />
+    <Compile Include="Entities\Terrain.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

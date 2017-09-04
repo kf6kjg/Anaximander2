@@ -98,14 +98,14 @@ namespace Anaximander {
 
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
 			watch.Stop();
-			LOG.Debug($"[RENDER]: Init'd image for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Debug($"[RENDER]: Init'd image for {region.Id} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			// Draw the terrain.
-			LOG.Debug($"[RENDER]: Rendering region {region.regionId}");
+			LOG.Debug($"[RENDER]: Rendering region {region.Id}");
 			watch.Restart();
 			_regionRenderer.RenderTileFrom(region, bitmap);
 			watch.Stop();
-			LOG.Info($"[RENDER]: Completed render for {region.regionId} in " + (watch.ElapsedMilliseconds) + " ms");
+			LOG.Info($"[RENDER]: Completed render for {region.Id} in " + (watch.ElapsedMilliseconds) + " ms");
 
 			return bitmap;
 		}

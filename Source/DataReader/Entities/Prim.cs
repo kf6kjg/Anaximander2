@@ -23,70 +23,205 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using log4net;
+using OpenMetaverse;
 
 namespace DataReader {
 	public class Prim {
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		internal static IEnumerable<Prim> LoadPrims(string rdbConnectionString, Guid regionId) {
+			using (var conn = DBHelpers.GetConnection(rdbConnectionString)) {
+				if (conn == null) {
+					return null;
+				}
+				using (var cmd = conn.CreateCommand()) {
+					cmd.CommandText = @"SELECT
+							UUID,
+							Name,
+							ObjectFlags,
+							State,
+							PositionX, PositionY, PositionZ,
+							GroupPositionX, GroupPositionY, GroupPositionZ,
+							ScaleX, ScaleY, ScaleZ,
+							RotationX, RotationY, RotationZ, RotationW,
+							RootRotationX, RootRotationY, RootRotationZ, RootRotationW,
+							Texture
+						FROM
+							prims pr
+							NATURAL JOIN primshapes
+							LEFT JOIN (
+								SELECT
+									RotationX AS RootRotationX,
+									RotationY AS RootRotationY,
+									RotationZ AS RootRotationZ,
+									RotationW AS RootRotationW,
+									SceneGroupID
+								FROM
+									prims pr
+								WHERE
+									LinkNumber = 1
+							) AS rootprim ON rootprim.SceneGroupID = pr.SceneGroupID
+						WHERE
+							GroupPositionZ < 766 /* = max terrain height + render height */
+							AND LENGTH(Texture) > 0
+							AND ObjectFlags & (0 | 0x40000 | 0x20000) = 0
+							AND ScaleX > 1.0
+							AND ScaleY > 1.0
+							AND ScaleZ > 1.0
+							AND PCode NOT IN (255, 111, 95)
+							AND RegionUUID = @region_id
+						ORDER BY
+							GroupPositionZ, PositionZ
+					";
+					cmd.Parameters.AddWithValue("region_id", regionId);
+					cmd.Prepare();
+					var reader = DBHelpers.ExecuteReader(cmd);
+					if (reader == null) {
+						return null;
+					}
+
+					var prims = new List<Prim>(); // List was chosen because it guarantees that insertion order will be preserved unless explictly sorted.
+
+					try {
+						while (reader.Read()) {
+							// Nullables start here
+							var groupPosX = RDBMap.GetDBValueOrNull<double>(reader, "GroupPositionX");
+							var groupPosY = RDBMap.GetDBValueOrNull<double>(reader, "GroupPositionY");
+							var groupPosZ = RDBMap.GetDBValueOrNull<double>(reader, "GroupPositionZ");
+							var posX = RDBMap.GetDBValueOrNull<double>(reader, "PositionX");
+							var posY = RDBMap.GetDBValueOrNull<double>(reader, "PositionY");
+							var posZ = RDBMap.GetDBValueOrNull<double>(reader, "PositionZ");
+							var rootRotW = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationW");
+							var rootRotX = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationX");
+							var rootRotY = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationY");
+							var rootRotZ = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationZ");
+							var rotW = RDBMap.GetDBValueOrNull<double>(reader, "RotationW");
+							var rotX = RDBMap.GetDBValueOrNull<double>(reader, "RotationX");
+							var rotY = RDBMap.GetDBValueOrNull<double>(reader, "RotationY");
+							var rotZ = RDBMap.GetDBValueOrNull<double>(reader, "RotationZ");
+
+							prims.Add(new Prim {
+								GroupPosition = groupPosX != null && groupPosY != null && groupPosZ != null ? new Vector3(
+									(float)groupPosX,
+									(float)groupPosY,
+									(float)groupPosZ
+								) : (Vector3?)null,
+								Id = Guid.Parse(RDBMap.GetDBValue(reader, "UUID")),
+								Name = RDBMap.GetDBValue(reader, "Name"),
+								ObjectFlags = RDBMap.GetDBValue<int>(reader, "ObjectFlags"),
+								Position = posX != null && posY != null && posZ != null ? new Vector3(
+									(float)posX,
+									(float)posY,
+									(float)posZ
+								) : (Vector3?)null,
+								RegionId = regionId,
+								RootRotation = rootRotW != null && rootRotX != null && rootRotY != null && rootRotZ != null ? new Quaternion(
+									(float)rootRotX,
+									(float)rootRotY,
+									(float)rootRotZ,
+									(float)rootRotW
+								) : (Quaternion?)null,
+								Rotation = rotW != null && rotX != null && rotY != null && rotZ != null ? new Quaternion(
+									(float)rotX,
+									(float)rotY,
+									(float)rotZ,
+									(float)rotW
+								) : (Quaternion?)null,
+								Scale = new Vector3(
+									(float)RDBMap.GetDBValue<double>(reader, "ScaleX"),
+									(float)RDBMap.GetDBValue<double>(reader, "ScaleY"),
+									(float)RDBMap.GetDBValue<double>(reader, "ScaleZ")
+								),
+								State = RDBMap.GetDBValue<int>(reader, "State"),
+								Texture = (byte[])reader["Texture"],
+							});
+						}
+					}
+					finally {
+						reader.Close();
+					}
+
+					LOG.Info($"[PRIM] Loaded prim data for region {regionId}");
+					return prims;
+				}
+			}
+		}
+
 		#region Public Properties and Accessors
 
-		public Guid Id { get { return _primData.PrimId; } }
+		public Guid Id { get; private set; }
 
-		public Guid RegionId { get { return _primData.RegionId; } }
+		public string Name { get; private set; }
 
-		public int ObjectFlags { get { return _primData.ObjectFlags; } }
+		public Guid? RegionId { get; private set; }
 
-		public int State { get { return _primData.State; } }
+		public int? ObjectFlags { get; private set; }
 
-		public float PositionX  { get { return (float) _primData.PositionX; } }
+		public int? State { get; private set; }
 
-		public float PositionY { get { return (float) _primData.PositionY; } }
+		public Vector3? Position { get; private set; }
 
-		public float PositionZ { get { return (float) _primData.PositionZ; } }
+		public Vector3? GroupPosition { get; private set; }
 
-		public float GroupPositionX { get { return (float) _primData.GroupPositionX; } }
+		public Quaternion? Rotation { get; private set; }
 
-		public float GroupPositionY { get { return (float) _primData.GroupPositionY; } }
+		public Vector3 Scale { get; private set; }
 
-		public float GroupPositionZ { get { return (float) _primData.GroupPositionZ; } }
+		public Quaternion? RootRotation { get; private set; } = null;
 
-		public float RotationX { get { return (float) _primData.RotationX; } }
-
-		public float RotationY { get { return (float) _primData.RotationY; } }
-
-		public float RotationZ { get { return (float) _primData.RotationZ; } }
-
-		public float RotationW { get { return (float) _primData.RotationW; } }
-
-		public float ScaleX { get { return (float) _primData.ScaleX; } }
-
-		public float ScaleY { get { return (float) _primData.ScaleY; } }
-
-		public float ScaleZ { get { return (float) _primData.ScaleZ; } }
-
-		public float? RootRotationX { get { return (float?) _primData.RootRotationX; } }
-
-		public float? RootRotationY { get { return (float?) _primData.RootRotationY; } }
-
-		public float? RootRotationZ { get { return (float?) _primData.RootRotationZ; } }
-
-		public float? RootRotationW { get { return (float?) _primData.RootRotationW; } }
-
-		public byte[] Texture { get { return _primData.Texture; } }
+		public byte[] Texture { get; private set; }
 
 		#endregion
 
-		#region Private Properties
+		public Vector3? ComputeWorldPosition() {
+			if (RootRotation == null) {
+				// Is a root or childless prim.
+				return GroupPosition;
+			}
+			if (RootRotation == null || Position == null || GroupPosition == null) {
+				return null;
+			}
+			// Is a child prim.
 
-		private RegionPrimData _primData;
+			var translationOffsetPosition = Position * RootRotation;
 
-		#endregion
+			return GroupPosition + translationOffsetPosition;
+		}
+
+		public Quaternion? ComputeWorldRotation() {
+			if (RootRotation == null) {
+				// Is a root or childless prim.
+				return Rotation;
+			}
+			if (RootRotation == null || Rotation == null) {
+				return null;
+			}
+			// Is a child prim.
+
+			return RootRotation * Rotation;
+		}
+
+		/// <summary>
+		/// Allows the prim position to be shifted by the given amount.  Good for when the prim is actually owned by an adjacent region.
+		/// </summary>
+		/// <param name="offset">Offset.</param>
+		internal void Offset(Vector2 offset) {
+			if (GroupPosition != null) {
+				var position = (Vector3)GroupPosition;
+				position.X += offset.X;
+				position.Y += offset.Y;
+				GroupPosition = position;
+			}
+		}
 
 		#region Constructors
 
-		public Prim(ref RegionPrimData data) {
-			_primData = data;
+		private Prim() {
 		}
 
 		#endregion
 	}
 }
-
