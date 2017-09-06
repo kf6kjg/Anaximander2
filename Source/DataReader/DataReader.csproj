@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -28,6 +28,9 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="LibreMetaverse.Types, Version=1.1.8.107, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\LibreMetaverse.Types.1.1.8.107\lib\net40\LibreMetaverse.Types.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="MySql.Data">
       <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
@@ -42,9 +45,6 @@
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.3.0\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
-    <Reference Include="LibreMetaverse.Types">
-      <HintPath>..\packages\LibreMetaverse.Types.1.1.8.107\lib\net40\LibreMetaverse.Types.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -56,9 +56,7 @@
     <Compile Include="Entities\Terrain.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Entities\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />

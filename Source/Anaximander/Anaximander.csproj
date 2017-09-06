@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -32,6 +32,12 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="LibreMetaverse.Types, Version=1.1.8.107, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\LibreMetaverse.Types.1.1.8.107\lib\net40\LibreMetaverse.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net, Version=2.3.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\protobuf-net.2.3.0\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="Nini">
       <HintPath>..\packages\Trove.Nini.1.1.0.0\lib\net20\Nini.dll</HintPath>
@@ -74,12 +80,6 @@
     <Reference Include="Chattel">
       <HintPath>..\packages\Chattel.1.2.0.22\lib\net45\Chattel.dll</HintPath>
     </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\packages\protobuf-net.2.2.1\lib\net40\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="LibreMetaverse.Types">
-      <HintPath>..\packages\LibreMetaverse.Types.1.0.10.71\lib\net40\LibreMetaverse.Types.dll</HintPath>
-    </Reference>
     <Reference Include="LibreMetaverse">
       <HintPath>..\packages\LibreMetaverse.1.0.10.71\lib\net40\LibreMetaverse.dll</HintPath>
     </Reference>
@@ -104,12 +104,6 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Configuration\" />
-    <Folder Include="Texture\" />
-    <Folder Include="FileIO\" />
-    <Folder Include="TileZooming\" />
-    <Folder Include="Renderers\" />
-    <Folder Include="Renderers\OBBRenderer\" />
-    <Folder Include="Renderers\FlatRenderer\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
