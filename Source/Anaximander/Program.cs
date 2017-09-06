@@ -41,7 +41,7 @@ namespace Anaximander {
 	class Application {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private static readonly string EXECUTABLE_DIRECTORY = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", String.Empty));
+		private static readonly string EXECUTABLE_DIRECTORY = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", string.Empty));
 
 		private static readonly string DEFAULT_INI_FILE = "Anaximander.ini";
 
@@ -394,10 +394,10 @@ namespace Anaximander {
 		}
 
 		private static void ReadConfigurationFromINI(IConfigSource configSource) {
-			IConfig startupConfig = configSource.Configs["Startup"];
-			string iniFileName = startupConfig.GetString("inifile", DEFAULT_INI_FILE);
+			var startupConfig = configSource.Configs["Startup"];
+			var iniFileName = startupConfig.GetString("inifile", DEFAULT_INI_FILE);
 
-			bool found_at_given_path = false;
+			var found_at_given_path = false;
 
 			try {
 				LOG.Info($"[MAIN] Attempting to read configuration file {Path.GetFullPath(iniFileName)}");
