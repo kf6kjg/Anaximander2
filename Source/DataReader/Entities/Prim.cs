@@ -24,6 +24,7 @@
 // THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Reflection;
 using log4net;
 using OpenMetaverse;
@@ -80,9 +81,16 @@ namespace DataReader {
 					cmd.Parameters.AddWithValue("region_id", regionId);
 					cmd.CommandTimeout = 600;
 					cmd.Prepare();
-					var reader = DBHelpers.ExecuteReader(cmd);
+					IDataReader reader = null;
+					try {
+						reader = DBHelpers.ExecuteReader(cmd);
+					}
+					catch (Exception e) {
+						LOG.Warn($"[PRIM] Prims DB reader query threw an error when attempting to get prims for region '{regionId}'.", e);
+					}
+
 					if (reader == null) {
-						LOG.Warn($"[PRIM] No prims query DB reader returned for region '{regionId}'.");
+						LOG.Warn($"[TERRAIN] Prims DB reader query returned nothing for region '{regionId}'.");
 						return null;
 					}
 

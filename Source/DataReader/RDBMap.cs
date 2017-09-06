@@ -103,9 +103,16 @@ namespace DataReader {
 						estate_map
 					ORDER BY
 						region_id";
-					var reader = DBHelpers.ExecuteReader(cmd);
+					IDataReader reader = null;
+					try {
+						reader = DBHelpers.ExecuteReader(cmd);
+					}
+					catch (Exception e) {
+						LOG.Warn($"[RDB_MAP] Region list query DB reader threw an error when attempting to get regions list.", e);
+					}
+
 					if (reader == null) {
-						LOG.Warn($"[RDB_MAP] No region list query DB reader returned from main DB, cannot remove old regions from map.");
+						LOG.Warn($"[RDB_MAP] Region list query DB reader returned nothing from main DB, cannot remove old regions from map.");
 						return;
 					}
 
@@ -160,9 +167,16 @@ namespace DataReader {
 					ORDER BY
 						host_name, region_id";
 					cmd.CommandTimeout = 600;
-					var reader = DBHelpers.ExecuteReader(cmd);
+					IDataReader reader = null;
+					try {
+						reader = DBHelpers.ExecuteReader(cmd);
+					}
+					catch (Exception e) {
+						LOG.Warn($"[PRIM] Region list query DB reader threw an error when attempting to update the map.", e);
+					}
+
 					if (reader == null) {
-						LOG.Warn($"[RDB_MAP] No region list query DB reader returned from main DB, cannot update the map.");
+						LOG.Warn($"[RDB_MAP] Region list query DB reader returned nothing from main DB, cannot update the map.");
 						return;
 					}
 

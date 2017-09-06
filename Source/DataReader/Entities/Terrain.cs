@@ -23,6 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Data;
 using System.IO;
 using System.Reflection;
 using log4net;
@@ -70,9 +71,16 @@ namespace DataReader {
 					";
 					cmd.Parameters.AddWithValue("region_id", _regionId.ToString());
 					cmd.Prepare();
-					var reader = DBHelpers.ExecuteReader(cmd);
+					IDataReader reader = null;
+					try {
+						reader = DBHelpers.ExecuteReader(cmd);
+					}
+					catch (Exception e) {
+						LOG.Warn($"[PRIM] Prims query DB reader threw an error when attempting to get prims for region '{_regionId}'.", e);
+					}
+
 					if (reader == null) {
-						LOG.Warn($"[TERRAIN] No prims query DB reader returned for region '{_regionId}'.");
+						LOG.Warn($"[TERRAIN] Terrain DB reader query returned nothing for region '{_regionId}'.");
 						return false;
 					}
 
