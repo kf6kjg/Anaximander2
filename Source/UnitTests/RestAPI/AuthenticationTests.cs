@@ -68,12 +68,12 @@ namespace UnitTests {
 			return apiKey == uuid.ToString();
 		}
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void Init() {
 			RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, _domain, _port, _useSSL);
 		}
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void Stop() {
 			RestAPI.StopHost();
 		}
