@@ -1,6 +1,6 @@
 version: 2.0.{build}
 
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 nuget:
   project_feed: true
@@ -14,6 +14,12 @@ build:
 cache:
   - Source\packages -> Source\**\packages.config
 
+skip_commits:
+  files:
+    - .gitignore
+    - LICENSE
+    - README.md
+  
 before_build:
   - ps: if ($env:APPVEYOR_REPO_TAG -eq "true") { $env:TAG_VERSION = "$env:APPVEYOR_REPO_TAG_NAME.$env:APPVEYOR_BUILD_NUMBER" } else { $env:TAG_VERSION = "v2.0.0.$env:APPVEYOR_BUILD_NUMBER" }
   - ps: $env:TAG_VERSION = $env:TAG_VERSION -replace 'v',''
