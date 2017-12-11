@@ -41,9 +41,6 @@
     <Reference Include="CSJ2K">
       <HintPath>..\packages\CSJ2K.2.0.0.1\lib\net40-client\CSJ2K.dll</HintPath>
     </Reference>
-    <Reference Include="InWorldz.Whip.Client">
-      <HintPath>..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
-    </Reference>
     <Reference Include="Flurl.Http">
       <HintPath>..\packages\Flurl.Http.Signed.0.7.0\lib\net45\Flurl.Http.dll</HintPath>
     </Reference>
@@ -65,19 +62,7 @@
     <Reference Include="Nancy">
       <HintPath>..\packages\Nancy.1.4.4\lib\net40\Nancy.dll</HintPath>
     </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\packages\protobuf-net.2.3.2\lib\net40\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="LibreMetaverse.Types">
-      <HintPath>..\packages\LibreMetaverse.Types.1.2.0.146\lib\net461\LibreMetaverse.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="LibreMetaverse.StructuredData">
-      <HintPath>..\packages\LibreMetaverse.StructuredData.1.2.0.146\lib\net461\LibreMetaverse.StructuredData.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="System.Reflection.TypeExtensions">
-      <HintPath>..\packages\System.Reflection.TypeExtensions.4.1.0\lib\net46\System.Reflection.TypeExtensions.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="XmlRpcCs">
       <HintPath>..\packages\XmlRpcCs.2.1.1.2\lib\net461\XmlRpcCs.dll</HintPath>
@@ -85,11 +70,29 @@
     <Reference Include="zlib.net">
       <HintPath>..\packages\zlib.net-mutliplatform.1.0.4\lib\net461\zlib.net.dll</HintPath>
     </Reference>
-    <Reference Include="LibreMetaverse">
-      <HintPath>..\packages\LibreMetaverse.1.2.0.146\lib\net461\LibreMetaverse.dll</HintPath>
+    <Reference Include="InWorldz.Whip.Client">
+      <HintPath>..\packages\InWorldz.Whip.Client.1.1.0.6\lib\net461\InWorldz.Whip.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.TypeExtensions">
+      <HintPath>..\packages\System.Reflection.TypeExtensions.4.4.0\lib\net461\System.Reflection.TypeExtensions.dll</HintPath>
     </Reference>
     <Reference Include="Chattel">
-      <HintPath>..\packages\Chattel.1.2.1.25\lib\net461\Chattel.dll</HintPath>
+      <HintPath>..\packages\Chattel.1.4.0.52\lib\net461\Chattel.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse.Types">
+      <HintPath>..\packages\LibreMetaverse.Types.1.2.1.151\lib\net461\LibreMetaverse.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse.StructuredData">
+      <HintPath>..\packages\LibreMetaverse.StructuredData.1.2.1.151\lib\net461\LibreMetaverse.StructuredData.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse">
+      <HintPath>..\packages\LibreMetaverse.1.2.1.151\lib\net461\LibreMetaverse.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.3.3\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="Chattel-AssetTools">
+      <HintPath>..\packages\Chattel-AssetTools.1.4.0.52\lib\net461\Chattel-AssetTools.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

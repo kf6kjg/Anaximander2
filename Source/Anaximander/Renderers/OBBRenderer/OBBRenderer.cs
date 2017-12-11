@@ -693,7 +693,7 @@ namespace Anaximander {
 			// Compute a color from the texture data AND the color applied.  The operation is "Multiplication" aka per-pixel (A*B)/255 or if float in domain 0-1: (A*B)
 			Texture texture;
 			try {
-				texture = Texture.GetByUUID(facetexture.TextureID);
+				texture = Texture.GetByUUID(facetexture.TextureID.Guid);
 			}
 			catch (InvalidOperationException e) {
 				var location = prim.ComputeWorldPosition();

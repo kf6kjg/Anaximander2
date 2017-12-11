@@ -27,16 +27,15 @@ using System.Data;
 using System.IO;
 using System.Reflection;
 using log4net;
-using OpenMetaverse;
 
 namespace DataReader {
 	public class Terrain {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public UUID TerrainTexture1 { get; private set; }
-		public UUID TerrainTexture2 { get; private set; }
-		public UUID TerrainTexture3 { get; private set; }
-		public UUID TerrainTexture4 { get; private set; }
+		public Guid TerrainTexture1 { get; private set; }
+		public Guid TerrainTexture2 { get; private set; }
+		public Guid TerrainTexture3 { get; private set; }
+		public Guid TerrainTexture4 { get; private set; }
 
 		public double ElevationNWLow { get; private set; }
 		public double ElevationNWHigh { get; private set; }
@@ -87,10 +86,10 @@ namespace DataReader {
 					try {
 						reader.Read();
 
-						TerrainTexture1 = UUID.Parse(RDBMap.GetDBValue(reader, "terrain_texture_1"));
-						TerrainTexture2 = UUID.Parse(RDBMap.GetDBValue(reader, "terrain_texture_2"));
-						TerrainTexture3 = UUID.Parse(RDBMap.GetDBValue(reader, "terrain_texture_3"));
-						TerrainTexture4 = UUID.Parse(RDBMap.GetDBValue(reader, "terrain_texture_4"));
+						TerrainTexture1 = Guid.Parse(RDBMap.GetDBValue(reader, "terrain_texture_1"));
+						TerrainTexture2 = Guid.Parse(RDBMap.GetDBValue(reader, "terrain_texture_2"));
+						TerrainTexture3 = Guid.Parse(RDBMap.GetDBValue(reader, "terrain_texture_3"));
+						TerrainTexture4 = Guid.Parse(RDBMap.GetDBValue(reader, "terrain_texture_4"));
 
 						ElevationNWLow = RDBMap.GetDBValue<double>(reader, "elevation_1_nw");
 						ElevationNWHigh = RDBMap.GetDBValue<double>(reader, "elevation_2_nw");
