@@ -26,8 +26,8 @@ before_build:
   - ps: Write-Host "Setting version to '$env:TAG_VERSION'"
   - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:TAG_VERSION" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
   - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:TAG_VERSION" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
-  - ps: (Get-Content Source\Anaximander\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\Anaximander\app.config
-  - ps: (Get-Content Source\RollbarCrashReporter\app.config) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2015"' | Set-Content Source\RollbarCrashReporter\app.config
+  - ps: (Get-Content Source\Anaximander\Program.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\Anaximander\Program.cs
+  - ps: (Get-Content Source\RollbarCrashReporter\CrashReporter.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\RollbarCrashReporter\CrashReporter.cs
   - nuget restore Source\Anaximander.sln
 
 after_build:
