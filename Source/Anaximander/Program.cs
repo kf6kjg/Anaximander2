@@ -100,6 +100,18 @@ namespace Anaximander {
 			// Read in the ini file
 			ReadConfigurationFromINI(configSource);
 
+			// Create a IPC wait handle with a unique identifier.
+			var serverMode = startupConfig.GetBoolean("ServerMode", Constants.KeepRunningDefault);
+			var createdNew = true;
+			var waitHandle = serverMode ? new EventWaitHandle(false, EventResetMode.AutoReset, "4d1ede7a-7f81-4934-bc59-f4fe10396408", out createdNew) : null;
+			var serverState = serverMode ? ServerState.Starting : ServerState.Ignored;
+
+			// If the handle was already there, inform the user and die.
+			if (serverState == ServerState.Starting && !createdNew) {
+				LOG.Error("Server process alredy started, please stop that server first.");
+				return 2;
+			}
+
 			LOG.Info($"[MAIN] Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
 
 			var chattelConfig = new ChattelConfiguration(configSource, configSource.Configs["Assets"]);
@@ -189,7 +201,14 @@ namespace Anaximander {
 			}
 
 			// Activate server process
-			if (startupConfig.GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
+			if (serverState == ServerState.Starting) {
+				System.Console.CancelKeyPress += (sender, cargs) => {
+					cargs.Cancel = true;
+					waitHandle.Set();
+				};
+
+				serverState = ServerState.Running;
+
 				var server_config = configSource.Configs["Server"];
 
 				var domain = server_config?.GetString("UseSSL", Constants.ServerDomain) ?? Constants.ServerDomain;
@@ -208,10 +227,8 @@ namespace Anaximander {
 					useSSL
 				);
 
-				while (true) {
-					// Just spin.
-					// TODO: swap out for a wait handle based approach. See http://stackoverflow.com/a/12367882/7363787
-				}
+				waitHandle.WaitOne();
+				serverState = ServerState.Stopping;
 			}
 
 			// I don't care what's still connected or keeping things running, it's time to die!
@@ -500,6 +517,13 @@ namespace Anaximander {
 					Environment.Exit(1);
 				}
 			}
+		}
+
+		private enum ServerState {
+			Ignored,
+			Starting,
+			Running,
+			Stopping
 		}
 	}
 }
