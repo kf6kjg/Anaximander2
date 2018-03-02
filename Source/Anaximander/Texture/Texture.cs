@@ -22,13 +22,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 using System.Collections.Concurrent;
 using System.Drawing;
 using System.Reflection;
 using Chattel;
+using ChattelAssetTools;
 using InWorldz.Data.Assets.Stratus;
 using log4net;
-using OpenMetaverse;
+
 
 namespace Anaximander {
 	/// <summary>
@@ -59,7 +61,7 @@ namespace Anaximander {
 
 		private static ChattelReader _assetReader = null;
 
-		private static readonly ConcurrentDictionary<UUID, Texture> _memoryCache = new ConcurrentDictionary<UUID, Texture>();
+		private static readonly ConcurrentDictionary<Guid, Texture> _memoryCache = new ConcurrentDictionary<Guid, Texture>();
 
 		public static void Initialize(ChattelReader assetReader) {
 			if (_assetReader == null) {
@@ -72,7 +74,7 @@ namespace Anaximander {
 			CSJ2K.Util.BitmapImageCreator.Register();
 		}
 
-		public static Texture GetByUUID(UUID id, Color? defaultColor = null) {
+		public static Texture GetByUUID(Guid id, Color? defaultColor = null) {
 			Texture texture;
 
 			if (_memoryCache.TryGetValue(id, out texture)) {
@@ -114,13 +116,10 @@ namespace Anaximander {
 		}
 
 		private Texture(StratusAsset asset) {
-			if (asset.IsImageAsset) {
-				var tex = asset.ToTexture();
+			if (asset.IsTextureAsset()) {
+				LOG.Debug($"[TEXTURE] Decoding image {asset.Id} named '{asset.Name}'. Notable data: Type={asset.Type}, Temp={asset.Temporary}, Data Length={asset.Data?.Length}.");
 
-				LOG.Debug($"Decoding image {asset.Id}. Notable data: Type={tex.AssetType}, Temp={tex.Temporary}, Data Length={tex.AssetData?.Length}.");
-
-				var jp2k = CSJ2K.J2kImage.FromBytes(tex.AssetData);
-				var bitmap = jp2k.As<Bitmap>();
+				var bitmap = asset.ToImage<Bitmap>();
 
 				Image = bitmap;
 				AverageColor = computeAverageColor(bitmap);
@@ -149,18 +148,18 @@ namespace Anaximander {
 			// color-channel, so 2^24 is the maximum value we can get, adding everything.
 			// int is be big enough for that.
 			int r = 0, g = 0, b = 0;
-			for (int y = 0; y < bmp.Height; ++y)
+			for (var y = 0; y < bmp.Height; ++y)
 			{
-				for (int x = 0; x < bmp.Width; ++x)
+				for (var x = 0; x < bmp.Width; ++x)
 				{
-					Color c = bmp.GetPixel(x, y);
+					var c = bmp.GetPixel(x, y);
 					r += (int)c.R & 0xff;
 					g += (int)c.G & 0xff;
 					b += (int)c.B & 0xff;
 				}
 			}
 
-			int pixels = bmp.Width * bmp.Height;
+			var pixels = bmp.Width * bmp.Height;
 			return Color.FromArgb(r / pixels, g / pixels, b / pixels);
 		}
 

@@ -84,8 +84,8 @@ namespace Anaximander {
 				}
 
 				// Add all regions that would show on the same super tile to make sure a full picture is generated.
-				var super_x = ((int)region.locationX >> 1) << 1;
-				var super_y = ((int)region.locationY >> 1) << 1;
+				var super_x = ((int)region.Location?.X >> 1) << 1;
+				var super_y = ((int)region.Location?.Y >> 1) << 1;
 
 				if (_rdbMap.GetRegionByLocation(super_x, super_y) != null) {
 					var node = new TileTreeNode(super_x, super_y, 1);

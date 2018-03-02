@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Anaximander</RootNamespace>
     <AssemblyName>Anaximander</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <CodePage>65001</CodePage>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
@@ -38,14 +38,8 @@
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Drawing" />
-    <Reference Include="Nancy">
-      <HintPath>..\packages\Nancy.1.4.3\lib\net40\Nancy.dll</HintPath>
-    </Reference>
     <Reference Include="CSJ2K">
       <HintPath>..\packages\CSJ2K.2.0.0.1\lib\net40-client\CSJ2K.dll</HintPath>
-    </Reference>
-    <Reference Include="InWorldz.Whip.Client">
-      <HintPath>..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
     </Reference>
     <Reference Include="Flurl.Http">
       <HintPath>..\packages\Flurl.Http.Signed.0.7.0\lib\net45\Flurl.Http.dll</HintPath>
@@ -56,9 +50,6 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="OpenGL.Net">
-      <HintPath>..\packages\OpenGL.Net.0.4.2\lib\net35\OpenGL.Net.dll</HintPath>
-    </Reference>
     <Reference Include="Flurl">
       <HintPath>..\packages\Flurl.Signed.2.3.0\lib\portable40-net40+sl5+win8+wp8+wpa81\Flurl.dll</HintPath>
     </Reference>
@@ -68,23 +59,40 @@
     <Reference Include="openstacknet">
       <HintPath>..\packages\openstack.net.1.7.7\lib\net45\openstacknet.dll</HintPath>
     </Reference>
+    <Reference Include="Nancy">
+      <HintPath>..\packages\Nancy.1.4.4\lib\net40\Nancy.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="mscorlib" />
     <Reference Include="XmlRpcCs">
-      <HintPath>..\packages\XmlRpcCS.2.0.1.8\lib\net40\XmlRpcCs.dll</HintPath>
+      <HintPath>..\packages\XmlRpcCs.2.1.1.2\lib\net461\XmlRpcCs.dll</HintPath>
     </Reference>
     <Reference Include="zlib.net">
-      <HintPath>..\packages\zlib.net.1.0.4.0\lib\zlib.net.dll</HintPath>
+      <HintPath>..\packages\zlib.net-mutliplatform.1.0.4\lib\net461\zlib.net.dll</HintPath>
+    </Reference>
+    <Reference Include="InWorldz.Whip.Client">
+      <HintPath>..\packages\InWorldz.Whip.Client.1.1.0.6\lib\net461\InWorldz.Whip.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.TypeExtensions">
+      <HintPath>..\packages\System.Reflection.TypeExtensions.4.4.0\lib\net461\System.Reflection.TypeExtensions.dll</HintPath>
     </Reference>
     <Reference Include="Chattel">
-      <HintPath>..\packages\Chattel.1.2.0.22\lib\net45\Chattel.dll</HintPath>
-    </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\packages\protobuf-net.2.2.1\lib\net40\protobuf-net.dll</HintPath>
+      <HintPath>..\packages\Chattel.1.4.0.52\lib\net461\Chattel.dll</HintPath>
     </Reference>
     <Reference Include="LibreMetaverse.Types">
-      <HintPath>..\packages\LibreMetaverse.Types.1.0.10.71\lib\net40\LibreMetaverse.Types.dll</HintPath>
+      <HintPath>..\packages\LibreMetaverse.Types.1.2.1.151\lib\net461\LibreMetaverse.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse.StructuredData">
+      <HintPath>..\packages\LibreMetaverse.StructuredData.1.2.1.151\lib\net461\LibreMetaverse.StructuredData.dll</HintPath>
     </Reference>
     <Reference Include="LibreMetaverse">
-      <HintPath>..\packages\LibreMetaverse.1.0.10.71\lib\net40\LibreMetaverse.dll</HintPath>
+      <HintPath>..\packages\LibreMetaverse.1.2.1.151\lib\net461\LibreMetaverse.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.3.3\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="Chattel-AssetTools">
+      <HintPath>..\packages\Chattel-AssetTools.1.4.0.52\lib\net461\Chattel-AssetTools.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -107,12 +115,6 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Configuration\" />
-    <Folder Include="Texture\" />
-    <Folder Include="FileIO\" />
-    <Folder Include="TileZooming\" />
-    <Folder Include="Renderers\" />
-    <Folder Include="Renderers\OBBRenderer\" />
-    <Folder Include="Renderers\FlatRenderer\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

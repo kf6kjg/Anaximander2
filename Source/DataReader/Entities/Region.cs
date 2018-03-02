@@ -22,93 +22,125 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Collections;
-using System.Data;
-using System.IO;
-using System.Net;
-using log4net;
-using MySql.Data.MySqlClient;
-using Nini.Config;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using log4net;
+using OpenMetaverse;
 
 namespace DataReader {
 	public class Region {
-		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		#region Public Properties and Accessors
 
-		public Guid regionId { get { return _info.regionId; } private set { _info.regionId = value; } }
+		public Guid Id { get; internal set; }
 
-		public string regionName { get { return _info.regionName; } private set { _info.regionName = value; } }
+		public Vector2? Location { get; internal set; }
 
-		/// <summary>
-		/// Gets or sets the location x.  Please use the RDBMap's UpdateRegionLocation method instead of setting this.
-		/// </summary>
-		/// <value>The location x.</value>
-		public int? locationX { get { return _info.locationX; } set { _info.locationX = value; } }
+		public string Name { get; internal set; }
 
-		/// <summary>
-		/// Gets or sets the location y.  Please use the RDBMap's UpdateRegionLocation method instead of setting this.
-		/// </summary>
-		/// <value>The location y.</value>
-		public int? locationY { get { return _info.locationY; } set { _info.locationY = value; } }
+		public string ServerIP { get; internal set; }
 
-		public int? sizeX { get { return _info.sizeX; } private set { _info.sizeX = value; } }
+		public int? ServerPort { get; internal set; }
 
-		public int? sizeY { get { return _info.sizeY; } private set { _info.sizeY = value; } }
-
-		public string serverIP { get { return _info.serverIP; } private set { _info.serverIP = value; } }
-
-		public int? serverPort { get { return _info.serverPort; } private set { _info.serverPort = value; } }
-
-		public string rdbConnectionString => _info.RDBConnectionString;
-
-
-		public string terrainTexture1 { get { return _terrainData.terrainTexture1; } private set { _terrainData.terrainTexture1 = value; } }
-
-		public string terrainTexture2 { get { return _terrainData.terrainTexture2; } private set { _terrainData.terrainTexture2 = value; } }
-
-		public string terrainTexture3 { get { return _terrainData.terrainTexture3; } private set { _terrainData.terrainTexture3 = value; } }
-
-		public string terrainTexture4 { get { return _terrainData.terrainTexture4; } private set { _terrainData.terrainTexture4 = value; } }
-
-		public double elevation1NW { get { return _terrainData.elevation1NW; } private set { _terrainData.elevation1NW = value; } }
-
-		public double elevation2NW { get { return _terrainData.elevation2NW; } private set { _terrainData.elevation2NW = value; } }
-
-		public double elevation1NE { get { return _terrainData.elevation1NE; } private set { _terrainData.elevation1NE = value; } }
-
-		public double elevation2NE { get { return _terrainData.elevation2NE; } private set { _terrainData.elevation2NE = value; } }
-
-		public double elevation1SW { get { return _terrainData.elevation1SW; } private set { _terrainData.elevation1SW = value; } }
-
-		public double elevation2SW { get { return _terrainData.elevation2SW; } private set { _terrainData.elevation2SW = value; } }
-
-		public double elevation1SE { get { return _terrainData.elevation1SE; } private set { _terrainData.elevation1SE = value; } }
-
-		public double elevation2SE { get { return _terrainData.elevation2SE; } private set { _terrainData.elevation2SE = value; } }
-
-		public double waterHeight { get { return _terrainData.waterHeight; } private set { _terrainData.waterHeight = value; } }
-
-		public double[,] heightmapData { get { return _terrainData.heightmap; } private set { _terrainData.heightmap = value; }} // Yes, the elements are stull mutable, but I don't feel like making my life that difficult ATM.
-
-		public IEnumerable<Prim> prims { get { return _primData; } }
+		public Vector2 Size { get; internal set; }
 
 		#endregion
 
-		#region Private Properties
+		#region Private/Internal Properties
 
-		private RegionInfo _info;
-		private RegionTerrainData _terrainData;
-		private readonly List<Prim> _primData; // List was chosen because it guarantees that insertion order will be preserved unless explictly sorted.
+		internal IEnumerable<Region> _adjacentRegions;
+
+		internal string _rdbConnectionString = null;
 
 		#endregion
 
 		#region Public Methods
 
-		public void AddPrim(Prim prim) {
-			_primData.Add(prim);
+		/// <summary>
+		/// Gets the prims for this region and all adjacent from the DB.
+		/// </summary>
+		/// <returns>The prims.</returns>
+		public IEnumerable<Prim> GetPrims() {
+			if (!HasKnownCoordinates()) {
+				return null;
+			}
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			LOG.Debug($"[REGION] Loading region-local prims for region {Id} named '{Name}'.");
+
+			var prims = Prim.LoadPrims(_rdbConnectionString, Id);
+
+			watch.Stop();
+			LOG.Debug($"[REGION] Loading region-local prims for region {Id} named '{Name}' took {watch.ElapsedMilliseconds}ms " + (prims != null ? $"for {prims.Count()} prims." : "but failed to update from DB."));
+			watch.Reset();
+
+			if (prims != null && _adjacentRegions != null) {
+				prims = _adjacentRegions.Select(adjacentRegion => {
+					if (adjacentRegion.HasKnownCoordinates()) {
+						watch.Start();
+						LOG.Debug($"[REGION] Loading prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}'.");
+
+						var adjacentRegionPrims = Prim.LoadPrims(adjacentRegion._rdbConnectionString, adjacentRegion.Id);
+
+						watch.Stop();
+						LOG.Debug($"[REGION] Loading prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}' took {watch.ElapsedMilliseconds}ms " + (adjacentRegionPrims != null ? $"for {adjacentRegionPrims.Count()} prims." : "but failed to update from DB."));
+						watch.Reset();
+
+						if (adjacentRegionPrims != null) {
+							watch.Start();
+							LOG.Debug($"[REGION] Offsetting prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}'.");
+
+							foreach (var prim in adjacentRegionPrims) {
+								var regionOffset = (Vector2)adjacentRegion.Location - (Vector2)Location;
+
+								prim.Offset(regionOffset * Size); // Assumes constant size regions.
+							}
+
+							watch.Stop();
+							LOG.Debug($"[REGION] Offsetting prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}' took {watch.ElapsedMilliseconds}ms for {adjacentRegionPrims.Count()} prims.");
+							watch.Reset();
+						}
+
+						return adjacentRegionPrims;
+					}
+
+					return null;
+				})
+				.Where(region => region != null)
+				.Aggregate(prims, (primAccumulation, regionPrims) => primAccumulation.Concat(regionPrims));
+			}
+
+			return prims;
+		}
+
+		/// <summary>
+		/// Gets the current terrain data for the current region from the DB.  Make sure you've run Update first!
+		/// </summary>
+		/// <returns>The terrain.</returns>
+		public Terrain GetTerrain() {
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			LOG.Debug($"[REGION] Loading terrain for region {Id} named '{Name}'.");
+
+			var terrain = new Terrain(_rdbConnectionString, Id);
+
+			var result = terrain.Update();
+
+			watch.Stop();
+			LOG.Debug($"[REGION] Loading terrain for region {Id} named '{Name}' took {watch.ElapsedMilliseconds}ms and " + (result ? "was successful." : "failed to update from DB."));
+
+			return result ? terrain : null;
+		}
+
+		/// <summary>
+		/// Whether or not the region is listed as online or not, were we able to dig up some coordinates for this region?
+		/// </summary>
+		/// <returns><c>true</c>, if region has good coordinates, <c>false</c> otherwise.</returns>
+		public bool HasKnownCoordinates() {
+			return Location != null;
 		}
 
 		/// <summary>
@@ -116,20 +148,35 @@ namespace DataReader {
 		/// </summary>
 		/// <returns><c>true</c> if this instance is region currently up; otherwise, <c>false</c>.</returns>
 		public bool IsCurrentlyAccessable() {
-			if (serverIP != null) {
-				var wrGETURL = WebRequest.Create($"http://{serverIP}:{serverPort}/simstatus/");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up.");
+			if (ServerIP != null) {
+				var wrGETURL = WebRequest.Create($"http://{ServerIP}:{ServerPort}/simstatus/");
 				wrGETURL.Timeout = 10000; // Limit to something reasonable.  If the region can't respond in that time, it's not really accessable ATM.
 				try {
 					// Total time for 1000 passing tests against a server on the Internet: 42352ms, for an avg of 42.352 ms per check.
 					var objStream = wrGETURL.GetResponse().GetResponseStream();
 					var objReader = new StreamReader(objStream);
-					return objReader.ReadLine() == "OK";
+
+					var result = objReader.ReadLine();
+
+					watch.Stop();
+					LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms and the server returned '{result}'.");
+
+					return result == "OK";
 				}
 				catch (WebException) {
 					// Total time for 1000 fail tests against localhost: 848ms, for an avg of 0.848 ms per check.
+
+					watch.Stop();
+					LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms and the server never returned a value so is not up.");
+
 					return false;
 				}
 			}
+
+			watch.Stop();
+			LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms but the region doesn't have a known IP so the test was skipped.");
 
 			// Total time for 1000 False tests against nothing: 2ms, for an avg of 0.002 ms per check.
 			return false;
@@ -140,40 +187,15 @@ namespace DataReader {
 		/// </summary>
 		/// <returns><c>true</c>, if region is listed as online, <c>false</c> otherwise.</returns>
 		public bool IsListedAsOnline() {
-			return regionName != null;
+			return Name != null;
 		}
-
-		/// <summary>
-		/// Whether or not the region is listed as online or not, were we able to dig up some coordinates for this region?
-		/// </summary>
-		/// <returns><c>true</c>, if region has good coordinates, <c>false</c> otherwise.</returns>
-		public bool HasKnownCoordinates() {
-			return locationX != null && locationY != null;
-		}
-
 
 		#endregion
 
 		#region Constructors
 
-		public Region(RegionInfo info, RegionTerrainData terrain_data) {
-			_info = info;
-			_terrainData = terrain_data;
-			_primData = new List<Prim>();
-		}
-
-		public Region(Region region, RegionInfo info) : this(info, region._terrainData) {
-			_primData.AddRange(region.prims);
-		}
-
-		public Region(Region region, RegionTerrainData terrain_data) : this(region._info, terrain_data) {
-			_primData.AddRange(region.prims);
-		}
-
-		public Region(Region region, bool wipe_prims = false) : this(region._info, region._terrainData) {
-			if (!wipe_prims) {
-				_primData.AddRange(region.prims);
-			}
+		internal Region(string rdbConnectionString) {
+			_rdbConnectionString = rdbConnectionString;
 		}
 
 		#endregion

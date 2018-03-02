@@ -252,3 +252,5 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+Source/DataReader/docs/

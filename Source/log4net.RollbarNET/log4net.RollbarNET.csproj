@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>log4net_RollbarNET</RootNamespace>
     <AssemblyName>log4net.RollbarNET</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

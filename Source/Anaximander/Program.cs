@@ -41,7 +41,7 @@ namespace Anaximander {
 	class Application {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private static readonly string EXECUTABLE_DIRECTORY = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", String.Empty));
+		private static readonly string EXECUTABLE_DIRECTORY = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", string.Empty));
 
 		private static readonly string DEFAULT_INI_FILE = "Anaximander.ini";
 
@@ -57,8 +57,10 @@ namespace Anaximander {
 
 		public static int Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
+#pragma warning disable RECS0164 // Explicit delegate creation expression is redundant
 			// Analysis disable once RedundantDelegateCreation // The "new" is required.
 			AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+#pragma warning restore RECS0164 // Explicit delegate creation expression is redundant
 
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -75,7 +77,7 @@ namespace Anaximander {
 			var startupConfig = _configSource.Configs["Startup"];
 
 			// Configure Log4Net
-			var logConfigFile = startupConfig.GetString("logconfig", String.Empty);
+			var logConfigFile = startupConfig.GetString("logconfig", string.Empty);
 			if (string.IsNullOrEmpty(logConfigFile)) {
 				XmlConfigurator.Configure();
 				LogBootMessage();
@@ -123,8 +125,7 @@ namespace Anaximander {
 
 			// Load the RDB map
 			try {
-				var rdb_map = new RDBMap(configSource);
-				_rdbMap = rdb_map;
+				_rdbMap = new RDBMap(configSource);
 			}
 			catch (DatabaseException e) {
 				LOG.Error($"[MAIN] Unable to continue without database connection. Aborting.", e);
@@ -268,7 +269,7 @@ namespace Anaximander {
 					switch (change) {
 						case RestApi.ChangeCategory.RegionStart:
 							// Get all new data.
-							redraw = _rdbMap.CreateRegion(uuid);
+							//redraw = _rdbMap.CreateRegion(uuid);
 						break;
 						case RestApi.ChangeCategory.RegionStop:
 							// RegionStop just means redraw but no need to update source data.
@@ -276,18 +277,18 @@ namespace Anaximander {
 						break;
 						case RestApi.ChangeCategory.TerrainElevation:
 						case RestApi.ChangeCategory.TerrainTexture:
-							_rdbMap.UpdateRegionTerrainData(uuid);
+							//_rdbMap.UpdateRegionTerrainData(uuid);
 							redraw = true;
 						break;
 						case RestApi.ChangeCategory.Prim:
-							_rdbMap.UpdateRegionPrimData(uuid);
+							//_rdbMap.UpdateRegionPrimData(uuid);
 							redraw = true;
 						break;
 					}
 				}
 			}
 			else { // New region, maybe.
-				redraw = _rdbMap.CreateRegion(uuid);
+				//redraw = _rdbMap.CreateRegion(uuid);
 			}
 
 			if (redraw) {
@@ -326,12 +327,12 @@ namespace Anaximander {
 			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
 			RegionErrorDisplayTechnique offlineTechnique;
 			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out offlineTechnique)) {
-				LOG.Error($"Invalid offline region technique '{techniqueConfig}' in configuration.");
+				LOG.Error($"[MAIN] Invalid offline region technique '{techniqueConfig}' in configuration.");
 			}
 			techniqueConfig = defaultTiles?.GetString("CrashedRegion", Constants.CrashedRegion.ToString()) ?? Constants.CrashedRegion.ToString();
 			RegionErrorDisplayTechnique crashedTechnique;
 			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out crashedTechnique)) {
-				LOG.Error($"Invalid crashed region technique '{techniqueConfig}' in configuration.");
+				LOG.Error($"[MAIN] Invalid crashed region technique '{techniqueConfig}' in configuration.");
 			}
 
 			var region = _rdbMap.GetRegionByUUID(region_id);
@@ -340,35 +341,35 @@ namespace Anaximander {
 				// Assume that during bootup the tile is out of date and rebuild everything.
 
 				if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.IsCurrentlyAccessable()) {
-					LOG.Info($"Generating a full region tile for {region_id}.");
+					LOG.Info($"[MAIN] Generating a full region tile for {region_id}.");
 					using (var tile_image = _tileGenerator.RenderRegionTile(region)) {
-						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
+						_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, tile_image.Bitmap);
 					}
 				}
 				else {
 					if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
-						LOG.Info($"Generating a crashed-style imaged based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
+						LOG.Info($"[MAIN] Generating a crashed-style imaged based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
 						var filename = defaultTiles?.GetString("CrashedRegionImage", Constants.CrashedRegionImage) ?? Constants.CrashedRegionImage;
 
-						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
+						_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, filename);
 					}
 					else if (crashedTechnique == RegionErrorDisplayTechnique.COLOR) {
-						LOG.Info($"Generating a crashed-style color based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
+						LOG.Info($"[MAIN] Generating a crashed-style color based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
 						var colorR = defaultTiles?.GetInt("CrashedRegionRed", Constants.CrashedRegionColor.R) ?? Constants.CrashedRegionColor.R;
 						var colorG = defaultTiles?.GetInt("CrashedRegionGreen", Constants.CrashedRegionColor.G) ?? Constants.CrashedRegionColor.G;
 						var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
 
 						using (var tile_image = _tileGenerator.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
-							_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
+							_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, tile_image.Bitmap);
 						}
 					}
 					else {
-						LOG.Debug($"No render of crashed regions enabled. {region_id} is reported by the DB as online, but the region itself is not responding.");
+						LOG.Debug($"[MAIN] No render of crashed regions enabled. {region_id} is reported by the DB as online, but the region itself is not responding.");
 					}
 				}
 			}
 			else if (offlineTechnique != RegionErrorDisplayTechnique.IGNORE) {
-				LOG.Debug($"Region {region_id} was reported by the DB to be offline.");
+				LOG.Debug($"[MAIN] Region {region_id} was reported by the DB to be offline.");
 				// Go looking for the backup technique to find the coordinates of a region that has gone offline.
 				var folderinfo = _configSource.Configs["Folders"];
 				var tilepath = folderinfo?.GetString("MapTilePath", Constants.MapTilePath) ?? Constants.MapTilePath;
@@ -378,7 +379,7 @@ namespace Anaximander {
 					coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id.ToString()));
 				}
 				catch (SystemException) { // All IO errors just mean skippage.
-					LOG.Info($"Offline region {region_id} has not been seen before so the coordinates cannot be found and no tile will be rendered.");
+					LOG.Info($"[MAIN] Offline region {region_id} has not been seen before so the coordinates cannot be found and no tile will be rendered.");
 				}
 
 				if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
@@ -387,33 +388,33 @@ namespace Anaximander {
 					_rdbMap.UpdateRegionLocation(region_id, coordsList[0], coordsList[1]);
 
 					if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
-						LOG.Info($"Generating an offline-style imaged based region tile for {region_id} as the DB reports it as offline.");
+						LOG.Info($"[MAIN] Generating an offline-style imaged based region tile for {region_id} as the DB reports it as offline.");
 						var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
 
-						_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, filename);
+						_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, filename);
 					}
 					else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
-						LOG.Info($"Generating an offline-style color based region tile for {region_id} as the DB reports it as offline.");
+						LOG.Info($"[MAIN] Generating an offline-style color based region tile for {region_id} as the DB reports it as offline.");
 						var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
 						var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
 						var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
 
 						using (var tile_image = _tileGenerator.GenerateConstantColorTile(Color.FromArgb(colorR, colorG, colorB))) {
-							_tileWriter.WriteTile((int)region.locationX, (int)region.locationY, 1, region_id, tile_image.Bitmap);
+							_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, tile_image.Bitmap);
 						}
 					}
 				}
 			}
 			else {
-				LOG.Debug($"No render of offline regions enabled. {region_id} is reported by the DB as offline.");
+				LOG.Debug($"[MAIN] No render of offline regions enabled. {region_id} is reported by the DB as offline.");
 			}
 		}
 
 		private static void ReadConfigurationFromINI(IConfigSource configSource) {
-			IConfig startupConfig = configSource.Configs["Startup"];
-			string iniFileName = startupConfig.GetString("inifile", DEFAULT_INI_FILE);
+			var startupConfig = configSource.Configs["Startup"];
+			var iniFileName = startupConfig.GetString("inifile", DEFAULT_INI_FILE);
 
-			bool found_at_given_path = false;
+			var found_at_given_path = false;
 
 			try {
 				LOG.Info($"[MAIN] Attempting to read configuration file {Path.GetFullPath(iniFileName)}");
@@ -471,14 +472,14 @@ namespace Anaximander {
 			try {
 				isHandlingException = true;
 
-				string msg = String.Empty;
+				var msg = string.Empty;
 
 				var ex = (Exception)e.ExceptionObject;
 				if (ex.InnerException != null) {
 					msg = $"InnerException: {ex.InnerException}\n";
 				}
 
-				msg = $"[APPLICATION]: APPLICATION EXCEPTION DETECTED: {e}\n" +
+				msg = $"[MAIN] APPLICATION EXCEPTION DETECTED: {e}\n" +
 					"\n" +
 					$"Exception: {e.ExceptionObject}\n" +
 					msg +

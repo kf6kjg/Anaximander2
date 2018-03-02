@@ -28,37 +28,6 @@ using OpenMetaverse;
 
 namespace Anaximander {
 	public static class MathUtilities {
-		public static Vector3 ComputeWorldPosition(Prim prim) {
-			var groupPosition = new Vector3(prim.GroupPositionX, prim.GroupPositionY, prim.GroupPositionZ);
-
-			if (prim.RootRotationX == null) {
-				// Is a root or childless prim.
-				return groupPosition;
-			}
-			// Is a child prim.
-
-			var parentRot = new Quaternion((float)prim.RootRotationX, (float)prim.RootRotationY, (float)prim.RootRotationZ, (float)prim.RootRotationW); //ParentGroup.RootPart.RotationOffset;
-
-			var axPos = new Vector3(prim.PositionX, prim.PositionY, prim.PositionZ); //OffsetPosition;
-			axPos *= parentRot;
-			var translationOffsetPosition = axPos;
-
-			return groupPosition/*GroupPosition*/ + translationOffsetPosition;
-		}
-
-		public static Quaternion ComputeWorldRotation(Prim prim) {
-			var rotationOffset = new Quaternion(prim.RotationX, prim.RotationY, prim.RotationZ, prim.RotationW); // RotationOffset;
-
-			if (prim.RootRotationX == null) {
-				// Is a root or childless prim.
-				return rotationOffset;
-			}
-			// Is a child prim.
-
-			var parentRot = new Quaternion((float)prim.RootRotationX, (float)prim.RootRotationY, (float)prim.RootRotationZ, (float)prim.RootRotationW); //ParentGroup.RootPart.RotationOffset;
-			return parentRot * rotationOffset;
-		}
-
 		public static float ZOfCrossDiff(ref Vector3 P, ref Vector3 Q, ref Vector3 R) {
 			// let A = Q - P
 			// let B = R - P
@@ -73,41 +42,6 @@ namespace Anaximander {
 		// f''(0.5) = 0, f''(x) != 0 for x != 0.5
 		public static double SCurve(double v) {
 			return (v * v * (3f - 2f * v));
-		}
-
-		/// <summary>
-		/// Gets the height at the specified location, blending the value depending on the proximity to the pixel center.
-		/// AKA: bilinear filtering.
-		/// </summary>
-		/// <returns>The height in meters.</returns>
-		/// <param name="hm">The heightmap array.</param>
-		/// <param name="x">The x coordinate.</param>
-		/// <param name="y">The y coordinate.</param>
-		public static double GetBlendedHeight(double[,] hm, double x, double y) {
-			int x_0 = (int)x, y_0 = (int)y;
-			int x_1 = x_0 + 1, y_1 = y_0 + 1;
-
-			var x_ratio = x - x_0; // The fractional part gives the 0-1 ratio needed.
-			var y_ratio = y - y_0;
-
-			// Unit square interpretation of bilinear filtering.
-			if (x_0 < hm.GetLength(0) - 1 && y_0 < hm.GetLength(1) - 1)
-				return
-					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
-					hm[x_1, y_0] * x_ratio * (1 - y_ratio) +
-					hm[x_0, y_1] * (1 - x_ratio) * y_ratio +
-					hm[x_1, y_1] * x_ratio * y_ratio;
-			else if (x_0 < hm.GetLength(0) - 1)
-				return
-					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
-					hm[x_1, y_0] * x_ratio * (1 - y_ratio);
-			else if (y_0 < hm.GetLength(1) - 1)
-				return
-					hm[x_0, y_0] * (1 - x_ratio) * (1 - y_ratio) +
-					hm[x_0, y_1] * (1 - x_ratio) * y_ratio;
-			else
-				return
-					hm[x_0, y_0];
 		}
 	}
 }

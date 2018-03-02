@@ -68,12 +68,12 @@ namespace UnitTests {
 			return apiKey == uuid.ToString();
 		}
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void Init() {
 			RestAPI.StartHost(UpdateRegionDelegate, MapRulesDelegate, CheckAPIKeyDelegate, _domain, _port, _useSSL);
 		}
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void Stop() {
 			RestAPI.StopHost();
 		}
@@ -105,7 +105,7 @@ namespace UnitTests {
 
 		[Test]
 		public void TestGetMapRulesRegionSpecific() {
-			string regionUUID = Guid.NewGuid().ToString();
+			var regionUUID = Guid.NewGuid().ToString();
 
 			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
 			var request = new RestRequest($"maprules/{regionUUID}", Method.GET);
@@ -123,7 +123,7 @@ namespace UnitTests {
 			Assert.AreEqual($"{_protocol}://{_domain}:{_port}/wherever_I_want_it_to__be", info["pushNotifyUri"]);
 
 			Assert.That(info.ContainsKey("pushNotifyEvents"), "Missing 'pushNotifyEvents' key in the 'info' object!");
-			var events = (JsonArray)info["pushNotifyEvents"];
+			var events = (SimpleJson.JsonArray)info["pushNotifyEvents"];
 			Assert.IsNotNull(events, "Key 'pushNotifyEvents' must be a JSON array!");
 			Assert.AreEqual("AnyDBUpdate", events[0]);
 		}
@@ -132,9 +132,9 @@ namespace UnitTests {
 		#region Update Region
 		[Test]
 		public void TestUpdateRegionGoodKey() {
-			string regionUUID = Guid.NewGuid().ToString();
+			var regionUUID = Guid.NewGuid().ToString();
 
-			string APIKey = regionUUID;
+			var APIKey = regionUUID;
 
 			var client = new RestClient($"{_protocol}://{_domain}:{_port}");
 			var request = new RestRequest($"updateregion/{regionUUID}", Method.POST);
@@ -159,7 +159,7 @@ namespace UnitTests {
 
 		[Test]
 		public void TestUpdateRegionBadKey() {
-			string regionUUID = Guid.NewGuid().ToString();
+			var regionUUID = Guid.NewGuid().ToString();
 
 			const string APIKey = "greensleeves";
 
