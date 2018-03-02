@@ -119,14 +119,19 @@ namespace Anaximander {
 			watch.Restart();
 			var prims = region.GetPrims();
 			watch.Stop();
-			LOG.Debug($"[RENDER] Completed getting {prims.Count()} prims for region {region.Id} named '{region.Name}' in {watch.ElapsedMilliseconds}ms");
+			LOG.Debug($"[RENDER] Completed getting {prims?.Count()} prims for region {region.Id} named '{region.Name}' in {watch.ElapsedMilliseconds}ms");
 
-			// Draw the prims.
-			LOG.Debug($"[RENDER] Rendering OBB prims for region {region.Id} named '{region.Name}'");
-			watch.Restart();
-			DrawObjects(prims, terrain, bitmap);
-			watch.Stop();
-			LOG.Debug($"[RENDER] Completed OBB prims for region {region.Id} named '{region.Name}' in {watch.ElapsedMilliseconds}ms");
+			if (prims != null) {
+				// Draw the prims.
+				LOG.Debug($"[RENDER] Rendering OBB prims for region {region.Id} named '{region.Name}'");
+				watch.Restart();
+				DrawObjects(prims, terrain, bitmap);
+				watch.Stop();
+				LOG.Debug($"[RENDER] Completed OBB prims for region {region.Id} named '{region.Name}' in {watch.ElapsedMilliseconds}ms");
+			}
+			else {
+				LOG.Debug($"[RENDER] Unable to render OBB prims for region {region.Id} named '{region.Name}': there was a problem getting the prims from the DB.");
+			}
 
 			return bitmap;
 		}
