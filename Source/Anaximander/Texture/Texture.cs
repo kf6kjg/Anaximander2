@@ -74,7 +74,9 @@ namespace Anaximander {
 			CSJ2K.Util.BitmapImageCreator.Register();
 		}
 
-		public static Texture GetByUUID(Guid id, Color? defaultColor = null) {
+		public static Texture GetByUUID(Guid id) => GetByUUID(id, null);
+
+		public static Texture GetByUUID(Guid id, Color? defaultColor) {
 			if (_memoryCache.TryGetValue(id, out var cachedTexture)) {
 				return cachedTexture;
 			}
@@ -117,7 +119,7 @@ namespace Anaximander {
 
 		public Color AverageColor { get; private set; } = BLANK_TEXTURE_COLOR;
 
-		public Image Image { get; private set; } = null;
+		public Image Image { get; private set; }
 
 		#endregion
 
@@ -138,7 +140,15 @@ namespace Anaximander {
 			}
 		}
 
-		public Texture(Bitmap image = null, Color? color = null) {
+		public Texture(Bitmap image)
+			: this(image, null) {
+		}
+
+		public Texture(Color? color)
+			: this(null, color) {
+		}
+
+		public Texture(Bitmap image, Color? color) {
 			if (image != null) {
 				Image = new Bitmap(image); // Deep copy that image to make sure we don't lose immutability.
 				AverageColor = ComputeAverageColor(image);

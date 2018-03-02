@@ -29,21 +29,22 @@ using log4net.Core;
 
 namespace Console {
 	public class AnaximanderAppender : AnsiColorTerminalAppender {
-		private ConsoleBase m_console = null;
+		private ConsoleBase _console;
 
 		public ConsoleBase Console {
-			get { return m_console; }
-			set { m_console = value; }
+			get { return _console; }
+			set { _console = value; }
 		}
 
 		override protected void Append(LoggingEvent loggingEvent) {
-			if (m_console != null)
-				m_console.LockOutput();
+			if (_console != null) {
+				_console.LockOutput();
+			}
 
 			string loggingMessage = RenderLoggingEvent(loggingEvent);
 
 			try {
-				if (m_console != null) {
+				if (_console != null) {
 					string level = "normal";
 
 					if (loggingEvent.Level == Level.Error) {
@@ -53,10 +54,10 @@ namespace Console {
 						level = "warn";
 					}
 
-					m_console.Output(loggingMessage, level);
+					_console.Output(loggingMessage, level);
 				}
 				else {
-					if (!loggingMessage.EndsWith("\n")) {
+					if (!loggingMessage.EndsWith("\n", StringComparison.Ordinal)) {
 						System.Console.WriteLine(loggingMessage);
 					}
 					else {
@@ -68,8 +69,8 @@ namespace Console {
 				System.Console.WriteLine($"Couldn't write out log message: {e}");
 			}
 			finally {
-				if (m_console != null) {
-					m_console.UnlockOutput();
+				if (_console != null) {
+					_console.UnlockOutput();
 				}
 			}
 		}

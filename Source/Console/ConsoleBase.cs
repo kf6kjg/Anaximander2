@@ -29,15 +29,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using log4net;
 
 namespace Console {
 	public class ConsoleBase {
-		//private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		//private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		protected string prompt = "# ";
 
@@ -158,16 +153,18 @@ namespace Console {
 				System.Console.WriteLine(format, args);
 			}
 			catch (ObjectDisposedException) {
+				// Don't care.
 			}
 		}
 
 		protected virtual void WritePrefixLine(ConsoleColor color, string sender) {
 			try {
-				sender = sender.ToUpper();
+				var senderFixed = sender.ToUpper(System.Globalization.CultureInfo.CurrentCulture);
 
-				System.Console.Write($"[{sender}] \n[{sender}] \t");
+				System.Console.Write($"[{senderFixed}] \n[{senderFixed}] \t");
 			}
 			catch (ObjectDisposedException) {
+				// Don't care.
 			}
 		}
 
@@ -197,8 +194,9 @@ namespace Console {
 		public string CmdPrompt(string p, string def) {
 			string pr = $"{p} [{def}]: ";
 			string ret = ReadLine(pr, false, true);
-			if (String.IsNullOrEmpty(ret))
+			if (String.IsNullOrEmpty(ret)) {
 				ret = def;
+			}
 
 			return ret;
 		}
@@ -248,8 +246,9 @@ namespace Console {
 		public string CmdPrompt(string prompt, string defaultresponse, List<string> options) {
 			bool itisdone = false;
 			string optstr = String.Empty;
-			foreach (string s in options)
+			foreach (string s in options) {
 				optstr += " " + s;
+			}
 
 			string temp = CmdPrompt(prompt, defaultresponse);
 			while (itisdone == false) {

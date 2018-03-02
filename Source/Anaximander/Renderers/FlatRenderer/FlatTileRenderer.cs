@@ -28,13 +28,15 @@ using Nini.Config;
 
 namespace Anaximander {
 	public class FlatTileRenderer {
-		private IConfig _tileInfo;
+		private readonly IConfig _tileInfo;
 
 		public FlatTileRenderer(IConfigSource config) {
 			_tileInfo = config.Configs["MapTileInfo"];
 		}
 
-		public DirectBitmap RenderToBitmap(DirectBitmap mapbmp, Bitmap overlay = null) {
+		public DirectBitmap RenderToBitmap(DirectBitmap mapbmp) => RenderToBitmap(mapbmp, null);
+
+		public DirectBitmap RenderToBitmap(DirectBitmap mapbmp, Bitmap overlay) {
 			var dbitmap = RenderToBitmap(Color.FromArgb(
 				_tileInfo?.GetInt("OceanColorRed", Constants.OceanColor.R) ?? Constants.OceanColor.R,
 				_tileInfo?.GetInt("OceanColorGreen", Constants.OceanColor.G) ?? Constants.OceanColor.G,
@@ -50,7 +52,7 @@ namespace Anaximander {
 			return dbitmap;
 		}
 
-		public DirectBitmap RenderToBitmap(Color color, DirectBitmap mapbmp) {
+		public static DirectBitmap RenderToBitmap(Color color, DirectBitmap mapbmp) {
 			using (var gfx = Graphics.FromImage(mapbmp.Bitmap)) {
 				using (var brush = new SolidBrush(color)) {
 					gfx.FillRectangle(brush, 0, 0, mapbmp.Width, mapbmp.Height);

@@ -35,14 +35,14 @@ namespace Anaximander {
 
 		public string Id { get { return MakeId(X, Y, Zoom); } }
 
-		public Bitmap Image { get; private set; } = null;
+		public Bitmap Image { get; private set; }
 
 		public bool Disposed { get; private set; }
 
 		public string ParentNodeId { get; private set; }
 
 		private readonly string[] _childNodeIds = new string[4];
-		public int ChildNodeCount { get; private set; } = 0;
+		public int ChildNodeCount { get; private set; }
 		public IList<string> ChildNodeIds { get { return _childNodeIds; } }
 
 		#region Ctor and cleanup tools
@@ -61,8 +61,9 @@ namespace Anaximander {
 		}
 
 		public void Dispose() {
-			if (Disposed)
+			if (Disposed) {
 				return;
+			}
 			Disposed = true;
 			DisposeImage();
 		}

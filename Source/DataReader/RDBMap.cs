@@ -342,16 +342,6 @@ namespace DataReader {
 			return rdbhost;
 		}
 
-		private string GetHostNameFromConnectionString(string connstr) {
-			// Format: Data Source=127.0.0.1;Port=3307;Database=TABLENAME;User ID=USERNAME;password=PASSWORD;Pooling=True;Min Pool Size=0;
-			return connstr.ToLowerInvariant().Split(';').FirstOrDefault(stanza => stanza.StartsWith("data source", StringComparison.InvariantCulture))?.Substring(12);
-		}
-
-		private string GetDatabaseNameFromConnectionString(string connstr) {
-			// Format: Data Source=127.0.0.1;Port=3307;Database=TABLENAME;User ID=USERNAME;password=PASSWORD;Pooling=True;Min Pool Size=0;
-			return connstr.ToLowerInvariant().Split(';').FirstOrDefault(stanza => stanza.StartsWith("database", StringComparison.InvariantCulture))?.Substring(9);
-		}
-
 		internal static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T : struct {
 			Contract.Ensures(Contract.Result<T?>() != null);
 			var result = new T?();
@@ -379,6 +369,7 @@ namespace DataReader {
 			}
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			catch {
+				// I reallly don't care.
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 

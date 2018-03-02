@@ -67,7 +67,7 @@ namespace Anaximander {
 			}
 			catch (Exception e) {
 				LOG.Fatal($"[IMAGE_WRITER] Error creating folder '{tilepath}': {e}");
-				throw e;
+				throw;
 			}
 
 			try {
@@ -98,6 +98,7 @@ namespace Anaximander {
 				return File.GetLastWriteTimeUtc(Path.Combine(_tileFolder.FullName, PrepareTileFilename(locationX, locationY, locationZ)));
 			}
 			catch (FileNotFoundException) {
+				// Don't care.
 			}
 
 			return null;
@@ -180,13 +181,11 @@ namespace Anaximander {
 		/// <param name="bitmap">Bitmap.</param>
 		private void WriteTile(string filename, Bitmap bitmap) {
 			var format = ImageFormat.Jpeg;
-			switch (_imageFormat) {
-				case ImageFormats.JPEG:
-					format = ImageFormat.Jpeg;
-					break;
-				case ImageFormats.PNG:
-					format = ImageFormat.Png;
-					break;
+			if (_imageFormat == ImageFormats.JPEG) {
+				format = ImageFormat.Jpeg;
+			}
+			else if (_imageFormat == ImageFormats.PNG) {
+				format = ImageFormat.Png;
 			}
 
 			try {
@@ -282,6 +281,7 @@ namespace Anaximander {
 						region = rdbMap.GetRegionByLocation(x, y);
 					}
 					catch (KeyNotFoundException) {
+						// Don't care
 					}
 
 					if (region == null) {

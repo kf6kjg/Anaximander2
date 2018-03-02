@@ -211,7 +211,6 @@ namespace Anaximander {
 
 				watch.Stop();
 				LOG.Info($"[MAIN] Created all super tiles in {watch.ElapsedMilliseconds} ms.");
-				//watch.Restart();
 			}
 
 			// Activate server process
@@ -299,11 +298,13 @@ namespace Anaximander {
 							//_rdbMap.UpdateRegionPrimData(uuid);
 							redraw = true;
 							break;
+						default:
+							throw new InvalidOperationException($"Unexpected value change = {change}");
 					}
 				}
 			}
 			else { // New region, maybe.
-						 //redraw = _rdbMap.CreateRegion(uuid);
+				//redraw = _rdbMap.CreateRegion(uuid);
 			}
 
 			if (redraw) {
@@ -312,7 +313,7 @@ namespace Anaximander {
 				var superGen = new SuperTileGenerator(_configSource, _rdbMap);
 
 				// Only update that portion of the tree that's affected by the change.
-				superGen.PreloadTileTrees(new Guid[] { uuid });
+				superGen.PreloadTileTrees(new [] { uuid });
 				superGen.GeneratePreloadedTree();
 
 				// Time for cleanup: make sure that we only have what we need.
@@ -569,7 +570,7 @@ namespace Anaximander {
 
 		#region Crash Handler
 
-		private static bool isHandlingException;
+		private static bool _isHandlingException;
 
 		/// <summary>
 		/// Global exception handler -- all unhandled exceptions end up here :)
@@ -577,12 +578,12 @@ namespace Anaximander {
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
 		private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
-			if (isHandlingException) {
+			if (_isHandlingException) {
 				return;
 			}
 
 			try {
-				isHandlingException = true;
+				_isHandlingException = true;
 
 				var msg = string.Empty;
 
@@ -623,7 +624,7 @@ namespace Anaximander {
 				LOG.Error("[MAIN] Exception launching CrashReporter.", ex);
 			}
 			finally {
-				isHandlingException = false;
+				_isHandlingException = false;
 
 				if (e.IsTerminating) {
 					// Preempt to not show a pile of puke if console was disabled.

@@ -36,14 +36,14 @@ namespace Anaximander {
 	public class OBBRenderer : IRegionRenderer {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-		private Color _waterColor;
-		private Color _beachColor;
-		private Color[,] _waterOverlay;
+		private readonly Color _waterColor;
+		private readonly Color _beachColor;
+		private readonly Color[,] _waterOverlay;
 
 		public struct DrawStruct {
-			public float sort_order;
-			public SolidBrush brush;
-			public Point[] vertices;
+			public float SortOrder;
+			public SolidBrush Brush;
+			public Point[] Vertices;
 		}
 
 		public OBBRenderer(IConfigSource config) {
@@ -69,7 +69,6 @@ namespace Anaximander {
 			if (!string.IsNullOrWhiteSpace(waterOverlayPath)) {
 				try {
 					var overlay = new Bitmap(Image.FromFile(waterOverlayPath));
-					//overlay.MakeTransparent();
 
 					waterOverlay = new DirectBitmap(pixelScale, pixelScale);
 					using (var gfx = Graphics.FromImage(waterOverlay.Bitmap)) {
@@ -175,8 +174,6 @@ namespace Anaximander {
 				textures[3] = new Texture(color: Texture.TERRAIN_TEXTURE_4_COLOR);
 			}
 
-			var tc = Environment.TickCount;
-
 			// the four terrain colors as HSVs for interpolation
 			var hsv1 = new HSV(textures[0].AverageColor);
 			var hsv2 = new HSV(textures[1].AverageColor);
@@ -197,8 +194,9 @@ namespace Anaximander {
 						terrain.GetBlendedHeight(255 * columnRatio, 255 * rowRatio)
 					;
 
-					if (double.IsInfinity(heightvalue) || double.IsNaN(heightvalue))
+					if (double.IsInfinity(heightvalue) || double.IsNaN(heightvalue)) {
 						heightvalue = 0d;
+					}
 
 					var tileScalarX = 256f / mapbmp.Width; // Used to hack back in those constants that were hand-tuned to 256px tiles.
 					var tileScalarY = 256f / mapbmp.Height; // Used to hack back in those constants that were hand-tuned to 256px tiles.
@@ -237,21 +235,26 @@ namespace Anaximander {
 					if (heightvalue > terrain.WaterHeight) {
 						HSV hsv;
 						// Above water
-						if (hmod <= low)
+						if (hmod <= low) {
 							hsv = hsv1; // too low
-						else if (hmod >= high)
+						}
+						else if (hmod >= high) {
 							hsv = hsv4; // too high
+						}
 						else {
 							// HSV-interpolate along the colors
 							// first, rescale h to 0.0 - 1.0
 							hmod = (hmod - low) / (high - low);
 							// now we have to split: 0.00 => color1, 0.33 => color2, 0.67 => color3, 1.00 => color4
-							if (hmod < 1d / 3d)
+							if (hmod < 1d / 3d) {
 								hsv = hsv1.InterpolateHSV(ref hsv2, (float)(hmod * 3d));
-							else if (hmod < 2d / 3d)
+							}
+							else if (hmod < 2d / 3d) {
 								hsv = hsv2.InterpolateHSV(ref hsv3, (float)((hmod * 3d) - 1d));
-							else
+							}
+							else {
 								hsv = hsv3.InterpolateHSV(ref hsv4, (float)((hmod * 3d) - 2d));
+							}
 						}
 
 						result = hsv.ToColor();
@@ -311,7 +314,7 @@ namespace Anaximander {
 			return terrain;
 		}
 
-		private DirectBitmap DrawObjects(IEnumerable<Prim> prims, Terrain terrain, DirectBitmap mapbmp) {
+		private static DirectBitmap DrawObjects(IEnumerable<Prim> prims, Terrain terrain, DirectBitmap mapbmp) {
 			var scale_factor = mapbmp.Height / 256f;
 
 			var drawdata_for_sorting = new List<DrawStruct>();
@@ -338,8 +341,10 @@ namespace Anaximander {
 
 					// skip prim Z at or above 256m above the terrain at that position, but only if actually above terrain.
 					// BUG: will still cause discrepencies when the terrain changes height drastically between regions and the prim is in the high "iffy" area.
-					(pos.X >= 0f && pos.X < 256f && pos.Y >= 0f && pos.Y < 256f && pos.Z >= (terrain.GetBlendedHeight(pos.X, pos.Y) + 256f)))
+					(pos.X >= 0f && pos.X < 256f && pos.Y >= 0f && pos.Y < 256f && pos.Z >= (terrain.GetBlendedHeight(pos.X, pos.Y) + 256f))
+				) {
 					return null;
+				}
 
 				var radial_scale = prim.Scale * 0.5f;
 				Vector3 rotated_radial_scale;
@@ -427,7 +432,7 @@ namespace Anaximander {
 				/* * * * * * * * * * * * * * * * * * */
 				// SORT HEIGHT CALC
 				/* * * * * * * * * * * * * * * * * * */
-				drawdata.sort_order =
+				drawdata.SortOrder =
 					Math.Max(vertices[0].Z,
 						Math.Max(vertices[1].Z,
 							Math.Max(vertices[2].Z,
@@ -450,206 +455,129 @@ namespace Anaximander {
 				/* * * * * * * * * * * * * * * * * * */
 
 				// Compute face 0 of OBB and add if facing up.
-				//time_start_temp = Environment.TickCount;
-				//if (Vector3.Cross(Vector3.Subtract(vertices[1], vertices[0]), Vector3.Subtract(vertices[3], vertices[0])).Z > 0)
 				if (MathUtilities.ZOfCrossDiff(ref vertices[0], ref vertices[1], ref vertices[3]) > 0) {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
+					drawdata.Brush = GetFaceBrush(prim, 0);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.brush = GetFaceBrush(prim, 0);
-					//time_obb_brush += Environment.TickCount - time_start_temp;
+					drawdata.Vertices = new Point[4];
+					drawdata.Vertices[0].X = (int)(vertices[0].X * scale_factor);
+					drawdata.Vertices[0].Y = mapbmp.Height - (int)(vertices[0].Y * scale_factor);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.vertices = new Point[4];
-					drawdata.vertices[0].X = (int)(vertices[0].X * scale_factor);
-					drawdata.vertices[0].Y = mapbmp.Height - (int)(vertices[0].Y * scale_factor);
+					drawdata.Vertices[1].X = (int)(vertices[1].X * scale_factor);
+					drawdata.Vertices[1].Y = mapbmp.Height - (int)(vertices[1].Y * scale_factor);
 
-					drawdata.vertices[1].X = (int)(vertices[1].X * scale_factor);
-					drawdata.vertices[1].Y = mapbmp.Height - (int)(vertices[1].Y * scale_factor);
+					drawdata.Vertices[2].X = (int)(vertices[2].X * scale_factor);
+					drawdata.Vertices[2].Y = mapbmp.Height - (int)(vertices[2].Y * scale_factor);
 
-					drawdata.vertices[2].X = (int)(vertices[2].X * scale_factor);
-					drawdata.vertices[2].Y = mapbmp.Height - (int)(vertices[2].Y * scale_factor);
+					drawdata.Vertices[3].X = (int)(vertices[3].X * scale_factor);
+					drawdata.Vertices[3].Y = mapbmp.Height - (int)(vertices[3].Y * scale_factor);
 
-					drawdata.vertices[3].X = (int)(vertices[3].X * scale_factor);
-					drawdata.vertices[3].Y = mapbmp.Height - (int)(vertices[3].Y * scale_factor);
-					//time_obb_calc += Environment.TickCount - time_start_temp;
-
-					//time_start_temp = Environment.TickCount;
 					drawdata_for_sorting.Add(drawdata);
-					//time_obb_addtolist += Environment.TickCount - time_start_temp;
-				}
-				else {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 1 of OBB and add if facing up.
-				//time_start_temp = Environment.TickCount;
-				//if (Vector3.Cross(Vector3.Subtract(vertices[5], vertices[4]), Vector3.Subtract(vertices[0], vertices[4])).Z > 0)
 				if (MathUtilities.ZOfCrossDiff(ref vertices[4], ref vertices[5], ref vertices[0]) > 0) {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.brush = GetFaceBrush(prim, 1);
-					//time_obb_brush += Environment.TickCount - time_start_temp;
+					drawdata.Brush = GetFaceBrush(prim, 1);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.vertices = new Point[4];
-					drawdata.vertices[0].X = (int)(vertices[4].X * scale_factor);
-					drawdata.vertices[0].Y = mapbmp.Height - (int)(vertices[4].Y * scale_factor);
+					drawdata.Vertices = new Point[4];
+					drawdata.Vertices[0].X = (int)(vertices[4].X * scale_factor);
+					drawdata.Vertices[0].Y = mapbmp.Height - (int)(vertices[4].Y * scale_factor);
 
-					drawdata.vertices[1].X = (int)(vertices[5].X * scale_factor);
-					drawdata.vertices[1].Y = mapbmp.Height - (int)(vertices[5].Y * scale_factor);
+					drawdata.Vertices[1].X = (int)(vertices[5].X * scale_factor);
+					drawdata.Vertices[1].Y = mapbmp.Height - (int)(vertices[5].Y * scale_factor);
 
-					drawdata.vertices[2].X = (int)(vertices[1].X * scale_factor);
-					drawdata.vertices[2].Y = mapbmp.Height - (int)(vertices[1].Y * scale_factor);
+					drawdata.Vertices[2].X = (int)(vertices[1].X * scale_factor);
+					drawdata.Vertices[2].Y = mapbmp.Height - (int)(vertices[1].Y * scale_factor);
 
-					drawdata.vertices[3].X = (int)(vertices[0].X * scale_factor);
-					drawdata.vertices[3].Y = mapbmp.Height - (int)(vertices[0].Y * scale_factor);
-					//time_obb_calc += Environment.TickCount - time_start_temp;
+					drawdata.Vertices[3].X = (int)(vertices[0].X * scale_factor);
+					drawdata.Vertices[3].Y = mapbmp.Height - (int)(vertices[0].Y * scale_factor);
 
-					//time_start_temp = Environment.TickCount;
 					drawdata_for_sorting.Add(drawdata);
-					//time_obb_addtolist += Environment.TickCount - time_start_temp;
-				}
-				else {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 2 of OBB and add if facing up.
-				//time_start_temp = Environment.TickCount;
-				//if (Vector3.Cross(Vector3.Subtract(vertices[6], vertices[5]), Vector3.Subtract(vertices[1], vertices[5])).Z > 0)
 				if (MathUtilities.ZOfCrossDiff(ref vertices[5], ref vertices[6], ref vertices[1]) > 0) {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
+					drawdata.Brush = GetFaceBrush(prim, 2);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.brush = GetFaceBrush(prim, 2);
-					//time_obb_brush += Environment.TickCount - time_start_temp;
+					drawdata.Vertices = new Point[4];
+					drawdata.Vertices[0].X = (int)(vertices[5].X * scale_factor);
+					drawdata.Vertices[0].Y = mapbmp.Height - (int)(vertices[5].Y * scale_factor);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.vertices = new Point[4];
-					drawdata.vertices[0].X = (int)(vertices[5].X * scale_factor);
-					drawdata.vertices[0].Y = mapbmp.Height - (int)(vertices[5].Y * scale_factor);
+					drawdata.Vertices[1].X = (int)(vertices[6].X * scale_factor);
+					drawdata.Vertices[1].Y = mapbmp.Height - (int)(vertices[6].Y * scale_factor);
 
-					drawdata.vertices[1].X = (int)(vertices[6].X * scale_factor);
-					drawdata.vertices[1].Y = mapbmp.Height - (int)(vertices[6].Y * scale_factor);
+					drawdata.Vertices[2].X = (int)(vertices[2].X * scale_factor);
+					drawdata.Vertices[2].Y = mapbmp.Height - (int)(vertices[2].Y * scale_factor);
 
-					drawdata.vertices[2].X = (int)(vertices[2].X * scale_factor);
-					drawdata.vertices[2].Y = mapbmp.Height - (int)(vertices[2].Y * scale_factor);
+					drawdata.Vertices[3].X = (int)(vertices[1].X * scale_factor);
+					drawdata.Vertices[3].Y = mapbmp.Height - (int)(vertices[1].Y * scale_factor);
 
-					drawdata.vertices[3].X = (int)(vertices[1].X * scale_factor);
-					drawdata.vertices[3].Y = mapbmp.Height - (int)(vertices[1].Y * scale_factor);
-					//time_obb_calc += Environment.TickCount - time_start_temp;
-
-					//time_start_temp = Environment.TickCount;
 					drawdata_for_sorting.Add(drawdata);
-					//time_obb_addtolist += Environment.TickCount - time_start_temp;
-				}
-				else {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 3 of OBB and add if facing up.
-				//time_start_temp = Environment.TickCount;
-				//if (Vector3.Cross(Vector3.Subtract(vertices[7], vertices[6]), Vector3.Subtract(vertices[2], vertices[6])).Z > 0)
 				if (MathUtilities.ZOfCrossDiff(ref vertices[6], ref vertices[7], ref vertices[2]) > 0) {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
+					drawdata.Brush = GetFaceBrush(prim, 3);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.brush = GetFaceBrush(prim, 3);
-					//time_obb_brush += Environment.TickCount - time_start_temp;
+					drawdata.Vertices = new Point[4];
+					drawdata.Vertices[0].X = (int)(vertices[6].X * scale_factor);
+					drawdata.Vertices[0].Y = mapbmp.Height - (int)(vertices[6].Y * scale_factor);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.vertices = new Point[4];
-					drawdata.vertices[0].X = (int)(vertices[6].X * scale_factor);
-					drawdata.vertices[0].Y = mapbmp.Height - (int)(vertices[6].Y * scale_factor);
+					drawdata.Vertices[1].X = (int)(vertices[7].X * scale_factor);
+					drawdata.Vertices[1].Y = mapbmp.Height - (int)(vertices[7].Y * scale_factor);
 
-					drawdata.vertices[1].X = (int)(vertices[7].X * scale_factor);
-					drawdata.vertices[1].Y = mapbmp.Height - (int)(vertices[7].Y * scale_factor);
+					drawdata.Vertices[2].X = (int)(vertices[3].X * scale_factor);
+					drawdata.Vertices[2].Y = mapbmp.Height - (int)(vertices[3].Y * scale_factor);
 
-					drawdata.vertices[2].X = (int)(vertices[3].X * scale_factor);
-					drawdata.vertices[2].Y = mapbmp.Height - (int)(vertices[3].Y * scale_factor);
+					drawdata.Vertices[3].X = (int)(vertices[2].X * scale_factor);
+					drawdata.Vertices[3].Y = mapbmp.Height - (int)(vertices[2].Y * scale_factor);
 
-					drawdata.vertices[3].X = (int)(vertices[2].X * scale_factor);
-					drawdata.vertices[3].Y = mapbmp.Height - (int)(vertices[2].Y * scale_factor);
-					//time_obb_calc += Environment.TickCount - time_start_temp;
-
-					//time_start_temp = Environment.TickCount;
 					drawdata_for_sorting.Add(drawdata);
-					//time_obb_addtolist += Environment.TickCount - time_start_temp;
-				}
-				else {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 4 of OBB and add if facing up.
-				//time_start_temp = Environment.TickCount;
-				//if (Vector3.Cross(Vector3.Subtract(vertices[4], vertices[7]), Vector3.Subtract(vertices[3], vertices[7])).Z > 0)
 				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[4], ref vertices[3]) > 0) {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
+					drawdata.Brush = GetFaceBrush(prim, 4);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.brush = GetFaceBrush(prim, 4);
-					//time_obb_brush += Environment.TickCount - time_start_temp;
+					drawdata.Vertices = new Point[4];
+					drawdata.Vertices[0].X = (int)(vertices[7].X * scale_factor);
+					drawdata.Vertices[0].Y = mapbmp.Height - (int)(vertices[7].Y * scale_factor);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.vertices = new Point[4];
-					drawdata.vertices[0].X = (int)(vertices[7].X * scale_factor);
-					drawdata.vertices[0].Y = mapbmp.Height - (int)(vertices[7].Y * scale_factor);
+					drawdata.Vertices[1].X = (int)(vertices[4].X * scale_factor);
+					drawdata.Vertices[1].Y = mapbmp.Height - (int)(vertices[4].Y * scale_factor);
 
-					drawdata.vertices[1].X = (int)(vertices[4].X * scale_factor);
-					drawdata.vertices[1].Y = mapbmp.Height - (int)(vertices[4].Y * scale_factor);
+					drawdata.Vertices[2].X = (int)(vertices[0].X * scale_factor);
+					drawdata.Vertices[2].Y = mapbmp.Height - (int)(vertices[0].Y * scale_factor);
 
-					drawdata.vertices[2].X = (int)(vertices[0].X * scale_factor);
-					drawdata.vertices[2].Y = mapbmp.Height - (int)(vertices[0].Y * scale_factor);
+					drawdata.Vertices[3].X = (int)(vertices[3].X * scale_factor);
+					drawdata.Vertices[3].Y = mapbmp.Height - (int)(vertices[3].Y * scale_factor);
 
-					drawdata.vertices[3].X = (int)(vertices[3].X * scale_factor);
-					drawdata.vertices[3].Y = mapbmp.Height - (int)(vertices[3].Y * scale_factor);
-					//time_obb_calc += Environment.TickCount - time_start_temp;
-
-					//time_start_temp = Environment.TickCount;
 					drawdata_for_sorting.Add(drawdata);
-					//time_obb_addtolist += Environment.TickCount - time_start_temp;
-				}
-				else {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 5 of OBB and add if facing up.
-				//time_start_temp = Environment.TickCount;
-				//if (Vector3.Cross(Vector3.Subtract(vertices[6], vertices[7]), Vector3.Subtract(vertices[4], vertices[7])).Z > 0)
 				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[6], ref vertices[4]) > 0) {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
+					drawdata.Brush = GetFaceBrush(prim, 5);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.brush = GetFaceBrush(prim, 5);
-					//time_obb_brush += Environment.TickCount - time_start_temp;
+					drawdata.Vertices = new Point[4];
+					drawdata.Vertices[0].X = (int)(vertices[7].X * scale_factor);
+					drawdata.Vertices[0].Y = mapbmp.Height - (int)(vertices[7].Y * scale_factor);
 
-					//time_start_temp = Environment.TickCount;
-					drawdata.vertices = new Point[4];
-					drawdata.vertices[0].X = (int)(vertices[7].X * scale_factor);
-					drawdata.vertices[0].Y = mapbmp.Height - (int)(vertices[7].Y * scale_factor);
+					drawdata.Vertices[1].X = (int)(vertices[6].X * scale_factor);
+					drawdata.Vertices[1].Y = mapbmp.Height - (int)(vertices[6].Y * scale_factor);
 
-					drawdata.vertices[1].X = (int)(vertices[6].X * scale_factor);
-					drawdata.vertices[1].Y = mapbmp.Height - (int)(vertices[6].Y * scale_factor);
+					drawdata.Vertices[2].X = (int)(vertices[5].X * scale_factor);
+					drawdata.Vertices[2].Y = mapbmp.Height - (int)(vertices[5].Y * scale_factor);
 
-					drawdata.vertices[2].X = (int)(vertices[5].X * scale_factor);
-					drawdata.vertices[2].Y = mapbmp.Height - (int)(vertices[5].Y * scale_factor);
+					drawdata.Vertices[3].X = (int)(vertices[4].X * scale_factor);
+					drawdata.Vertices[3].Y = mapbmp.Height - (int)(vertices[4].Y * scale_factor);
 
-					drawdata.vertices[3].X = (int)(vertices[4].X * scale_factor);
-					drawdata.vertices[3].Y = mapbmp.Height - (int)(vertices[4].Y * scale_factor);
-					//time_obb_calc += Environment.TickCount - time_start_temp;
-
-					//time_start_temp = Environment.TickCount;
 					drawdata_for_sorting.Add(drawdata);
-					//time_obb_addtolist += Environment.TickCount - time_start_temp;
-				}
-				else {
-					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 			}
 
 			// Sort faces by Z position
-			drawdata_for_sorting.Sort((h1, h2) => h1.sort_order.CompareTo(h2.sort_order));
+			drawdata_for_sorting.Sort((h1, h2) => h1.SortOrder.CompareTo(h2.SortOrder));
 
 			// Draw the faces
 			using (var g = Graphics.FromImage(mapbmp.Bitmap)) {
@@ -660,7 +588,7 @@ namespace Anaximander {
 				g.InterpolationMode = InterpolationMode.NearestNeighbor;
 
 				for (int s = 0; s < drawdata_for_sorting.Count; s++) {
-					g.FillPolygon(drawdata_for_sorting[s].brush, drawdata_for_sorting[s].vertices);
+					g.FillPolygon(drawdata_for_sorting[s].Brush, drawdata_for_sorting[s].Vertices);
 				}
 			}
 
@@ -672,8 +600,10 @@ namespace Anaximander {
 		private static readonly SolidBrush DefaultBrush = new SolidBrush(Color.Black);
 		private static SolidBrush GetFaceBrush(Prim prim, uint face) {
 			// Block sillyness that would cause an exception.
-			if (face >= Primitive.TextureEntry.MAX_FACES)
+			if (face >= Primitive.TextureEntry.MAX_FACES) {
 				return DefaultBrush;
+			}
+
 			var textures = new Primitive.TextureEntry(prim.Texture, 0, prim.Texture.Length);
 
 			var facetexture = textures.GetFace(face);

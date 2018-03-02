@@ -34,8 +34,6 @@ namespace Anaximander {
 
 		private readonly int _pixelSize;
 
-		private readonly string _rendererName;
-
 		private readonly IRegionRenderer _regionRenderer;
 
 		private readonly FlatTileRenderer _flatRenderer;
@@ -45,14 +43,14 @@ namespace Anaximander {
 		public TileGenerator(IConfigSource config) {
 			var tileInfo = config.Configs["MapTileInfo"];
 			_pixelSize = tileInfo?.GetInt("PixelScale", Constants.PixelScale) ?? Constants.PixelScale;
-			_rendererName = tileInfo?.GetString("RenderTechnique", Constants.RenderTechnique) ?? Constants.RenderTechnique;
+			var rendererName = tileInfo?.GetString("RenderTechnique", Constants.RenderTechnique) ?? Constants.RenderTechnique;
 
-			switch (_rendererName.ToLowerInvariant()) {
+			switch (rendererName.ToLowerInvariant()) {
 				case "obbrenderer":
 					_regionRenderer = new OBBRenderer(config);
 					break;
 				default:
-					LOG.Error($"[TILE_GENERATOR] Unknown renderer '{_rendererName}', defaulting to 'OBBRenderer'.");
+					LOG.Error($"[TILE_GENERATOR] Unknown renderer '{rendererName}', defaulting to 'OBBRenderer'.");
 					_regionRenderer = new OBBRenderer(config);
 					break;
 			}
@@ -66,9 +64,9 @@ namespace Anaximander {
 			if (!string.IsNullOrWhiteSpace(oceanOverlayPath)) {
 				try {
 					var overlay = new Bitmap(Image.FromFile(oceanOverlayPath));
-					//overlay.MakeTransparent();
 
 					_oceanOverlay = new Bitmap(pixelScale, pixelScale);
+
 					using (var gfx = Graphics.FromImage(_oceanOverlay)) {
 						gfx.CompositingMode = CompositingMode.SourceCopy;
 						gfx.DrawImage(overlay, 0, 0, pixelScale, pixelScale);
@@ -88,7 +86,7 @@ namespace Anaximander {
 
 		public DirectBitmap GenerateConstantColorTile(Color color) {
 			var bitmap = new DirectBitmap(_pixelSize, _pixelSize);
-			_flatRenderer.RenderToBitmap(color, bitmap);
+			FlatTileRenderer.RenderToBitmap(color, bitmap);
 			return bitmap;
 		}
 
