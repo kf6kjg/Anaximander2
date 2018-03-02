@@ -89,10 +89,10 @@ namespace DataReader {
 		public void DeleteOldMapEntries() {
 			var active_regions = new List<Guid>();
 
-			LOG.Debug("[RDB_MAP] Removing explicity removed regions, if any.");
+			LOG.Debug("Removing explicity removed regions, if any.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
 				if (conn == null) {
-					LOG.Warn($"[RDB_MAP] Could not get connection to main DB, cannot remove old regions from map.");
+					LOG.Warn($"Could not get connection to main DB, cannot remove old regions from map.");
 					return;
 				}
 				using (var cmd = conn.CreateCommand()) {
@@ -108,11 +108,11 @@ namespace DataReader {
 						reader = DBHelpers.ExecuteReader(cmd);
 					}
 					catch (Exception e) {
-						LOG.Warn($"[RDB_MAP] Region list query DB reader threw an error when attempting to get regions list.", e);
+						LOG.Warn($"Region list query DB reader threw an error when attempting to get regions list.", e);
 					}
 
 					if (reader == null) {
-						LOG.Warn($"[RDB_MAP] Region list query DB reader returned nothing from main DB, cannot remove old regions from map.");
+						LOG.Warn($"Region list query DB reader returned nothing from main DB, cannot remove old regions from map.");
 						return;
 					}
 
@@ -140,10 +140,10 @@ namespace DataReader {
 			// Stores RDB connection strings as keys to dictionaries of region UUIDs mapped to the region data.
 			var region_list = new ConcurrentDictionary<Guid, Region>();
 
-			LOG.Debug("[RDB_MAP] Loading region-to-host map from DB.");
+			LOG.Debug("Loading region-to-host map from DB.");
 			using (var conn = DBHelpers.GetConnection(CONNECTION_STRING)) {
 				if (conn == null) {
-					LOG.Warn($"[RDB_MAP] Could not get connection to main DB, cannot update the map.");
+					LOG.Warn($"Could not get connection to main DB, cannot update the map.");
 					return;
 				}
 				using (var cmd = conn.CreateCommand()) {
@@ -171,11 +171,11 @@ namespace DataReader {
 						reader = DBHelpers.ExecuteReader(cmd);
 					}
 					catch (Exception e) {
-						LOG.Warn($"[PRIM] Region list query DB reader threw an error when attempting to update the map.", e);
+						LOG.Warn($"Region list query DB reader threw an error when attempting to update the map.", e);
 					}
 
 					if (reader == null) {
-						LOG.Warn($"[RDB_MAP] Region list query DB reader returned nothing from main DB, cannot update the map.");
+						LOG.Warn($"Region list query DB reader returned nothing from main DB, cannot update the map.");
 						return;
 					}
 
@@ -205,7 +205,7 @@ namespace DataReader {
 							}
 
 							if (!region_list.TryAdd(region_id, region)) {
-								LOG.Warn($"[RDB_MAP] Attempted to add a duplicate region entry for RDB {rdbHostName}: Region is '{region.Name}' with UUID '{region_id}'.  Check to see if you have duplicate entries in your 'regions' table, or if you have multiple entries in the 'RegionRdbMapping' for the same region UUID.");
+								LOG.Warn($"Attempted to add a duplicate region entry for RDB {rdbHostName}: Region is '{region.Name}' with UUID '{region_id}'.  Check to see if you have duplicate entries in your 'regions' table, or if you have multiple entries in the 'RegionRdbMapping' for the same region UUID.");
 							}
 						}
 					}
@@ -215,14 +215,14 @@ namespace DataReader {
 				}
 			}
 
-			LOG.Debug("[RDB_MAP] Preparing updated region map.");
+			LOG.Debug("Preparing updated region map.");
 			Parallel.ForEach(region_list.Values.ToList(), PARALLELISM_OPTIONS, region => {
 				var oldPriority = Thread.CurrentThread.Priority;
 				Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
 				if (!MAP.TryAdd(region.Id, region)) {
 					MAP.TryGetValue(region.Id, out var orig);
-					LOG.Warn($"[RDB_MAP] Region '{region.Id}' is a duplicate: name is '{region.Name}' and is duplicating a region with name '{orig?.Name}'.");
+					LOG.Warn($"Region '{region.Id}' is a duplicate: name is '{region.Name}' and is duplicating a region with name '{orig?.Name}'.");
 				}
 
 				// Not all regions returned have a position, after all some could be in an offline state and never been seen before.
@@ -232,14 +232,14 @@ namespace DataReader {
 						COORD_MAP.TryGetValue(coord, out var orig);
 						// Might be a bug here when this method is executed multiple times in a single execution of Anax, and a region was removed and another region was MOVED into the old region's location.
 						// That would be resolved I think by executing DeleteOldMapEntries() before this method.
-						LOG.Warn($"[RDB_MAP] Region {region.Id} named '{region.Name}' at <{region.Location?.X},{region.Location?.Y}> at same location as {orig?.Id} named '{orig?.Name}' at <{orig?.Location?.X},{orig?.Location?.Y}>. Both of these regions are listed as online in the 'regions' table.");
+						LOG.Warn($"Region {region.Id} named '{region.Name}' at <{region.Location?.X},{region.Location?.Y}> at same location as {orig?.Id} named '{orig?.Name}' at <{orig?.Location?.X},{orig?.Location?.Y}>. Both of these regions are listed as online in the 'regions' table.");
 					}
 				}
 
 				Thread.CurrentThread.Priority = oldPriority;
 			});
 
-			LOG.Debug("[RDB_MAP] Connecting adjacent regions.");
+			LOG.Debug("Connecting adjacent regions.");
 			foreach (var region in region_list.Values) {
 				if (region.HasKnownCoordinates()) {
 					var adjacentRegions = new List<Region>();

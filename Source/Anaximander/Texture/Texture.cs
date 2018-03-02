@@ -68,7 +68,7 @@ namespace Anaximander {
 				_assetReader = assetReader;
 			}
 			else {
-				LOG.Warn($"[TEXTURE] Attempt to inialize the asset reader in the Texture class more than once! Re-initialization ignored.");
+				LOG.Warn($"Attempt to inialize the asset reader in the Texture class more than once! Re-initialization ignored.");
 			}
 
 			CSJ2K.Util.BitmapImageCreator.Register();
@@ -131,7 +131,7 @@ namespace Anaximander {
 
 		private Texture(StratusAsset asset) {
 			if (asset.IsTextureAsset()) {
-				LOG.Debug($"[TEXTURE] Decoding image {asset.Id} named '{asset.Name}'. Notable data: Type={asset.Type}, Temp={asset.Temporary}, Data Length={asset.Data?.Length}.");
+				LOG.Debug($"Decoding image {asset.Id} named '{asset.Name}'. Notable data: Type={asset.Type}, Temp={asset.Temporary}, Data Length={asset.Data?.Length}.");
 
 				var bitmap = asset.ToImage<Bitmap>();
 

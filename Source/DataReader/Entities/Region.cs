@@ -70,29 +70,29 @@ namespace DataReader {
 				return null;
 			}
 			var watch = System.Diagnostics.Stopwatch.StartNew();
-			LOG.Debug($"[REGION] Loading region-local prims for region {Id} named '{Name}'.");
+			LOG.Debug($"Loading region-local prims for region {Id} named '{Name}'.");
 
 			var prims = Prim.LoadPrims(_rdbConnectionString, Id);
 
 			watch.Stop();
-			LOG.Debug($"[REGION] Loading region-local prims for region {Id} named '{Name}' took {watch.ElapsedMilliseconds}ms " + (prims != null ? $"for {prims.Count()} prims." : "but failed to update from DB."));
+			LOG.Debug($"Loading region-local prims for region {Id} named '{Name}' took {watch.ElapsedMilliseconds}ms " + (prims != null ? $"for {prims.Count()} prims." : "but failed to update from DB."));
 			watch.Reset();
 
 			if (prims != null && _adjacentRegions != null) {
 				prims = _adjacentRegions.Select(adjacentRegion => {
 					if (adjacentRegion.HasKnownCoordinates()) {
 						watch.Start();
-						LOG.Debug($"[REGION] Loading prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}'.");
+						LOG.Debug($"Loading prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}'.");
 
 						var adjacentRegionPrims = Prim.LoadPrims(adjacentRegion._rdbConnectionString, adjacentRegion.Id);
 
 						watch.Stop();
-						LOG.Debug($"[REGION] Loading prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}' took {watch.ElapsedMilliseconds}ms " + (adjacentRegionPrims != null ? $"for {adjacentRegionPrims.Count()} prims." : "but failed to update from DB."));
+						LOG.Debug($"Loading prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}' took {watch.ElapsedMilliseconds}ms " + (adjacentRegionPrims != null ? $"for {adjacentRegionPrims.Count()} prims." : "but failed to update from DB."));
 						watch.Reset();
 
 						if (adjacentRegionPrims != null) {
 							watch.Start();
-							LOG.Debug($"[REGION] Offsetting prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}'.");
+							LOG.Debug($"Offsetting prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}'.");
 
 							foreach (var prim in adjacentRegionPrims) {
 								var regionOffset = (Vector2)adjacentRegion.Location - (Vector2)Location;
@@ -101,7 +101,7 @@ namespace DataReader {
 							}
 
 							watch.Stop();
-							LOG.Debug($"[REGION] Offsetting prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}' took {watch.ElapsedMilliseconds}ms for {adjacentRegionPrims.Count()} prims.");
+							LOG.Debug($"Offsetting prims for region {Id} named '{Name}' from adjacent region {adjacentRegion.Id} named '{adjacentRegion.Name}' took {watch.ElapsedMilliseconds}ms for {adjacentRegionPrims.Count()} prims.");
 							watch.Reset();
 						}
 
@@ -123,14 +123,14 @@ namespace DataReader {
 		/// <returns>The terrain.</returns>
 		public Terrain GetTerrain() {
 			var watch = System.Diagnostics.Stopwatch.StartNew();
-			LOG.Debug($"[REGION] Loading terrain for region {Id} named '{Name}'.");
+			LOG.Debug($"Loading terrain for region {Id} named '{Name}'.");
 
 			var terrain = new Terrain(_rdbConnectionString, Id);
 
 			var result = terrain.Update();
 
 			watch.Stop();
-			LOG.Debug($"[REGION] Loading terrain for region {Id} named '{Name}' took {watch.ElapsedMilliseconds}ms and " + (result ? "was successful." : "failed to update from DB."));
+			LOG.Debug($"Loading terrain for region {Id} named '{Name}' took {watch.ElapsedMilliseconds}ms and " + (result ? "was successful." : "failed to update from DB."));
 
 			return result ? terrain : null;
 		}
@@ -149,7 +149,7 @@ namespace DataReader {
 		/// <returns><c>true</c> if this instance is region currently up; otherwise, <c>false</c>.</returns>
 		public bool IsCurrentlyAccessable() {
 			var watch = System.Diagnostics.Stopwatch.StartNew();
-			LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up.");
+			LOG.Debug($"Testing if region {Id} named '{Name}' is up.");
 			if (ServerIP != null) {
 				var wrGETURL = WebRequest.Create($"http://{ServerIP}:{ServerPort}/simstatus/");
 				wrGETURL.Timeout = 10000; // Limit to something reasonable.  If the region can't respond in that time, it's not really accessable ATM.
@@ -161,7 +161,7 @@ namespace DataReader {
 					var result = objReader.ReadLine();
 
 					watch.Stop();
-					LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms and the server returned '{result}'.");
+					LOG.Debug($"Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms and the server returned '{result}'.");
 
 					return result == "OK";
 				}
@@ -169,14 +169,14 @@ namespace DataReader {
 					// Total time for 1000 fail tests against localhost: 848ms, for an avg of 0.848 ms per check.
 
 					watch.Stop();
-					LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms and the server never returned a value so is not up.");
+					LOG.Debug($"Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms and the server never returned a value so is not up.");
 
 					return false;
 				}
 			}
 
 			watch.Stop();
-			LOG.Debug($"[REGION] Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms but the region doesn't have a known IP so the test was skipped.");
+			LOG.Debug($"Testing if region {Id} named '{Name}' is up took {watch.ElapsedMilliseconds}ms but the region doesn't have a known IP so the test was skipped.");
 
 			// Total time for 1000 False tests against nothing: 2ms, for an avg of 0.002 ms per check.
 			return false;

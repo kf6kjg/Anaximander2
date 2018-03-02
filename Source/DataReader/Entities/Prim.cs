@@ -36,7 +36,7 @@ namespace DataReader {
 		internal static IEnumerable<Prim> LoadPrims(string rdbConnectionString, Guid regionId) {
 			using (var conn = DBHelpers.GetConnection(rdbConnectionString)) {
 				if (conn == null) {
-					LOG.Warn($"[PRIM] Could not get connection to DB for region '{regionId}'.");
+					LOG.Warn($"Could not get connection to DB for region '{regionId}'.");
 					return null;
 				}
 				using (var cmd = conn.CreateCommand()) {
@@ -86,11 +86,11 @@ namespace DataReader {
 						reader = DBHelpers.ExecuteReader(cmd);
 					}
 					catch (Exception e) {
-						LOG.Warn($"[PRIM] Prims DB reader query threw an error when attempting to get prims for region '{regionId}'.", e);
+						LOG.Warn($"Prims DB reader query threw an error when attempting to get prims for region '{regionId}'.", e);
 					}
 
 					if (reader == null) {
-						LOG.Warn($"[TERRAIN] Prims DB reader query returned nothing for region '{regionId}'.");
+						LOG.Warn($"Prims DB reader query returned nothing for region '{regionId}'.");
 						return null;
 					}
 

@@ -87,12 +87,12 @@ namespace Anaximander {
 				if (string.IsNullOrEmpty(logConfigFile)) {
 					XmlConfigurator.Configure();
 					LogBootMessage();
-					LOG.Info("[MAIN] Configured log4net using ./Anaximander.exe.config as the default.");
+					LOG.Info("Configured log4net using ./Anaximander.exe.config as the default.");
 				}
 				else {
 					XmlConfigurator.Configure(new FileInfo(logConfigFile));
 					LogBootMessage();
-					LOG.Info($"[MAIN] Configured log4net using \"{logConfigFile}\" as configuration file.");
+					LOG.Info($"Configured log4net using \"{logConfigFile}\" as configuration file.");
 				}
 			}
 
@@ -125,7 +125,7 @@ namespace Anaximander {
 				return 2;
 			}
 
-			LOG.Info($"[MAIN] Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
+			LOG.Info($"Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
 
 			var readerLocalStorage = new AssetStorageSimpleFolderTree(chattelConfigRead);
 
@@ -133,7 +133,7 @@ namespace Anaximander {
 			Texture.Initialize(chattelReader);
 
 			watch.Stop();
-			LOG.Info($"[MAIN] Read configuration in {watch.ElapsedMilliseconds} ms.");
+			LOG.Info($"Read configuration in {watch.ElapsedMilliseconds} ms.");
 			watch.Restart();
 
 			// Load the RDB map
@@ -141,13 +141,13 @@ namespace Anaximander {
 				_rdbMap = new RDBMap(configSource);
 			}
 			catch (DatabaseException e) {
-				LOG.Error($"[MAIN] Unable to continue without database connection. Aborting.", e);
+				LOG.Error($"Unable to continue without database connection. Aborting.", e);
 
 				return 1;
 			}
 
 			watch.Stop();
-			LOG.Info($"[MAIN] Loaded region DB in {watch.ElapsedMilliseconds} ms for a total of {_rdbMap.GetRegionCount()} regions, resulting in an average of {(float)watch.ElapsedMilliseconds / _rdbMap.GetRegionCount()} ms / region.");
+			LOG.Info($"Loaded region DB in {watch.ElapsedMilliseconds} ms for a total of {_rdbMap.GetRegionCount()} regions, resulting in an average of {(float)watch.ElapsedMilliseconds / _rdbMap.GetRegionCount()} ms / region.");
 			watch.Restart();
 
 			/* Issues to watch for:
@@ -182,7 +182,7 @@ namespace Anaximander {
 				});
 
 				watch.Stop();
-				LOG.Info($"[MAIN] Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / _rdbMap.GetRegionCount()} ms / region.");
+				LOG.Info($"Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / _rdbMap.GetRegionCount()} ms / region.");
 				watch.Restart();
 
 
@@ -194,7 +194,7 @@ namespace Anaximander {
 				superGen.PreloadTileTrees(_rdbMap.GetRegionUUIDs());
 
 				watch.Stop();
-				LOG.Info($"[MAIN] Preloaded tile tree in {watch.ElapsedMilliseconds} ms.");
+				LOG.Info($"Preloaded tile tree in {watch.ElapsedMilliseconds} ms.");
 				watch.Restart();
 
 
@@ -202,7 +202,7 @@ namespace Anaximander {
 				_tileWriter.RemoveDeadTiles(_rdbMap, superGen.AllNodesById);
 
 				watch.Stop();
-				LOG.Info($"[MAIN] Removed all old tiles in {watch.ElapsedMilliseconds} ms.");
+				LOG.Info($"Removed all old tiles in {watch.ElapsedMilliseconds} ms.");
 				watch.Restart();
 
 
@@ -210,7 +210,7 @@ namespace Anaximander {
 				superGen.GeneratePreloadedTree();
 
 				watch.Stop();
-				LOG.Info($"[MAIN] Created all super tiles in {watch.ElapsedMilliseconds} ms.");
+				LOG.Info($"Created all super tiles in {watch.ElapsedMilliseconds} ms.");
 			}
 
 			// Activate server process
@@ -229,7 +229,7 @@ namespace Anaximander {
 				var useSSL = server_config?.GetBoolean("UseSSL", Constants.ServerUseSSL) ?? Constants.ServerUseSSL;
 
 				var protocol = useSSL ? "https" : "http";
-				LOG.Info($"[MAIN] Activating server on '{protocol}://{domain}:{port}', listening for region updates.");
+				LOG.Info($"Activating server on '{protocol}://{domain}:{port}', listening for region updates.");
 
 				RestApi.RestAPI.StartHost(
 					UpdateRegionDelegate,
@@ -321,11 +321,11 @@ namespace Anaximander {
 				_tileWriter.RemoveDeadTiles(_rdbMap, superGen.AllNodesById);
 
 				watch.Stop();
-				LOG.Info($"[UpdateRegionDelegate] Rebuilt region id '{uuid}', parent tree, and did filesystem cleanup in {watch.ElapsedMilliseconds} ms.");
+				LOG.Info($"Rebuilt region id '{uuid}', parent tree, and did filesystem cleanup in {watch.ElapsedMilliseconds} ms.");
 			}
 			else {
 				watch.Stop();
-				LOG.Info($"[UpdateRegionDelegate] Got request to rebuild region id '{uuid}', but there was nothing to do.");
+				LOG.Info($"Got request to rebuild region id '{uuid}', but there was nothing to do.");
 			}
 		}
 
@@ -342,11 +342,11 @@ namespace Anaximander {
 			var defaultTiles = _configSource.Configs["DefaultTiles"];
 			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
 			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out RegionErrorDisplayTechnique offlineTechnique)) {
-				LOG.Error($"[MAIN] Invalid offline region technique '{techniqueConfig}' in configuration.");
+				LOG.Error($"Invalid offline region technique '{techniqueConfig}' in configuration.");
 			}
 			techniqueConfig = defaultTiles?.GetString("CrashedRegion", Constants.CrashedRegion.ToString()) ?? Constants.CrashedRegion.ToString();
 			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out RegionErrorDisplayTechnique crashedTechnique)) {
-				LOG.Error($"[MAIN] Invalid crashed region technique '{techniqueConfig}' in configuration.");
+				LOG.Error($"Invalid crashed region technique '{techniqueConfig}' in configuration.");
 			}
 
 			var region = _rdbMap.GetRegionByUUID(region_id);
@@ -355,20 +355,20 @@ namespace Anaximander {
 				// Assume that during bootup the tile is out of date and rebuild everything.
 
 				if (crashedTechnique == RegionErrorDisplayTechnique.IGNORE || region.IsCurrentlyAccessable()) {
-					LOG.Info($"[MAIN] Generating a full region tile for {region_id}.");
+					LOG.Info($"Generating a full region tile for {region_id}.");
 					using (var tile_image = _tileGenerator.RenderRegionTile(region)) {
 						_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, tile_image.Bitmap);
 					}
 				}
 				else {
 					if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
-						LOG.Info($"[MAIN] Generating a crashed-style imaged based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
+						LOG.Info($"Generating a crashed-style imaged based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
 						var filename = defaultTiles?.GetString("CrashedRegionImage", Constants.CrashedRegionImage) ?? Constants.CrashedRegionImage;
 
 						_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, filename);
 					}
 					else if (crashedTechnique == RegionErrorDisplayTechnique.COLOR) {
-						LOG.Info($"[MAIN] Generating a crashed-style color based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
+						LOG.Info($"Generating a crashed-style color based region tile for {region_id} as the DB reports it as online, but the region itself is not responding.");
 						var colorR = defaultTiles?.GetInt("CrashedRegionRed", Constants.CrashedRegionColor.R) ?? Constants.CrashedRegionColor.R;
 						var colorG = defaultTiles?.GetInt("CrashedRegionGreen", Constants.CrashedRegionColor.G) ?? Constants.CrashedRegionColor.G;
 						var colorB = defaultTiles?.GetInt("CrashedRegionBlue", Constants.CrashedRegionColor.B) ?? Constants.CrashedRegionColor.B;
@@ -378,12 +378,12 @@ namespace Anaximander {
 						}
 					}
 					else {
-						LOG.Debug($"[MAIN] No render of crashed regions enabled. {region_id} is reported by the DB as online, but the region itself is not responding.");
+						LOG.Debug($"No render of crashed regions enabled. {region_id} is reported by the DB as online, but the region itself is not responding.");
 					}
 				}
 			}
 			else if (offlineTechnique != RegionErrorDisplayTechnique.IGNORE) {
-				LOG.Debug($"[MAIN] Region {region_id} was reported by the DB to be offline.");
+				LOG.Debug($"Region {region_id} was reported by the DB to be offline.");
 				// Go looking for the backup technique to find the coordinates of a region that has gone offline.
 				var folderinfo = _configSource.Configs["Folders"];
 				var tilepath = folderinfo?.GetString("MapTilePath", Constants.MapTilePath) ?? Constants.MapTilePath;
@@ -393,7 +393,7 @@ namespace Anaximander {
 					coords = File.ReadAllText(Path.Combine(tilepath, Constants.ReverseLookupPath, region_id.ToString()));
 				}
 				catch (SystemException) { // All IO errors just mean skippage.
-					LOG.Info($"[MAIN] Offline region {region_id} has not been seen before so the coordinates cannot be found and no tile will be rendered.");
+					LOG.Info($"Offline region {region_id} has not been seen before so the coordinates cannot be found and no tile will be rendered.");
 				}
 
 				if (!string.IsNullOrWhiteSpace(coords)) { // Backup technique has succeeded, do as specified in config.
@@ -402,13 +402,13 @@ namespace Anaximander {
 					_rdbMap.UpdateRegionLocation(region_id, coordsList[0], coordsList[1]);
 
 					if (offlineTechnique == RegionErrorDisplayTechnique.IMAGE) {
-						LOG.Info($"[MAIN] Generating an offline-style imaged based region tile for {region_id} as the DB reports it as offline.");
+						LOG.Info($"Generating an offline-style imaged based region tile for {region_id} as the DB reports it as offline.");
 						var filename = defaultTiles?.GetString("OfflineRegionImage", Constants.OfflineRegionImage) ?? Constants.OfflineRegionImage;
 
 						_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, filename);
 					}
 					else if (offlineTechnique == RegionErrorDisplayTechnique.COLOR) {
-						LOG.Info($"[MAIN] Generating an offline-style color based region tile for {region_id} as the DB reports it as offline.");
+						LOG.Info($"Generating an offline-style color based region tile for {region_id} as the DB reports it as offline.");
 						var colorR = defaultTiles?.GetInt("OfflineRegionRed", Constants.OfflineRegionColor.R) ?? Constants.OfflineRegionColor.R;
 						var colorG = defaultTiles?.GetInt("OfflineRegionGreen", Constants.OfflineRegionColor.G) ?? Constants.OfflineRegionColor.G;
 						var colorB = defaultTiles?.GetInt("OfflineRegionBlue", Constants.OfflineRegionColor.B) ?? Constants.OfflineRegionColor.B;
@@ -420,7 +420,7 @@ namespace Anaximander {
 				}
 			}
 			else {
-				LOG.Debug($"[MAIN] No render of offline regions enabled. {region_id} is reported by the DB as offline.");
+				LOG.Debug($"No render of offline regions enabled. {region_id} is reported by the DB as offline.");
 			}
 		}
 
@@ -435,13 +435,13 @@ namespace Anaximander {
 			var found_at_given_path = false;
 
 			try {
-				LOG.Info($"[MAIN] Attempting to read configuration file {Path.GetFullPath(iniFileName)}");
+				LOG.Info($"Attempting to read configuration file {Path.GetFullPath(iniFileName)}");
 				startupConfig.ConfigSource.Merge(new IniConfigSource(iniFileName));
-				LOG.Info($"[MAIN] Success reading configuration file.");
+				LOG.Info($"Success reading configuration file.");
 				found_at_given_path = true;
 			}
 			catch {
-				LOG.Warn($"[MAIN] Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
+				LOG.Warn($"Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
 			}
 
 			if (!found_at_given_path) {
@@ -449,12 +449,12 @@ namespace Anaximander {
 				iniFileName = Path.Combine(EXECUTABLE_DIRECTORY, iniFileName);
 
 				try {
-					LOG.Info($"[MAIN] Attempting to read configuration file from installation path {Path.GetFullPath(iniFileName)}");
+					LOG.Info($"Attempting to read configuration file from installation path {Path.GetFullPath(iniFileName)}");
 					startupConfig.ConfigSource.Merge(new IniConfigSource(iniFileName));
-					LOG.Info($"[MAIN] Success reading configuration file.");
+					LOG.Info($"Success reading configuration file.");
 				}
 				catch {
-					LOG.Fatal($"[MAIN] Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
+					LOG.Fatal($"Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
 					throw;
 				}
 			}
@@ -592,7 +592,7 @@ namespace Anaximander {
 					msg = $"InnerException: {ex.InnerException}\n";
 				}
 
-				msg = $"[MAIN] APPLICATION EXCEPTION DETECTED: {e}\n" +
+				msg = $"APPLICATION EXCEPTION DETECTED: {e}\n" +
 					"\n" +
 					$"Exception: {e.ExceptionObject}\n" +
 					msg +
@@ -621,7 +621,7 @@ namespace Anaximander {
 				}
 			}
 			catch (Exception ex) {
-				LOG.Error("[MAIN] Exception launching CrashReporter.", ex);
+				LOG.Error("Exception launching CrashReporter.", ex);
 			}
 			finally {
 				_isHandlingException = false;

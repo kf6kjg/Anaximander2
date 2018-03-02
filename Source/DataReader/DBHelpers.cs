@@ -65,7 +65,7 @@ namespace DataReader {
 				}
 			}
 			catch (MySqlException e) {
-				LOG.Error($"[DATABASE] MySQL query failed or the MySQL server was not available.\n{Environment.StackTrace}", e);
+				LOG.Error($"MySQL query failed or the MySQL server was not available.\n{Environment.StackTrace}", e);
 			}
 
 			return reader;

@@ -60,7 +60,7 @@ namespace DataReader {
 		public bool Update() {
 			using (var conn = DBHelpers.GetConnection(_rdbConnectionString)) {
 				if (conn == null) {
-					LOG.Warn($"[TERRAIN] Could not get connection to DB for region '{_regionId}'.");
+					LOG.Warn($"Could not get connection to DB for region '{_regionId}'.");
 					return false;
 				}
 				using (var cmd = conn.CreateCommand()) {
@@ -75,11 +75,11 @@ namespace DataReader {
 						reader = DBHelpers.ExecuteReader(cmd);
 					}
 					catch (Exception e) {
-						LOG.Warn($"[PRIM] Prims query DB reader threw an error when attempting to get prims for region '{_regionId}'.", e);
+						LOG.Warn($"Prims query DB reader threw an error when attempting to get prims for region '{_regionId}'.", e);
 					}
 
 					if (reader == null) {
-						LOG.Warn($"[TERRAIN] Terrain DB reader query returned nothing for region '{_regionId}'.");
+						LOG.Warn($"Terrain DB reader query returned nothing for region '{_regionId}'.");
 						return false;
 					}
 

@@ -39,7 +39,7 @@ namespace RestApi {
 			Nancy.Json.JsonSettings.PrimitiveConverters.Add(new JsonConvertEnum());
 
 			pipelines.OnError += (context, exception) => {
-				LOG.Error($"[SERVER] Unhandled error from '{context.Request.UserHostAddress}' on '{context.Request.Url}': {exception.Message}", exception);
+				LOG.Error($"Unhandled error from '{context.Request.UserHostAddress}' on '{context.Request.Url}': {exception.Message}", exception);
 
 				var response = new Response();
 				response.StatusCode = HttpStatusCode.InternalServerError;

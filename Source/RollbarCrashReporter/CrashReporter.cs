@@ -38,7 +38,7 @@ namespace RollbarCrashReporter {
 			XmlConfigurator.Configure();
 
 			if (args.Length < 1) {
-				LOG.Fatal($"[CRASH_REPORTER] Missing number of characters to read from stdin.\n\n{GenerateBootMessage()}");
+				LOG.Fatal($"Missing number of characters to read from stdin.\n\n{GenerateBootMessage()}");
 				Console.WriteLine("Missing number of characters to read from stdin.");
 				Environment.Exit(1);
 			}
@@ -51,7 +51,7 @@ namespace RollbarCrashReporter {
 
 			string msg = System.Text.Encoding.UTF8.GetString(raw_input);
 
-			Console.WriteLine("[CRASH_REPORTER] Logging inbound message.");
+			Console.WriteLine("Logging inbound message.");
 			LOG.Fatal(msg);
 		}
 

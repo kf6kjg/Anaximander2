@@ -64,14 +64,14 @@ namespace RestApi {
 
 		public RestAPI() {
 			Get["/test"] = _ => {
-				LOG.Debug($"[REST_API] test called by IP '{Request.UserHostAddress}'.");
+				LOG.Debug($"test called by IP '{Request.UserHostAddress}'.");
 
 				return (Response) "OK";
 			};
 
 			Post["/updateregion/{uuid}"] = parameters => {
 				//this.RequiresHttps();
-				LOG.Debug($"[REST_API] Update region called by IP '{Request.UserHostAddress}' for region id {parameters.uuid}.");
+				LOG.Debug($"Update region called by IP '{Request.UserHostAddress}' for region id {parameters.uuid}.");
 
 				if (_updateRegionDelegate == null || _checkAPIKeyDelegate == null) {
 					return (Response) HttpStatusCode.BadGateway;
@@ -80,7 +80,7 @@ namespace RestApi {
 				// Read the API key and verify.
 				var authtoken = Request.Headers["Authorization"]?.FirstOrDefault();
 				if (!_checkAPIKeyDelegate.EndInvoke(_checkAPIKeyDelegate.BeginInvoke(authtoken, parameters.uuid, null, null))) {
-					LOG.Info($"[REST_API] UpdateRegion: By IP '{Request.UserHostAddress}', API key '{authtoken}' failed verification for region ID '{parameters.uuid}'");
+					LOG.Info($"UpdateRegion: By IP '{Request.UserHostAddress}', API key '{authtoken}' failed verification for region ID '{parameters.uuid}'");
 					return (Response) HttpStatusCode.Forbidden;
 				}
 
@@ -93,10 +93,10 @@ namespace RestApi {
 
 			Get["/maprules/{uuid?}"] = parameters => {
 				if (parameters["uuid"]?.Value == null) {
-					LOG.Debug($"[REST_API] Map rules called by IP '{Request.UserHostAddress}'.");
+					LOG.Debug($"Map rules called by IP '{Request.UserHostAddress}'.");
 				}
 				else {
-					LOG.Debug($"[REST_API] Map rules called by IP '{Request.UserHostAddress}' for region id {parameters.uuid}.");
+					LOG.Debug($"Map rules called by IP '{Request.UserHostAddress}' for region id {parameters.uuid}.");
 				}
 
 				if (_getMapRulesDelegate == null) {

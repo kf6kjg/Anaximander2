@@ -52,7 +52,7 @@ namespace Anaximander {
 
 			var format = tileinfo?.GetString("ImageFormat", Constants.ImageFormat.ToString()) ?? Constants.ImageFormat.ToString();
 			if (!Enum.TryParse(format, out _imageFormat)) {
-				LOG.Error($"[IMAGE_WRITER] Invalid image format '{format}' in configuration.");
+				LOG.Error($"Invalid image format '{format}' in configuration.");
 			}
 
 			_tileNameFormat = tileinfo?.GetString("TileNameFormat", Constants.TileNameFormat) ?? Constants.TileNameFormat;
@@ -66,7 +66,7 @@ namespace Anaximander {
 				_tileFolder = Directory.CreateDirectory(tilepath);
 			}
 			catch (Exception e) {
-				LOG.Fatal($"[IMAGE_WRITER] Error creating folder '{tilepath}': {e}");
+				LOG.Fatal($"Error creating folder '{tilepath}': {e}");
 				throw;
 			}
 
@@ -162,7 +162,7 @@ namespace Anaximander {
 				bitmap.Save(Path.Combine(_rawImageFolder.FullName, $"{TileTreeNode.MakeId(locationX, locationY, locationZ)}.tiff"), ImageFormat.Tiff);
 			}
 			catch (Exception e) {
-				LOG.Error($"[IMAGE_WRITER] Error writing map image tile to disk: {e}");
+				LOG.Error($"Error writing map image tile to disk: {e}");
 			}
 		}
 
@@ -192,7 +192,7 @@ namespace Anaximander {
 				bitmap.Save(Path.Combine(_tileFolder.FullName, filename), format);
 			}
 			catch (Exception e) {
-				LOG.Error($"[IMAGE_WRITER] Error writing map image tile to disk: {e}");
+				LOG.Error($"Error writing map image tile to disk: {e}");
 			}
 		}
 
@@ -216,7 +216,7 @@ namespace Anaximander {
 
 		// This really doesn't belong here, but where should it be?
 		public void RemoveDeadTiles(DataReader.RDBMap rdbMap, IEnumerable<string> superTiles) {
-			LOG.Info("[IMAGE_WRITER] Checking for base region tiles that need to be removed.");
+			LOG.Info("Checking for base region tiles that need to be removed.");
 
 			var files = Directory.EnumerateFiles(_tileFolder.FullName);
 
@@ -292,7 +292,7 @@ namespace Anaximander {
 						}
 						catch (IOException) {
 							// File was in use.  Skip for now.
-							LOG.Warn($"[IMAGE_WRITER] Attempted removal of {filename} failed as file was in-use.");
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
 						}
 					}
 				}
@@ -306,7 +306,7 @@ namespace Anaximander {
 						}
 						catch (IOException) {
 							// File was in use.  Skip for now.
-							LOG.Warn($"[IMAGE_WRITER] Attempted removal of {filename} failed as file was in-use.");
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
 						}
 					}
 				}
@@ -315,7 +315,7 @@ namespace Anaximander {
 			});
 
 			if (counter > 0) {
-				LOG.Info($"[IMAGE_WRITER] Deleted {counter} region tiles for removed regions and consequent super tiles.");
+				LOG.Info($"Deleted {counter} region tiles for removed regions and consequent super tiles.");
 			}
 
 
@@ -342,13 +342,13 @@ namespace Anaximander {
 						}
 						catch (IOException) {
 							// File was in use.  Skip for now.
-							LOG.Warn($"[IMAGE_WRITER] Attempted removal of {filename} failed as file was in-use.");
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
 						}
 					}
 				});
 
 				if (counter > 0) {
-					LOG.Info($"[IMAGE_WRITER] Deleted {counter} uuid lookup files for removed regions.");
+					LOG.Info($"Deleted {counter} uuid lookup files for removed regions.");
 				}
 			}
 
@@ -375,13 +375,13 @@ namespace Anaximander {
 						}
 						catch (IOException) {
 							// File was in use.  Skip for now.
-							LOG.Warn($"[IMAGE_WRITER] Attempted removal of {filename} failed as file was in-use.");
+							LOG.Warn($"Attempted removal of {filename} failed as file was in-use.");
 						}
 					}
 				});
 
 				if (counter > 0) {
-					LOG.Info($"[IMAGE_WRITER] Deleted {counter} raw image files for removed super tiles.");
+					LOG.Info($"Deleted {counter} raw image files for removed super tiles.");
 				}
 			}
 		}
@@ -394,7 +394,7 @@ namespace Anaximander {
 				return new Bitmap(Image.FromFile(image_path));
 			}
 			catch (Exception e) {
-				LOG.Error($"[IMAGE_WRITER] Error reading map image tile from disk: {e}");
+				LOG.Error($"Error reading map image tile from disk: {e}");
 			}
 
 			return null;
@@ -408,7 +408,7 @@ namespace Anaximander {
 				return new Bitmap(Image.FromFile(image_path));
 			}
 			catch (Exception e) {
-				LOG.Warn($"[IMAGE_WRITER] Error reading raw image tile from disk: {e}");
+				LOG.Warn($"Error reading raw image tile from disk: {e}");
 			}
 
 			return null;
