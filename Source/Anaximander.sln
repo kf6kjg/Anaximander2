@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Anaximander", "Anaximander\Anaximander.csproj", "{BAD359C5-1737-448E-BE15-9B60B076A58B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{D3444D44-239D-4568-857F-14603FEC8177}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTests", "UnitTests\IntegrationTests.csproj", "{D3444D44-239D-4568-857F-14603FEC8177}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bin", "bin", "{A0E051A9-1859-4BA4-A720-1255ED58582E}"
 	ProjectSection(SolutionItems) = preProject
