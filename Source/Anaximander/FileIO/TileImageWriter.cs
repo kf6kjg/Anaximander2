@@ -51,7 +51,7 @@ namespace Anaximander {
 			var tileinfo = config.Configs["MapTileInfo"];
 
 			var format = tileinfo?.GetString("ImageFormat", Constants.ImageFormat.ToString()) ?? Constants.ImageFormat.ToString();
-			if (!Enum.TryParse<ImageFormats>(format, out _imageFormat)) {
+			if (!Enum.TryParse(format, out _imageFormat)) {
 				LOG.Error($"[IMAGE_WRITER] Invalid image format '{format}' in configuration.");
 			}
 

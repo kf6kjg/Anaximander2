@@ -129,8 +129,7 @@ namespace DataReader {
 
 			Parallel.ForEach(MAP.Keys.Except(active_regions).ToList(), (id) => {
 				DEAD_REGION_IDS.Add(id);
-				Region reg;
-				if (MAP.TryGetValue(id, out reg) && reg.HasKnownCoordinates()) {
+				if (MAP.TryGetValue(id, out var reg) && reg.HasKnownCoordinates()) {
 					COORD_MAP.TryRemove((Vector2)reg.Location, out reg);
 				}
 				MAP.TryRemove(id, out reg);
@@ -187,8 +186,7 @@ namespace DataReader {
 							var region_id = Guid.Parse(Convert.ToString(reader["regionID"]));
 
 							// Check to see if the map already has this entry and if the new entry is shut down.
-							Region region;
-							if (region_list.TryGetValue(region_id, out region) && Convert.IsDBNull(reader["regionName"])) {
+							if (region_list.TryGetValue(region_id, out var region) && Convert.IsDBNull(reader["regionName"])) {
 								// Region is offline, update the RDB connection in case that's changed.
 								region._rdbConnectionString = rdbhost;
 							}
@@ -223,8 +221,7 @@ namespace DataReader {
 				Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
 				if (!MAP.TryAdd(region.Id, region)) {
-					Region orig;
-					MAP.TryGetValue(region.Id, out orig);
+					MAP.TryGetValue(region.Id, out var orig);
 					LOG.Warn($"[RDB_MAP] Region '{region.Id}' is a duplicate: name is '{region.Name}' and is duplicating a region with name '{orig?.Name}'.");
 				}
 
@@ -232,8 +229,7 @@ namespace DataReader {
 				if (region.HasKnownCoordinates()) {
 					var coord = (Vector2)region.Location;
 					if (!COORD_MAP.TryAdd(coord, region)) {
-						Region orig;
-						COORD_MAP.TryGetValue(coord, out orig);
+						COORD_MAP.TryGetValue(coord, out var orig);
 						// Might be a bug here when this method is executed multiple times in a single execution of Anax, and a region was removed and another region was MOVED into the old region's location.
 						// That would be resolved I think by executing DeleteOldMapEntries() before this method.
 						LOG.Warn($"[RDB_MAP] Region {region.Id} named '{region.Name}' at <{region.Location?.X},{region.Location?.Y}> at same location as {orig?.Id} named '{orig?.Name}' at <{orig?.Location?.X},{orig?.Location?.Y}>. Both of these regions are listed as online in the 'regions' table.");
@@ -248,37 +244,35 @@ namespace DataReader {
 				if (region.HasKnownCoordinates()) {
 					var adjacentRegions = new List<Region>();
 
-					Region north, northeast, east, southeast, south, southwest, west, northwest;
-
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 0,  1), out north)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 0,  1), out var north)) {
 						adjacentRegions.Add(north);
 					}
 
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1,  1), out northeast)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1,  1), out var northeast)) {
 						adjacentRegions.Add(northeast);
 					}
 
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1,  0), out east)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1,  0), out var east)) {
 						adjacentRegions.Add(east);
 					}
 
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1, -1), out southeast)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2(-1, -1), out var southeast)) {
 						adjacentRegions.Add(southeast);
 					}
 
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 0, -1), out south)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 0, -1), out var south)) {
 						adjacentRegions.Add(south);
 					}
 
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1, -1), out southwest)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1, -1), out var southwest)) {
 						adjacentRegions.Add(southwest);
 					}
 
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1,  0), out west)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1,  0), out var west)) {
 						adjacentRegions.Add(west);
 					}
 
-					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1,  1), out northwest)) {
+					if (COORD_MAP.TryGetValue((Vector2)region.Location + new Vector2( 1,  1), out var northwest)) {
 						adjacentRegions.Add(northwest);
 					}
 
@@ -296,8 +290,7 @@ namespace DataReader {
 		}
 
 		public Region GetRegionByUUID(Guid uuid) {
-			Region region;
-			if (MAP.TryGetValue(uuid, out region)) {
+			if (MAP.TryGetValue(uuid, out var region)) {
 				return region;
 			}
 			return null;
@@ -305,8 +298,7 @@ namespace DataReader {
 
 		public Region GetRegionByLocation(int locationX, int locationY) {
 			var index = new Vector2(locationX, locationY);
-			Region region;
-			if (COORD_MAP.TryGetValue(index, out region)) {
+			if (COORD_MAP.TryGetValue(index, out var region)) {
 				return region;
 			}
 			return null;
@@ -317,8 +309,7 @@ namespace DataReader {
 			var coord = new Vector2(locationX, locationY);
 
 			// Clean up the reverse lookup.
-			Region temp;
-			COORD_MAP.TryRemove(coord, out temp);
+			COORD_MAP.TryRemove(coord, out var temp);
 
 			region.Location = coord;
 
