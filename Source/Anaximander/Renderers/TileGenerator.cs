@@ -22,22 +22,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Reflection;
-using log4net;
 using Nini.Config;
 
 namespace Anaximander {
 	public class TileGenerator {
-		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly int _pixelSize;
 
 		private readonly string _rendererName;
 
-		private readonly RegionRendererInterface _regionRenderer;
+		private readonly IRegionRenderer _regionRenderer;
 
 		private readonly FlatTileRenderer _flatRenderer;
 
@@ -51,11 +50,11 @@ namespace Anaximander {
 			switch (_rendererName.ToLowerInvariant()) {
 				case "obbrenderer":
 					_regionRenderer = new OBBRenderer(config);
-				break;
+					break;
 				default:
 					LOG.Error($"[TILE_GENERATOR] Unknown renderer '{_rendererName}', defaulting to 'OBBRenderer'.");
 					_regionRenderer = new OBBRenderer(config);
-				break;
+					break;
 			}
 
 			_flatRenderer = new FlatTileRenderer(config);

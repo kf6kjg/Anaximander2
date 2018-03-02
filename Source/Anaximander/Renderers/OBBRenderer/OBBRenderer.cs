@@ -22,20 +22,19 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
-using System.Reflection;
 using DataReader;
-using log4net;
 using Nini.Config;
 using OpenMetaverse;
 
 namespace Anaximander {
-	public class OBBRenderer : RegionRendererInterface {
-		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+	public class OBBRenderer : IRegionRenderer {
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		private Color _waterColor;
 		private Color _beachColor;
@@ -445,7 +444,7 @@ namespace Anaximander {
 						)
 					)
 				;
-				
+
 				/* * * * * * * * * * * * * * * * * * */
 				// OBB DRAWING PREPARATION PASS
 				/* * * * * * * * * * * * * * * * * * */
@@ -453,8 +452,7 @@ namespace Anaximander {
 				// Compute face 0 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[1], vertices[0]), Vector3.Subtract(vertices[3], vertices[0])).Z > 0)
-				if (MathUtilities.ZOfCrossDiff(ref vertices[0], ref vertices[1], ref vertices[3]) > 0)
-				{
+				if (MathUtilities.ZOfCrossDiff(ref vertices[0], ref vertices[1], ref vertices[3]) > 0) {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
 					//time_start_temp = Environment.TickCount;
@@ -480,16 +478,14 @@ namespace Anaximander {
 					drawdata_for_sorting.Add(drawdata);
 					//time_obb_addtolist += Environment.TickCount - time_start_temp;
 				}
-				else
-				{
+				else {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 1 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[5], vertices[4]), Vector3.Subtract(vertices[0], vertices[4])).Z > 0)
-				if (MathUtilities.ZOfCrossDiff(ref vertices[4], ref vertices[5], ref vertices[0]) > 0)
-				{
+				if (MathUtilities.ZOfCrossDiff(ref vertices[4], ref vertices[5], ref vertices[0]) > 0) {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
 					//time_start_temp = Environment.TickCount;
@@ -515,16 +511,14 @@ namespace Anaximander {
 					drawdata_for_sorting.Add(drawdata);
 					//time_obb_addtolist += Environment.TickCount - time_start_temp;
 				}
-				else
-				{
+				else {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 2 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[6], vertices[5]), Vector3.Subtract(vertices[1], vertices[5])).Z > 0)
-				if (MathUtilities.ZOfCrossDiff(ref vertices[5], ref vertices[6], ref vertices[1]) > 0)
-				{
+				if (MathUtilities.ZOfCrossDiff(ref vertices[5], ref vertices[6], ref vertices[1]) > 0) {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
 					//time_start_temp = Environment.TickCount;
@@ -550,16 +544,14 @@ namespace Anaximander {
 					drawdata_for_sorting.Add(drawdata);
 					//time_obb_addtolist += Environment.TickCount - time_start_temp;
 				}
-				else
-				{
+				else {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 3 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[7], vertices[6]), Vector3.Subtract(vertices[2], vertices[6])).Z > 0)
-				if (MathUtilities.ZOfCrossDiff(ref vertices[6], ref vertices[7], ref vertices[2]) > 0)
-				{
+				if (MathUtilities.ZOfCrossDiff(ref vertices[6], ref vertices[7], ref vertices[2]) > 0) {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
 					//time_start_temp = Environment.TickCount;
@@ -585,16 +577,14 @@ namespace Anaximander {
 					drawdata_for_sorting.Add(drawdata);
 					//time_obb_addtolist += Environment.TickCount - time_start_temp;
 				}
-				else
-				{
+				else {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 4 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[4], vertices[7]), Vector3.Subtract(vertices[3], vertices[7])).Z > 0)
-				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[4], ref vertices[3]) > 0)
-				{
+				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[4], ref vertices[3]) > 0) {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
 					//time_start_temp = Environment.TickCount;
@@ -620,16 +610,14 @@ namespace Anaximander {
 					drawdata_for_sorting.Add(drawdata);
 					//time_obb_addtolist += Environment.TickCount - time_start_temp;
 				}
-				else
-				{
+				else {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 
 				// Compute face 5 of OBB and add if facing up.
 				//time_start_temp = Environment.TickCount;
 				//if (Vector3.Cross(Vector3.Subtract(vertices[6], vertices[7]), Vector3.Subtract(vertices[4], vertices[7])).Z > 0)
-				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[6], ref vertices[4]) > 0)
-				{
+				if (MathUtilities.ZOfCrossDiff(ref vertices[7], ref vertices[6], ref vertices[4]) > 0) {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 
 					//time_start_temp = Environment.TickCount;
@@ -655,8 +643,7 @@ namespace Anaximander {
 					drawdata_for_sorting.Add(drawdata);
 					//time_obb_addtolist += Environment.TickCount - time_start_temp;
 				}
-				else
-				{
+				else {
 					//time_obb_norm += Environment.TickCount - time_start_temp;
 				}
 			}
@@ -665,16 +652,14 @@ namespace Anaximander {
 			drawdata_for_sorting.Sort((h1, h2) => h1.sort_order.CompareTo(h2.sort_order));
 
 			// Draw the faces
-			using (var g = Graphics.FromImage(mapbmp.Bitmap))
-			{
+			using (var g = Graphics.FromImage(mapbmp.Bitmap)) {
 				g.CompositingMode = CompositingMode.SourceCopy;
 				g.CompositingQuality = CompositingQuality.HighSpeed;
 				g.SmoothingMode = SmoothingMode.None;
 				g.PixelOffsetMode = PixelOffsetMode.None;
 				g.InterpolationMode = InterpolationMode.NearestNeighbor;
 
-				for (int s = 0; s < drawdata_for_sorting.Count; s++)
-				{
+				for (int s = 0; s < drawdata_for_sorting.Count; s++) {
 					g.FillPolygon(drawdata_for_sorting[s].brush, drawdata_for_sorting[s].vertices);
 				}
 			}
@@ -685,8 +670,7 @@ namespace Anaximander {
 		#region Utility Helpers
 
 		private static readonly SolidBrush DefaultBrush = new SolidBrush(Color.Black);
-		private static SolidBrush GetFaceBrush(Prim prim, uint face)
-		{
+		private static SolidBrush GetFaceBrush(Prim prim, uint face) {
 			// Block sillyness that would cause an exception.
 			if (face >= Primitive.TextureEntry.MAX_FACES)
 				return DefaultBrush;
@@ -696,14 +680,17 @@ namespace Anaximander {
 			// GetFace throws a generic exception if the parameter is greater than MAX_FACES.
 
 			// Compute a color from the texture data AND the color applied.  The operation is "Multiplication" aka per-pixel (A*B)/255 or if float in domain 0-1: (A*B)
-			Texture texture;
+			Texture texture = null;
+
 			try {
 				texture = Texture.GetByUUID(facetexture.TextureID.Guid);
 			}
-			catch (InvalidOperationException e) {
+			catch (Exception e) {
 				var location = prim.ComputeWorldPosition();
 				LOG.Warn($"[RENDER] Error decoding image asset {facetexture.TextureID} on face {face} of prim {prim.Id} at {location} in region {prim.RegionId}, continuing using default texture.", e);
+			}
 
+			if (texture == null) {
 				texture = Texture.DEFAULT;
 			}
 

@@ -24,48 +24,42 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 using System;
 
 namespace Anaximander {
-	public static class TerrainUtil
-	{
-		public static float MetersToSphericalStrength(float size)
-		{
+	public static class TerrainUtil {
+		public static float MetersToSphericalStrength(float size) {
 			//return Math.Pow(2, size);
 			return (size + 1) * 1.35f; // MCP: a more useful brush size range
 		}
 
-		public static double SphericalFactor(double x, double y, double rx, double ry, double size)
-		{
+		public static double SphericalFactor(double x, double y, double rx, double ry, double size) {
 			return size * size - ((x - rx) * (x - rx) + (y - ry) * (y - ry));
 		}
 
-		private static double Noise(double x, double y)
-		{
-			int n = (int) x + (int) (y * 749);
+		private static double Noise(double x, double y) {
+			int n = (int)x + (int)(y * 749);
 			n = (n << 13) ^ n;
 			return (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0);
 		}
 
-		private static double SmoothedNoise1(double x, double y)
-		{
+		private static double SmoothedNoise1(double x, double y) {
 			double corners = (Noise(x - 1, y - 1) + Noise(x + 1, y - 1) + Noise(x - 1, y + 1) + Noise(x + 1, y + 1)) / 16;
 			double sides = (Noise(x - 1, y) + Noise(x + 1, y) + Noise(x, y - 1) + Noise(x, y + 1)) / 8;
 			double center = Noise(x, y) / 4;
 			return corners + sides + center;
 		}
 
-		private static double Interpolate(double x, double y, double z)
-		{
+		private static double Interpolate(double x, double y, double z) {
 			return (x * (1.0 - z)) + (y * z);
 		}
 
-		public static double InterpolatedNoise(double x, double y)
-		{
-			int integer_X = (int) (x);
+		public static double InterpolatedNoise(double x, double y) {
+			int integer_X = (int)(x);
 			double fractional_X = x - integer_X;
 
-			int integer_Y = (int) y;
+			int integer_Y = (int)y;
 			double fractional_Y = y - integer_Y;
 
 			double v1 = SmoothedNoise1(integer_X, integer_Y);
@@ -79,12 +73,10 @@ namespace Anaximander {
 			return Interpolate(i1, i2, fractional_Y);
 		}
 
-		public static double PerlinNoise2D(double x, double y, int octaves, double persistence)
-		{
+		public static double PerlinNoise2D(double x, double y, int octaves, double persistence) {
 			double total = 0.0;
 
-			for (int i = 0; i < octaves; i++)
-			{
+			for (int i = 0; i < octaves; i++) {
 				double frequency = Math.Pow(2, i);
 				double amplitude = Math.Pow(persistence, i);
 

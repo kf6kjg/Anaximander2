@@ -33,13 +33,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Chattel;
 using DataReader;
-using log4net;
 using log4net.Config;
 using Nini.Config;
 
 namespace Anaximander {
 	class Application {
-		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private static readonly string EXECUTABLE_DIRECTORY = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", string.Empty));
 
@@ -47,7 +46,11 @@ namespace Anaximander {
 
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
 
+		private static readonly string DEFAULT_DB_FOLDER_PATH = "localStorage";
+
 		private static IConfigSource _configSource;
+
+		private static readonly Dictionary<string, IAssetServer> _assetServersByName = new Dictionary<string, IAssetServer>();
 
 		private static RDBMap _rdbMap;
 
@@ -76,17 +79,21 @@ namespace Anaximander {
 
 			var startupConfig = _configSource.Configs["Startup"];
 
+			// TODO: var pidFileManager = new PIDFileManager(startupConfig.GetString("pidfile", string.Empty));
+
 			// Configure Log4Net
-			var logConfigFile = startupConfig.GetString("logconfig", string.Empty);
-			if (string.IsNullOrEmpty(logConfigFile)) {
-				XmlConfigurator.Configure();
-				LogBootMessage();
-				LOG.Info("[MAIN] Configured log4net using ./Anaximander.exe.config as the default.");
-			}
-			else {
-				XmlConfigurator.Configure(new FileInfo(logConfigFile));
-				LogBootMessage();
-				LOG.Info($"[MAIN] Configured log4net using \"{logConfigFile}\" as configuration file.");
+			{
+				var logConfigFile = startupConfig.GetString("logconfig", string.Empty);
+				if (string.IsNullOrEmpty(logConfigFile)) {
+					XmlConfigurator.Configure();
+					LogBootMessage();
+					LOG.Info("[MAIN] Configured log4net using ./Anaximander.exe.config as the default.");
+				}
+				else {
+					XmlConfigurator.Configure(new FileInfo(logConfigFile));
+					LogBootMessage();
+					LOG.Info($"[MAIN] Configured log4net using \"{logConfigFile}\" as configuration file.");
+				}
 			}
 
 			// Configure nIni aliases and localles
@@ -102,7 +109,11 @@ namespace Anaximander {
 			// Read in the ini file
 			ReadConfigurationFromINI(configSource);
 
-			// Create a IPC wait handle with a unique identifier.
+			var configRead = configSource.Configs["AssetsRead"];
+			var serversRead = GetServers(configSource, configRead, _assetServersByName);
+			var chattelConfigRead = GetConfig(configRead, serversRead);
+
+			// Create an IPC wait handle with a unique identifier.
 			var serverMode = startupConfig.GetBoolean("ServerMode", Constants.KeepRunningDefault);
 			var createdNew = true;
 			var waitHandle = serverMode ? new EventWaitHandle(false, EventResetMode.AutoReset, "4d1ede7a-7f81-4934-bc59-f4fe10396408", out createdNew) : null;
@@ -116,8 +127,10 @@ namespace Anaximander {
 
 			LOG.Info($"[MAIN] Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
 
-			var chattelConfig = new ChattelConfiguration(configSource, configSource.Configs["Assets"]);
-			Texture.Initialize(new ChattelReader(chattelConfig));
+			var readerLocalStorage = new AssetStorageSimpleFolderTree(chattelConfigRead);
+
+			var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage); // TODO: add purge flag to CLI
+			Texture.Initialize(chattelReader);
 
 			watch.Stop();
 			LOG.Info($"[MAIN] Read configuration in {watch.ElapsedMilliseconds} ms.");
@@ -237,6 +250,8 @@ namespace Anaximander {
 			return 0;
 		}
 
+		#region Server Mode handlers
+
 		private static RestApi.RulesModel MapRulesDelegate(Guid uuid = new Guid()) {
 			var server_config = _configSource.Configs["Server"];
 
@@ -270,25 +285,25 @@ namespace Anaximander {
 						case RestApi.ChangeCategory.RegionStart:
 							// Get all new data.
 							//redraw = _rdbMap.CreateRegion(uuid);
-						break;
+							break;
 						case RestApi.ChangeCategory.RegionStop:
 							// RegionStop just means redraw but no need to update source data.
 							redraw = true;
-						break;
+							break;
 						case RestApi.ChangeCategory.TerrainElevation:
 						case RestApi.ChangeCategory.TerrainTexture:
 							//_rdbMap.UpdateRegionTerrainData(uuid);
 							redraw = true;
-						break;
+							break;
 						case RestApi.ChangeCategory.Prim:
 							//_rdbMap.UpdateRegionPrimData(uuid);
 							redraw = true;
-						break;
+							break;
 					}
 				}
 			}
 			else { // New region, maybe.
-				//redraw = _rdbMap.CreateRegion(uuid);
+						 //redraw = _rdbMap.CreateRegion(uuid);
 			}
 
 			if (redraw) {
@@ -325,13 +340,11 @@ namespace Anaximander {
 		private static void UpdateRegionTile(Guid region_id) {
 			var defaultTiles = _configSource.Configs["DefaultTiles"];
 			var techniqueConfig = defaultTiles?.GetString("OfflineRegion", Constants.OfflineRegion.ToString()) ?? Constants.OfflineRegion.ToString();
-			RegionErrorDisplayTechnique offlineTechnique;
-			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out offlineTechnique)) {
+			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out RegionErrorDisplayTechnique offlineTechnique)) {
 				LOG.Error($"[MAIN] Invalid offline region technique '{techniqueConfig}' in configuration.");
 			}
 			techniqueConfig = defaultTiles?.GetString("CrashedRegion", Constants.CrashedRegion.ToString()) ?? Constants.CrashedRegion.ToString();
-			RegionErrorDisplayTechnique crashedTechnique;
-			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out crashedTechnique)) {
+			if (!Enum.TryParse(techniqueConfig.ToUpperInvariant(), out RegionErrorDisplayTechnique crashedTechnique)) {
 				LOG.Error($"[MAIN] Invalid crashed region technique '{techniqueConfig}' in configuration.");
 			}
 
@@ -410,6 +423,10 @@ namespace Anaximander {
 			}
 		}
 
+		#endregion
+
+		#region Bootup utils
+
 		private static void ReadConfigurationFromINI(IConfigSource configSource) {
 			var startupConfig = configSource.Configs["Startup"];
 			var iniFileName = startupConfig.GetString("inifile", DEFAULT_INI_FILE);
@@ -457,7 +474,102 @@ namespace Anaximander {
 			LOG.Info("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
 		}
 
-		private static bool isHandlingException = false;
+		private static IEnumerable<IEnumerable<IAssetServer>> GetServers(IConfigSource configSource, IConfig assetConfig, Dictionary<string, IAssetServer> serverList) {
+			var serialParallelServerSources = assetConfig?
+				.GetString("Servers", string.Empty)
+				.Split(',')
+				.Where(parallelSources => !string.IsNullOrWhiteSpace(parallelSources))
+				.Select(parallelSources => parallelSources
+					.Split('&')
+					.Where(source => !string.IsNullOrWhiteSpace(source))
+					.Select(source => source.Trim())
+				)
+				.Where(parallelSources => parallelSources.Any())
+			;
+
+			var serialParallelAssetServers = new List<List<IAssetServer>>();
+
+			if (serialParallelServerSources != null && serialParallelServerSources.Any()) {
+				foreach (var parallelSources in serialParallelServerSources) {
+					var parallelServerConnectors = new List<IAssetServer>();
+					foreach (var sourceName in parallelSources) {
+						var sourceConfig = configSource.Configs[sourceName];
+						var type = sourceConfig?.GetString("Type", string.Empty)?.ToLower(System.Globalization.CultureInfo.InvariantCulture);
+
+						if (!serverList.TryGetValue(sourceName, out var serverConnector)) {
+							try {
+								switch (type) {
+									case "whip":
+										serverConnector = new AssetServerWHIP(
+											sourceName,
+											sourceConfig.GetString("Host", string.Empty),
+											sourceConfig.GetInt("Port", 32700),
+											sourceConfig.GetString("Password", "changeme") // Yes, that's the default password for WHIP.
+										);
+										break;
+									case "cf":
+										serverConnector = new AssetServerCF(
+											sourceName,
+											sourceConfig.GetString("Username", string.Empty),
+											sourceConfig.GetString("APIKey", string.Empty),
+											sourceConfig.GetString("DefaultRegion", string.Empty),
+											sourceConfig.GetBoolean("UseInternalURL", true),
+											sourceConfig.GetString("ContainerPrefix", string.Empty)
+										);
+										break;
+									default:
+										LOG.Warn($"Unknown asset server type in section [{sourceName}].");
+										break;
+								}
+
+								serverList.Add(sourceName, serverConnector);
+							}
+							catch (System.Net.Sockets.SocketException e) {
+								LOG.Error($"Asset server of type '{type}' defined in section [{sourceName}] failed setup. Skipping server.", e);
+							}
+						}
+
+						if (serverConnector != null) {
+							parallelServerConnectors.Add(serverConnector);
+						}
+					}
+
+					if (parallelServerConnectors.Any()) {
+						serialParallelAssetServers.Add(parallelServerConnectors);
+					}
+				}
+			}
+			else {
+				LOG.Warn("Servers empty or not specified. No asset server sections configured.");
+			}
+
+			return serialParallelAssetServers;
+		}
+
+		private static ChattelConfiguration GetConfig(IConfig assetConfig, IEnumerable<IEnumerable<IAssetServer>> serialParallelAssetServers) {
+			// Set up local storage
+			var localStoragePath = assetConfig?.GetString("DatabaseFolderPath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
+
+			DirectoryInfo localStorageFolder = null;
+
+			if (string.IsNullOrWhiteSpace(localStoragePath)) {
+				LOG.Info($"DatabaseFolderPath is empty, local storage of assets disabled.");
+			}
+			else if (!Directory.Exists(localStoragePath)) {
+				LOG.Info($"DatabaseFolderPath folder does not exist, local storage of assets disabled.");
+			}
+			else {
+				localStorageFolder = new DirectoryInfo(localStoragePath);
+				LOG.Info($"Local storage of assets enabled at {localStorageFolder.FullName}");
+			}
+			return new ChattelConfiguration(localStoragePath, serialParallelAssetServers);
+		}
+
+		#endregion
+
+		#region Crash Handler
+
+		private static bool isHandlingException;
 
 		/// <summary>
 		/// Global exception handler -- all unhandled exceptions end up here :)
@@ -491,7 +603,7 @@ namespace Anaximander {
 					// Since we are crashing, there's no way that log4net.RollbarNET will be able to send the message to Rollbar directly.
 					// So have a separate program go do that work while this one finishes dying.
 
-					var raw_msg =  System.Text.Encoding.Default.GetBytes(msg);
+					var raw_msg = System.Text.Encoding.Default.GetBytes(msg);
 
 					var err_reporter = new System.Diagnostics.Process();
 					err_reporter.EnableRaisingEvents = false;
@@ -519,6 +631,8 @@ namespace Anaximander {
 				}
 			}
 		}
+
+		#endregion
 
 		private enum ServerState {
 			Ignored,

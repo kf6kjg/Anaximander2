@@ -22,6 +22,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Concurrent;
 using System.Drawing;
@@ -30,7 +31,6 @@ using Chattel;
 using ChattelAssetTools;
 using InWorldz.Data.Assets.Stratus;
 using log4net;
-
 
 namespace Anaximander {
 	/// <summary>
@@ -59,7 +59,7 @@ namespace Anaximander {
 
 		#endregion
 
-		private static ChattelReader _assetReader = null;
+		private static ChattelReader _assetReader;
 
 		private static readonly ConcurrentDictionary<Guid, Texture> _memoryCache = new ConcurrentDictionary<Guid, Texture>();
 
@@ -75,27 +75,39 @@ namespace Anaximander {
 		}
 
 		public static Texture GetByUUID(Guid id, Color? defaultColor = null) {
-			Texture texture;
-
-			if (_memoryCache.TryGetValue(id, out texture)) {
-				return texture;
+			if (_memoryCache.TryGetValue(id, out var cachedTexture)) {
+				return cachedTexture;
 			}
 
 			if (_assetReader == null && defaultColor == null) {
 				return DEFAULT;
 				// No cache needed for default.
 			}
+			Texture texture = null;
+			Exception ex = null;
 
-			var asset = _assetReader?.GetAssetSync(id);
+			var wait = new System.Threading.AutoResetEvent(false);
+			_assetReader.GetAssetAsync(id, asset => {
+				if (asset == null || !asset.IsTextureAsset()) {
+					texture = new Texture(color: defaultColor);
+					// No cache when the asset was not found: maybe next time it will be.
+				}
+				else {
+					try {
+						texture = new Texture(asset);
 
-			if (asset == null) {
-				texture = new Texture(color: defaultColor);
-				// No cache when the asset was not found: maybe next time it will be.
-			}
-			else {
-				texture = new Texture(asset);
+						_memoryCache.TryAdd(id, texture);
+					}
+					catch (Exception e) {
+						ex = e;
+					}
+				}
+				wait.Set();
+			});
+			wait.WaitOne();
 
-				_memoryCache.TryAdd(id, texture);
+			if (ex != null) {
+				throw ex;
 			}
 
 			return texture;
@@ -122,18 +134,18 @@ namespace Anaximander {
 				var bitmap = asset.ToImage<Bitmap>();
 
 				Image = bitmap;
-				AverageColor = computeAverageColor(bitmap);
+				AverageColor = ComputeAverageColor(bitmap);
 			}
 		}
 
 		public Texture(Bitmap image = null, Color? color = null) {
 			if (image != null) {
 				Image = new Bitmap(image); // Deep copy that image to make sure we don't lose immutability.
-				AverageColor = computeAverageColor(image);
+				AverageColor = ComputeAverageColor(image);
 			}
 
 			if (color != null) {
-				AverageColor = (Color) color;
+				AverageColor = (Color)color;
 			}
 		}
 
@@ -142,16 +154,13 @@ namespace Anaximander {
 		#region Helpers
 
 		// Compute the average color of a texture.
-		private static Color computeAverageColor(Bitmap bmp)
-		{
+		private static Color ComputeAverageColor(Bitmap bmp) {
 			// we have 256 x 256 pixel, each with 256 possible color-values per
 			// color-channel, so 2^24 is the maximum value we can get, adding everything.
 			// int is be big enough for that.
 			int r = 0, g = 0, b = 0;
-			for (var y = 0; y < bmp.Height; ++y)
-			{
-				for (var x = 0; x < bmp.Width; ++x)
-				{
+			for (var y = 0; y < bmp.Height; ++y) {
+				for (var x = 0; x < bmp.Width; ++x) {
 					var c = bmp.GetPixel(x, y);
 					r += (int)c.R & 0xff;
 					g += (int)c.G & 0xff;

@@ -22,22 +22,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using log4net;
 using Nini.Config;
 
 namespace Anaximander {
 	public class TileImageWriter {
-		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly ImageFormats _imageFormat;
 		private readonly DirectoryInfo _tileFolder;
@@ -81,7 +80,7 @@ namespace Anaximander {
 
 			var startupConfig = config.Configs["Startup"];
 
-				if (startupConfig.GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
+			if (startupConfig.GetBoolean("ServerMode", Constants.KeepRunningDefault)) {
 				try {
 					_rawImageFolder = Directory.CreateDirectory(Path.Combine(_tileFolder.FullName, Constants.RawImagePath));
 				}
@@ -184,10 +183,10 @@ namespace Anaximander {
 			switch (_imageFormat) {
 				case ImageFormats.JPEG:
 					format = ImageFormat.Jpeg;
-				break;
+					break;
 				case ImageFormats.PNG:
 					format = ImageFormat.Png;
-				break;
+					break;
 			}
 
 			try {
@@ -207,10 +206,10 @@ namespace Anaximander {
 			switch (_imageFormat) {
 				case ImageFormats.JPEG:
 					extension = ".jpg";
-				break;
+					break;
 				case ImageFormats.PNG:
 					extension = ".png";
-				break;
+					break;
 			}
 
 			return filename + extension;
@@ -246,33 +245,33 @@ namespace Anaximander {
 						x = int.Parse(match.Groups[1].Value);
 						y = int.Parse(match.Groups[2].Value);
 						z = int.Parse(match.Groups[3].Value);
-					break;
+						break;
 					case "XZY":
 						x = int.Parse(match.Groups[1].Value);
 						z = int.Parse(match.Groups[2].Value);
 						y = int.Parse(match.Groups[3].Value);
-					break;
+						break;
 					case "YXZ":
 						y = int.Parse(match.Groups[1].Value);
 						x = int.Parse(match.Groups[2].Value);
 						z = int.Parse(match.Groups[3].Value);
-					break;
+						break;
 					case "YZX":
 						y = int.Parse(match.Groups[1].Value);
 						z = int.Parse(match.Groups[2].Value);
 						x = int.Parse(match.Groups[3].Value);
-					break;
+						break;
 					case "ZXY":
 						z = int.Parse(match.Groups[1].Value);
 						x = int.Parse(match.Groups[2].Value);
 						y = int.Parse(match.Groups[3].Value);
-					break;
+						break;
 					//case "ZYX":
 					default:
 						z = int.Parse(match.Groups[1].Value);
 						y = int.Parse(match.Groups[2].Value);
 						x = int.Parse(match.Groups[3].Value);
-					break;
+						break;
 				}
 
 				// Delete all region tiles for regions that have been explicitly removed from the DB.  For the new guy: this does not remove regions that are simply just offline.

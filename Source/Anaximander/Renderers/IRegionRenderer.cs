@@ -1,4 +1,4 @@
-﻿// TileRendererInterface.cs
+﻿// IRegionRenderer.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -24,7 +24,7 @@
 // THE SOFTWARE.
 
 namespace Anaximander {
-	public interface RegionRendererInterface {
+	public interface IRegionRenderer {
 		DirectBitmap RenderTileFrom(DataReader.Region region, DirectBitmap bitmap);
 	}
 }
