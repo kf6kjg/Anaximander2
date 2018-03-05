@@ -212,6 +212,10 @@ namespace Anaximander {
 						if (image != null) {
 							branch.CreateImage(_tilePixelSize, _tilePixelSize, image);
 						}
+						else {
+							// We couldn't find or load the image for the region! Just fill with ocean as this meant DB trouble or something else that caused a failure to render.
+							branch.CreateImage(_tilePixelSize, _tilePixelSize, _oceanColor);
+						}
 					}
 
 					// Ah, you are ready for reduction, export, and compiling into your parent then!
