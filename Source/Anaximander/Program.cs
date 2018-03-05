@@ -173,12 +173,15 @@ namespace Anaximander {
 				var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
 				Parallel.ForEach(_rdbMap.GetRegionUUIDs(), options, (region_id) => {
 					var oldPriority = Thread.CurrentThread.Priority;
-					Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-					//foreach(var region_id in rdb_map.GetRegionUUIDsAsStrings()) {
-					UpdateRegionTile(region_id);
+					try {
+						Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-					Thread.CurrentThread.Priority = oldPriority;
+						UpdateRegionTile(region_id);
+					}
+					finally {
+						Thread.CurrentThread.Priority = oldPriority;
+					}
 				});
 
 				watch.Stop();
@@ -313,7 +316,7 @@ namespace Anaximander {
 				var superGen = new SuperTileGenerator(_configSource, _rdbMap);
 
 				// Only update that portion of the tree that's affected by the change.
-				superGen.PreloadTileTrees(new [] { uuid });
+				superGen.PreloadTileTrees(new[] { uuid });
 				superGen.GeneratePreloadedTree();
 
 				// Time for cleanup: make sure that we only have what we need.
