@@ -115,6 +115,7 @@ namespace Anaximander {
 		/// <param name="bitmap">Bitmap of the region.</param>
 		public void WriteTile(int locationX, int locationY, int locationZ, Guid regionId, Bitmap bitmap) {
 			if (locationZ == 1 && _reverseLookupFolder != null && Guid.Empty != regionId) { // Only if a region.
+				LOG.Debug($"Writing reverse lookup file for {regionId}.");
 				try { // Store the reverse lookup file.
 					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId.ToString()), $"{locationX},{locationY}");
 				}
@@ -138,6 +139,7 @@ namespace Anaximander {
 		/// <param name="file">File to be copied.</param>
 		public void WriteTile(int locationX, int locationY, int locationZ, Guid regionId, string file) {
 			if (locationZ == 1 && _reverseLookupFolder != null && Guid.Empty != regionId) { // Only if a region.
+				LOG.Debug($"Writing reverse lookup file for {regionId}, copying from {file}.");
 				try { // Store the reverse lookup file.
 					File.WriteAllText(Path.Combine(_reverseLookupFolder.FullName, regionId.ToString()), $"{locationX},{locationY}");
 				}
@@ -147,6 +149,7 @@ namespace Anaximander {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 				}
 			}
+			LOG.Debug($"Writing tile for {regionId}, copying from {file}.");
 			File.Copy(file, Path.Combine(_tileFolder.FullName, PrepareTileFilename(locationX, locationY, locationZ)));
 		}
 
@@ -158,8 +161,10 @@ namespace Anaximander {
 		/// <param name="locationZ">Region location z.</param>
 		/// <param name="bitmap">Bitmap of the region.</param>
 		public void WriteRawTile(int locationX, int locationY, int locationZ, Bitmap bitmap) {
+			var filename = $"{TileTreeNode.MakeId(locationX, locationY, locationZ)}.tiff";
+			LOG.Debug($"Writing raw image file {filename} for later use.");
 			try {
-				bitmap.Save(Path.Combine(_rawImageFolder.FullName, $"{TileTreeNode.MakeId(locationX, locationY, locationZ)}.tiff"), ImageFormat.Tiff);
+				bitmap.Save(Path.Combine(_rawImageFolder.FullName, filename), ImageFormat.Tiff);
 			}
 			catch (Exception e) {
 				LOG.Error($"Error writing map image tile to disk: {e}");
@@ -188,6 +193,7 @@ namespace Anaximander {
 				format = ImageFormat.Png;
 			}
 
+			LOG.Debug($"Writing image file {filename}.");
 			try {
 				bitmap.Save(Path.Combine(_tileFolder.FullName, filename), format);
 			}

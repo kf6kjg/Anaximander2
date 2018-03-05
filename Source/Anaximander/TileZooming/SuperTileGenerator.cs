@@ -32,7 +32,7 @@ using System.Drawing;
 
 namespace Anaximander {
 	public class SuperTileGenerator {
-		//private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly int _tilePixelSize;
 
@@ -75,6 +75,7 @@ namespace Anaximander {
 			_rootNodeIds.Clear();
 			_allNodesById.Clear();
 
+			LOG.Debug($"Preparing tree: loading bottom layer of {region_ids?.Count()} tiles...");
 			// Preload the base layer as given.
 			foreach (var region_id in region_ids) {
 				var region = _rdbMap.GetRegionByUUID(region_id);
@@ -137,6 +138,7 @@ namespace Anaximander {
 
 			// Generate tree of tiles using a bottom-up breadth-first algorithm.
 			for (int zoom_level = 1; zoom_level < _maxZoomLevel; ++zoom_level) {
+				LOG.Debug($"Preparing tree: loading zoom level {zoom_level + 1}...");
 				var current_layer_ids = new List<string>();
 
 				// Move the top layer into the current layer for the next pass.
@@ -165,17 +167,25 @@ namespace Anaximander {
 					super.AddChild(node_id);
 				}
 			}
+
+			LOG.Debug($"Preparing tree complete.");
 		}
 
 		public void GeneratePreloadedTree() {
 			// Build the tile images using a post-order depth-first algorithm on the above trees.
 			// Turns out this is not a trivial problem to solve.  Many thanks to Dave Remy: http://blogs.msdn.com/b/daveremy/archive/2010/03/16/non-recursive-post-order-depth-first-traversal.aspx
+			var count = 0;
 			foreach (var node_id in _rootNodeIds) {
 				var ids_to_visit = new Stack<string>();
 				var visited_ancestor_ids = new Stack<string>();
 				ids_to_visit.Push(node_id);
 
+				LOG.Debug($"Drawing tree: processing root node {++count} of {_rootNodeIds.Count}...");
+
+				var children = 0;
 				while (ids_to_visit.Count > 0) {
+					LOG.Debug($"Drawing tree: processing (grand)child node {++children} of {ids_to_visit.Count} and appending any further children to this list...");
+
 					var branch_id = ids_to_visit.Peek();
 					var branch = _allNodesById[branch_id];
 
@@ -254,9 +264,14 @@ namespace Anaximander {
 				}
 			}
 
+
+			LOG.Debug($"Drawing tree: cleanup...");
+
 			// All trees have been compiled, no need to keep this data in memory!
 			_rootNodeIds.Clear();
 			_allNodesById.Clear();
+
+			LOG.Debug($"Drawing tree complete.");
 		}
 	}
 }

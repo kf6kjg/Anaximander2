@@ -362,6 +362,7 @@ namespace Anaximander {
 					using (var tile_image = _tileGenerator.RenderRegionTile(region)) {
 						_tileWriter.WriteTile((int)region.Location?.X, (int)region.Location?.Y, 1, region_id, tile_image.Bitmap);
 					}
+					LOG.Debug($"Completed full region tile for {region_id}.");
 				}
 				else {
 					if (crashedTechnique == RegionErrorDisplayTechnique.IMAGE) {
