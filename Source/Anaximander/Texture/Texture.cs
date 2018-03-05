@@ -106,7 +106,7 @@ namespace Anaximander {
 				}
 				wait.Set();
 			});
-			wait.WaitOne();
+			wait.WaitOne(60000);
 
 			if (ex != null) {
 				throw ex;
