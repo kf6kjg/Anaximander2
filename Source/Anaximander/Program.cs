@@ -170,19 +170,24 @@ namespace Anaximander {
 
 				LOG.Debug("Generating a full batch of region tiles.");
 				// Generate region tiles - all existing are nearly guaranteed to be out of date.
-				var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
-				Parallel.ForEach(_rdbMap.GetRegionUUIDs(), options, (region_id) => {
-					var oldPriority = Thread.CurrentThread.Priority;
+				try {
+					var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
+					Parallel.ForEach(_rdbMap.GetRegionUUIDs(), options, (region_id) => {
+						var oldPriority = Thread.CurrentThread.Priority;
 
-					try {
-						Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+						try {
+							Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-						UpdateRegionTile(region_id);
-					}
-					finally {
-						Thread.CurrentThread.Priority = oldPriority;
-					}
-				});
+							UpdateRegionTile(region_id);
+						}
+						finally {
+							Thread.CurrentThread.Priority = oldPriority;
+						}
+					});
+				}
+				catch (AggregateException e) {
+					LOG.Warn($"Errors received while processing regions.", e);
+				}
 
 				watch.Stop();
 				LOG.Info($"Created full res map tiles in {watch.ElapsedMilliseconds} ms all regions with known locations, resulting in an average of {(float)watch.ElapsedMilliseconds / _rdbMap.GetRegionCount()} ms / region.");
