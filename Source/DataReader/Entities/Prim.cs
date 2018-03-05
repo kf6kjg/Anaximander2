@@ -41,20 +41,20 @@ namespace DataReader {
 				}
 				using (var cmd = conn.CreateCommand()) {
 					cmd.CommandText = @"SELECT
-							UUID,
-							Name,
-							ObjectFlags,
-							State,
-							PositionX, PositionY, PositionZ,
-							GroupPositionX, GroupPositionY, GroupPositionZ,
-							ScaleX, ScaleY, ScaleZ,
-							RotationX, RotationY, RotationZ, RotationW,
-							RootRotationX, RootRotationY, RootRotationZ, RootRotationW,
-							Texture
+							pr.UUID,
+							pr.Name,
+							pr.ObjectFlags,
+							ps.State,
+							pr.PositionX, pr.PositionY, pr.PositionZ,
+							pr.GroupPositionX, pr.GroupPositionY, pr.GroupPositionZ,
+							ps.ScaleX, ps.ScaleY, ps.ScaleZ,
+							pr.RotationX, pr.RotationY, pr.RotationZ, pr.RotationW,
+							rootprim.RootRotationX, rootprim.RootRotationY, rootprim.RootRotationZ, rootprim.RootRotationW,
+							ps.Texture
 						FROM
 							prims pr
-							NATURAL JOIN primshapes
-							LEFT JOIN (
+							INNER JOIN primshapes ps USING (UUID)
+							LEFT OUTER JOIN (
 								SELECT
 									RotationX AS RootRotationX,
 									RotationY AS RootRotationY,
@@ -67,13 +67,13 @@ namespace DataReader {
 									LinkNumber = 1
 							) AS rootprim ON rootprim.SceneGroupID = pr.SceneGroupID
 						WHERE
-							GroupPositionZ < 766 /* = max terrain height + render height */
-							AND LENGTH(Texture) > 0
-							AND ObjectFlags & (0 | 0x40000 | 0x20000) = 0
-							AND ScaleX > 1.0
-							AND ScaleY > 1.0
-							AND ScaleZ > 1.0
-							AND PCode NOT IN (255, 111, 95)
+							pr.GroupPositionZ < 766 /* = max terrain height + render height */
+							AND LENGTH(ps.Texture) > 0
+							AND pr.ObjectFlags & (0 | 0x40000 | 0x20000) = 0
+							AND ps.ScaleX > 1.0
+							AND ps.ScaleY > 1.0
+							AND ps.ScaleZ > 1.0
+							AND ps.PCode NOT IN (255, 111, 95)
 							AND RegionUUID = @region_id
 						ORDER BY
 							GroupPositionZ, PositionZ
