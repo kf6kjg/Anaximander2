@@ -42,6 +42,8 @@ namespace DataReader {
 				using (var cmd = conn.CreateCommand()) {
 					cmd.CommandText = @"SELECT
 							pr.UUID,
+							pr.SceneGroupID,
+							pr.LinkNumber,
 							pr.Name,
 							pr.ObjectFlags,
 							ps.State,
@@ -49,23 +51,10 @@ namespace DataReader {
 							pr.GroupPositionX, pr.GroupPositionY, pr.GroupPositionZ,
 							ps.ScaleX, ps.ScaleY, ps.ScaleZ,
 							pr.RotationX, pr.RotationY, pr.RotationZ, pr.RotationW,
-							rootprim.RootRotationX, rootprim.RootRotationY, rootprim.RootRotationZ, rootprim.RootRotationW,
 							ps.Texture
 						FROM
 							prims pr
 							INNER JOIN primshapes ps USING (UUID)
-							LEFT OUTER JOIN (
-								SELECT
-									RotationX AS RootRotationX,
-									RotationY AS RootRotationY,
-									RotationZ AS RootRotationZ,
-									RotationW AS RootRotationW,
-									SceneGroupID
-								FROM
-									prims pr
-								WHERE
-									LinkNumber = 1
-							) AS rootprim ON rootprim.SceneGroupID = pr.SceneGroupID
 						WHERE
 							pr.GroupPositionZ < 766 /* = max terrain height + render height */
 							AND LENGTH(ps.Texture) > 0
@@ -96,6 +85,9 @@ namespace DataReader {
 
 					var prims = new List<Prim>(); // List was chosen because it guarantees that insertion order will be preserved unless explictly sorted.
 
+					var rootPrims = new Dictionary<Guid, Prim>();
+					var childPrims = new List<Prim>(); // List was chosen because it guarantees that insertion order will be preserved unless explictly sorted.
+
 					try {
 						while (reader.Read()) {
 							// Nullables start here
@@ -105,16 +97,12 @@ namespace DataReader {
 							var posX = RDBMap.GetDBValueOrNull<double>(reader, "PositionX");
 							var posY = RDBMap.GetDBValueOrNull<double>(reader, "PositionY");
 							var posZ = RDBMap.GetDBValueOrNull<double>(reader, "PositionZ");
-							var rootRotW = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationW");
-							var rootRotX = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationX");
-							var rootRotY = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationY");
-							var rootRotZ = RDBMap.GetDBValueOrNull<double>(reader, "RootRotationZ");
 							var rotW = RDBMap.GetDBValueOrNull<double>(reader, "RotationW");
 							var rotX = RDBMap.GetDBValueOrNull<double>(reader, "RotationX");
 							var rotY = RDBMap.GetDBValueOrNull<double>(reader, "RotationY");
 							var rotZ = RDBMap.GetDBValueOrNull<double>(reader, "RotationZ");
 
-							prims.Add(new Prim {
+							var prim = new Prim {
 								GroupPosition = groupPosX != null && groupPosY != null && groupPosZ != null ? new Vector3(
 									(float)groupPosX,
 									(float)groupPosY,
@@ -129,12 +117,7 @@ namespace DataReader {
 									(float)posZ
 								) : (Vector3?)null,
 								RegionId = regionId,
-								RootRotation = rootRotW != null && rootRotX != null && rootRotY != null && rootRotZ != null ? new Quaternion(
-									(float)rootRotX,
-									(float)rootRotY,
-									(float)rootRotZ,
-									(float)rootRotW
-								) : (Quaternion?)null,
+								RootRotation = null,
 								Rotation = rotW != null && rotX != null && rotY != null && rotZ != null ? new Quaternion(
 									(float)rotX,
 									(float)rotY,
@@ -148,11 +131,32 @@ namespace DataReader {
 								),
 								State = RDBMap.GetDBValue<int>(reader, "State"),
 								Texture = (byte[])reader["Texture"],
-							});
+							};
+
+							prims.Add(prim);
+
+							var sogIdStr = RDBMap.GetDBValue(reader, "SceneGroupID");
+							if (Guid.TryParse(sogIdStr, out var sogId)) {
+								prim.SceneGroupId = sogId;
+
+								var linkNumber = RDBMap.GetDBValue<int>(reader, "LinkNumber");
+								if (linkNumber == 1) {
+									rootPrims.Add(sogId, prim);
+								}
+								else if (linkNumber > 1) {
+									childPrims.Add(prim);
+								}
+							}
 						}
 					}
 					finally {
 						reader.Close();
+					}
+
+					foreach (var prim in childPrims) {
+						if (rootPrims.TryGetValue(prim.SceneGroupId, out var rootPrim)) {
+							prim.RootRotation = rootPrim.Rotation;
+						}
 					}
 
 					return prims;
@@ -165,6 +169,8 @@ namespace DataReader {
 		public Guid Id { get; private set; }
 
 		public string Name { get; private set; }
+
+		private Guid SceneGroupId;
 
 		public Guid? RegionId { get; private set; }
 
