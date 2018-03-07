@@ -109,7 +109,7 @@ namespace Anaximander {
 			wait.WaitOne(60000);
 
 			if (ex != null) {
-				throw ex;
+				throw new Exception("See inner exception", ex);
 			}
 
 			return texture;
