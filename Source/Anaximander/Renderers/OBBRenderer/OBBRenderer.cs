@@ -617,7 +617,7 @@ namespace Anaximander {
 			}
 			catch (Exception e) {
 				var location = prim.ComputeWorldPosition();
-				LOG.Warn($"Error decoding image asset {facetexture.TextureID} on face {face} of prim {prim.Id} at {location} in region {prim.RegionId}, continuing using default texture.", e);
+				LOG.Warn($"Error decoding image asset {facetexture.TextureID} on face {face} of prim {prim.Id} named '{prim.Name}' at {location} in region {prim.RegionId}, continuing using default texture.", e);
 			}
 
 			if (texture == null) {
