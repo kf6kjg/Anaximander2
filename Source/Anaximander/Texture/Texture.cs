@@ -90,7 +90,7 @@ namespace Anaximander {
 
 			var wait = new System.Threading.AutoResetEvent(false);
 			_assetReader.GetAssetAsync(id, asset => {
-				if (asset == null || !asset.IsTextureAsset()) {
+				if (asset == null || !(asset?.IsTextureAsset() ?? false)) {
 					texture = new Texture(color: defaultColor);
 					// No cache when the asset was not found: maybe next time it will be.
 				}
@@ -110,6 +110,14 @@ namespace Anaximander {
 
 			if (ex != null) {
 				throw new Exception("See inner exception", ex);
+			}
+
+			if (texture == null && defaultColor == null) {
+				return DEFAULT;
+				// No cache needed for default.
+			}
+			else if (texture == null) {
+				return new Texture(color: defaultColor);
 			}
 
 			return texture;
