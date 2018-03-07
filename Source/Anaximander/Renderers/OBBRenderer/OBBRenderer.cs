@@ -430,6 +430,37 @@ namespace Anaximander {
 				vertices[7].Z = pos.Z + rotated_radial_scale.Z;
 
 				/* * * * * * * * * * * * * * * * * * */
+				// ISSUE #22 Megaprim blockage solver
+				/* * * * * * * * * * * * * * * * * * */
+				{
+					var minVec = new Vector2(vertices[0].X, vertices[0].Y);
+					var maxVec = new Vector2(vertices[0].X, vertices[0].Y);
+					for (var index = 1; index < 8; ++index) {
+						var curVec = vertices[index];
+						if (curVec.X < minVec.X) {
+							minVec.X = curVec.X;
+						}
+						if (curVec.Y < minVec.Y) {
+							minVec.Y = curVec.Y;
+						}
+						if (curVec.X > maxVec.X) {
+							maxVec.X = curVec.X;
+						}
+						if (curVec.Y > maxVec.Y) {
+							maxVec.Y = curVec.Y;
+						}
+					}
+
+					if (
+						maxVec.X - minVec.X >= 200 /* Number chosen from hipshot based on map observations. */
+						&& maxVec.Y - minVec.Y >= 200
+					) {
+						// Skip oversized area covers.
+						continue;
+					}
+				}
+
+				/* * * * * * * * * * * * * * * * * * */
 				// SORT HEIGHT CALC
 				/* * * * * * * * * * * * * * * * * * */
 				drawdata.SortOrder =
