@@ -46,6 +46,7 @@ namespace DataReader {
 		public double ElevationSELow { get; private set; }
 		public double ElevationSEHigh { get; private set; }
 
+		public double TerrainHeightMin { get; private set; }
 		public double WaterHeight { get; private set; }
 
 		private readonly double[,] _heightmap = new double[256, 256];
@@ -104,12 +105,20 @@ namespace DataReader {
 
 						_heightmap.Initialize();
 
+						var minHeightFound = 510.0; // Max terrain height
+
 						var br = new BinaryReader(new MemoryStream((byte[])reader["Heightfield"]));
 						for (int x = 0; x < _heightmap.GetLength(0); x++) {
 							for (int y = 0; y < _heightmap.GetLength(1); y++) {
-								_heightmap[x, y] = br.ReadDouble();
+								var height = br.ReadDouble();
+								_heightmap[x, y] = height;
+								if (height < minHeightFound) {
+									minHeightFound = height;
+								}
 							}
 						}
+
+						TerrainHeightMin = minHeightFound;
 					}
 					finally {
 						reader.Close();

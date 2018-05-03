@@ -56,7 +56,7 @@ namespace DataReader {
 							prims pr
 							INNER JOIN primshapes ps USING (UUID)
 						WHERE
-							pr.GroupPositionZ < 766 /* = max terrain height + render height */
+							pr.GroupPositionZ < 766 /* = max terrain height (510) + render height (256) */
 							AND LENGTH(ps.Texture) > 0
 							AND pr.ObjectFlags & (0 | 0x40000 | 0x20000) = 0
 							AND ps.ScaleX > 1.0
