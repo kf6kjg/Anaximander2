@@ -1,57 +1,91 @@
-version: 2.0.{build}
+init:
+- ps: if ($env:APPVEYOR_REPO_TAG -eq "true") { $env:TAG_VERSION = "$env:APPVEYOR_REPO_TAG_NAME.$env:APPVEYOR_BUILD_NUMBER" } else { $env:TAG_VERSION = "v2.0.$env:APPVEYOR_BUILD_NUMBER-alpha" }
+- ps: $env:TAG_VERSION = $env:TAG_VERSION -replace 'v',''
+- ps: Write-Host "Setting version to '$env:TAG_VERSION'"
+- ps: Update-AppveyorBuild -Version "$env:TAG_VERSION"
 
-image: Visual Studio 2017
 
-nuget:
-  project_feed: true
+image:
+- Visual Studio 2017
+- Ubuntu
 
 configuration: Release
 
-build:
-  parallel: true
-  verbosity: minimal
+platform:
+- x64
 
-cache:
-  - Source\packages -> Source\**\packages.config
+pull_requests:
+  do_not_increment_build_number: true
+
+nuget:
+  disable_publish_on_pr: true
 
 skip_commits:
   files:
-    - .gitignore
-    - LICENSE
-    - README.md
-  
+  - .gitignore
+  - LICENSE
+  - README.md
+
+cache:
+- Source\packages -> Source\**\packages.config
+- '%LocalAppData%\NuGet\Cache'
+
+assembly_info:
+  patch: true
+  assembly_version: '{version}'
+  assembly_file_version: '{version}'
+  assembly_informational_version: '{version}'
+
 before_build:
-  - ps: if ($env:APPVEYOR_REPO_TAG -eq "true") { $env:TAG_VERSION = "$env:APPVEYOR_REPO_TAG_NAME.$env:APPVEYOR_BUILD_NUMBER" } else { $env:TAG_VERSION = "v2.0.0.$env:APPVEYOR_BUILD_NUMBER" }
-  - ps: $env:TAG_VERSION = $env:TAG_VERSION -replace 'v',''
-  - ps: Write-Host "Setting version to '$env:TAG_VERSION'"
-  - ps: (Get-Content Source\Anaximander\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:TAG_VERSION" | Set-Content Source\Anaximander\Properties\AssemblyInfo.cs
-  - ps: (Get-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs) -replace '1\.0\.\*', "$env:TAG_VERSION" | Set-Content Source\RollbarCrashReporter\Properties\AssemblyInfo.cs
-  - ps: (Get-Content Source\Anaximander\Program.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\Anaximander\Program.cs
-  - ps: (Get-Content Source\RollbarCrashReporter\CrashReporter.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\RollbarCrashReporter\CrashReporter.cs
-  - nuget restore Source\Anaximander.sln
+- ps: |
+    if ($isLinux) {
+      $env:COMPILED_BY = "Mono"
+      $env:EDITION = "mono"
+    } else {
+      $env:COMPILED_BY = "VS2017"
+      $env:EDITION = "dotnet"
+    }
+- ps: (Get-Content Source\Anaximander\Program.cs) -replace 'COMPILED_BY = "?mono?"', "COMPILED_BY = `"$env:COMPILED_BY`"" | Set-Content Source\Anaximander\Program.cs
+- ps: (Get-Content Source\RollbarCrashReporter\CrashReporter.cs) -replace 'COMPILED_BY = "?mono?"', "COMPILED_BY = `"$env:COMPILED_BY`"" | Set-Content Source\RollbarCrashReporter\CrashReporter.cs
+- nuget restore Source/Anaximander.sln
+
+build:
+  project: Source\Anaximander.sln
+  parallel: true
+  verbosity: minimal
+  publish_nuget: false
+  publish_nuget_symbols: false
+
+for:
+-
+  matrix:
+    only:
+    - image: Ubuntu
+  build_script:
+  - msbuild Source/Anaximander.sln
 
 after_build:
-  - ps: >-
-        if ($env:APPVEYOR_REPO_TAG -eq "true") {
-          (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
-          (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\RollbarCrashReporter.exe.config
-        }
-        else {
-          (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\Anaximander.exe.config
-          (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\RollbarCrashReporter.exe.config
-        }
-  - rename bin Anaximander2
+- ps: >-
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+        (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\Anaximander.exe.config
+        (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\RollbarCrashReporter.exe.config
+      }
+      else {
+        (Get-Content bin\Anaximander.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\Anaximander.exe.config
+        (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\RollbarCrashReporter.exe.config
+      }
+- ps: Rename-Item -Path bin -NewName Anaximander2
 
 artifacts:
   - path: Anaximander2
-    name: anaximander2-dotnet
-    type: Zip
+    name: anaximander2-$(EDITION)
+    type: zip
 
 deploy:
   provider: GitHub
   auth_token:
     secure: "QUqhwTOVl7qBikVjSddIdfQ/mJAYlmSwsPPxTW8kSPJKALifV/E3UFycqJyf6USR"
-  artifact: anaximander2-dotnet
+  artifact: anaximander2-$(EDITION)
   draft: true
   prerelease: false
   on:
