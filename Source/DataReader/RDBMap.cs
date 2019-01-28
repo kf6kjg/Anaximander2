@@ -1,4 +1,4 @@
-// RDBMap.cs
+﻿// RDBMap.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -323,18 +323,24 @@ namespace DataReader {
 		#endregion
 
 		private string GetRDBConnectionString(string rdbHostName) {
-			string rdbhost;
-
 			// The RDB connection string could have different user, table, or password than the main.
-			if (string.IsNullOrWhiteSpace(rdbHostName)) {
+			if (string.IsNullOrWhiteSpace(RDB_CONNECTION_STRING_PARTIAL)) {
 				// Not on an RDB, use the main as this implies that the region is either an invalid entry or is connected to the main DB.
-				rdbhost = CONNECTION_STRING;
-			}
-			else {
-				rdbhost = string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbHostName.ToLowerInvariant());
+				return CONNECTION_STRING;
 			}
 
-			return rdbhost;
+			if (string.IsNullOrWhiteSpace(rdbHostName)) { // No host name found in the DB, so get the host name from the main connection string.
+				char[] delimiters = {'=', ';'};
+				var connParts = CONNECTION_STRING.Split(delimiters);
+				var dataSourceIndex = Array.FindIndex(connParts, item => item.Equals("Data Source", StringComparison.InvariantCultureIgnoreCase));
+				if (dataSourceIndex < 0 || dataSourceIndex + 1 >= connParts.Length) {
+					return CONNECTION_STRING; // Can't find the host name in the conenction string!
+				}
+
+				rdbHostName = connParts[dataSourceIndex + 1];
+			}
+
+			return string.Format(RDB_CONNECTION_STRING_PARTIAL, rdbHostName.ToLowerInvariant());
 		}
 
 		internal static T? GetDBValueOrNull<T>(IDataRecord reader, string name) where T : struct {
