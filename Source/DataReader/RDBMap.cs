@@ -1,4 +1,4 @@
-﻿// RDBMap.cs
+// RDBMap.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -182,19 +182,21 @@ namespace DataReader {
 					try {
 						while (reader.Read()) {
 							var rdbHostName = Convert.ToString(reader["host_name"]);
-							var rdbhost = GetRDBConnectionString(rdbHostName);
+							var connString = GetRDBConnectionString(rdbHostName);
 							var region_id = Guid.Parse(Convert.ToString(reader["regionID"]));
 
 							// Check to see if the map already has this entry and if the new entry is shut down.
 							if (region_list.TryGetValue(region_id, out var region) && Convert.IsDBNull(reader["regionName"])) {
+								LOG.Debug($"Found offline region {region_id}.");
+
 								// Region is offline, update the RDB connection in case that's changed.
-								region._rdbConnectionString = rdbhost;
+								region._rdbConnectionString = connString;
 							}
 							else { // The DB has the freshest information.  Does not imply the region is online - it could have crashed.
 								var locationX = GetDBValueOrNull<int>(reader, "locX");
 								var locationY = GetDBValueOrNull<int>(reader, "locY");
 
-								region = new Region(rdbhost) {
+								region = new Region(connString) {
 									Id = region_id,
 									Location = locationX == null || locationY == null ? (Vector2?)null : new Vector2((float)locationX, (float)locationY),
 									Name = reader.IsDBNull(reader.GetOrdinal("regionName")) ? null : Convert.ToString(reader["regionName"]),
@@ -202,6 +204,8 @@ namespace DataReader {
 									ServerPort = GetDBValueOrNull<int>(reader, "serverPort"),
 									Size = new Vector2(256f, 256f), // DB always has 0 as far as I'm aware. Looks like regions.sizeX and .sizeY are never even read by Halcyon code as of 9/3/2017.
 								};
+
+								LOG.Debug($"Found online region {region_id} named '{region.Name}' at {locationX}, {locationY}.");
 							}
 
 							if (!region_list.TryAdd(region_id, region)) {
