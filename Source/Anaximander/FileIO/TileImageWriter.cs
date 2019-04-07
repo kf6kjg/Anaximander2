@@ -90,7 +90,7 @@ namespace Anaximander {
 				}
 			}
 
-			PARALLELISM_OPTIONS = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
+			PARALLELISM_OPTIONS = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallelism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
 		}
 
 		public DateTimeOffset? GetTileModDate(int locationX, int locationY, int locationZ) {

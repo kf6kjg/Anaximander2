@@ -77,7 +77,7 @@ namespace DataReader {
 				DeleteOldMapEntries();
 			}
 
-			PARALLELISM_OPTIONS = new ParallelOptions { MaxDegreeOfParallelism = config.Configs["Startup"].GetInt("MaxParallism", -1) }; // -1 means full parallel.  1 means non-parallel.
+			PARALLELISM_OPTIONS = new ParallelOptions { MaxDegreeOfParallelism = config.Configs["Startup"].GetInt("MaxParallelism", -1) }; // -1 means full parallel.  1 means non-parallel.
 
 			UpdateMap();
 		}

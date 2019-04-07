@@ -74,7 +74,7 @@ namespace Anaximander {
 			// Commandline switches
 			configSource.AddSwitch("Startup", "inifile");
 			configSource.AddSwitch("Startup", "logconfig");
-			configSource.AddSwitch("Startup", "MaxParallism", "p");
+			configSource.AddSwitch("Startup", "MaxParallelism", "p");
 			configSource.AddSwitch("Startup", "ServerMode");
 
 			var startupConfig = _configSource.Configs["Startup"];
@@ -125,7 +125,7 @@ namespace Anaximander {
 				return 2;
 			}
 
-			LOG.Info($"Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism)}");
+			LOG.Info($"Configured for max degree of parallelism of {startupConfig.GetInt("MaxParallelism", Constants.MaxDegreeParallism)}");
 
 			var readerLocalStorage = new AssetStorageSimpleFolderTree(chattelConfigRead);
 
@@ -170,7 +170,7 @@ namespace Anaximander {
 
 				LOG.Debug("Generating a full batch of region tiles.");
 				// Generate region tiles - all existing are nearly guaranteed to be out of date.
-				var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
+				var options = new ParallelOptions { MaxDegreeOfParallelism = startupConfig.GetInt("MaxParallelism", Constants.MaxDegreeParallism) }; // -1 means full parallel.  1 means non-parallel.
 				Parallel.ForEach(_rdbMap.GetRegionUUIDs(), options, (region_id) => {
 					var oldPriority = Thread.CurrentThread.Priority;
 
