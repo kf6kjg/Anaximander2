@@ -179,8 +179,12 @@ namespace Anaximander {
 			var hsv2 = new HSV(textures[1].AverageColor);
 			var hsv3 = new HSV(textures[2].AverageColor);
 			var hsv4 = new HSV(textures[3].AverageColor);
+            var vecColor1 = new Vector3d(textures[0].AverageColor.R, textures[0].AverageColor.G, textures[0].AverageColor.B) / 255.0;
+            var vecColor2 = new Vector3d(textures[1].AverageColor.R, textures[1].AverageColor.G, textures[1].AverageColor.B) / 255.0;
+            var vecColor3 = new Vector3d(textures[2].AverageColor.R, textures[2].AverageColor.G, textures[2].AverageColor.B) / 255.0;
+            var vecColor4 = new Vector3d(textures[3].AverageColor.R, textures[3].AverageColor.G, textures[3].AverageColor.B) / 255.0;
 
-			for (int x = 0; x < mapbmp.Width; x++) {
+            for (int x = 0; x < mapbmp.Width; x++) {
 				var columnRatio = (double)x / (mapbmp.Width - 1); // 0 - 1, for interpolation
 
 				for (int y = 0; y < mapbmp.Height; y++) {
@@ -201,17 +205,17 @@ namespace Anaximander {
 					var tileScalarX = 256f / mapbmp.Width; // Used to hack back in those constants that were hand-tuned to 256px tiles.
 					var tileScalarY = 256f / mapbmp.Height; // Used to hack back in those constants that were hand-tuned to 256px tiles.
 
-					// add a bit noise for breaking up those flat colors:
-					// - a large-scale noise, for the "patches" (using an doubled s-curve for sharper contrast)
-					// - a small-scale noise, for bringing in some small scale variation
-					//float bigNoise = (float)TerrainUtil.InterpolatedNoise(x / 8.0, y / 8.0) * .5f + .5f; // map to 0.0 - 1.0
-					//float smallNoise = (float)TerrainUtil.InterpolatedNoise(x + 33, y + 43) * .5f + .5f;
-					//float hmod = heightvalue + smallNoise * 3f + S(S(bigNoise)) * 10f;
-					var hmod =
-						heightvalue +
-						TerrainUtil.InterpolatedNoise(tileScalarX * (x + 33 + (int)region.Location?.X * mapbmp.Width), tileScalarY * (y + 43 + (int)region.Location?.Y * mapbmp.Height)) * 1.5f + 1.5f + // 0 - 3
+                    // add a bit noise for breaking up those flat colors:
+                    // - a large-scale noise, for the "patches" (using an doubled s-curve for sharper contrast)
+                    // - a small-scale noise, for bringing in some small scale variation
+                    //float bigNoise = (float)TerrainUtil.InterpolatedNoise(x / 8.0, y / 8.0) * .5f + .5f; // map to 0.0 - 1.0
+                    //float smallNoise = (float)TerrainUtil.InterpolatedNoise(x + 33, y + 43) * .5f + .5f;
+                    //float hmod = heightvalue + smallNoise * 3f + S(S(bigNoise)) * 10f;
+                    var hmod =
+                        heightvalue -
+						TerrainUtil.InterpolatedNoise(tileScalarX * (x + 33 + (int)region.Location?.X * mapbmp.Width), tileScalarY * (y + 43 + (int)region.Location?.Y * mapbmp.Height)) * 1.5f + 1.5f - // 0 - 3
 						MathUtilities.SCurve(MathUtilities.SCurve(TerrainUtil.InterpolatedNoise(tileScalarX * (x + (int)region.Location?.X * mapbmp.Width) / 8.0, tileScalarY * (y + (int)region.Location?.Y * mapbmp.Height) / 8.0) * .5f + .5f)) * 10f; // 0 - 10
-
+                        
 					// find the low/high values for this point (interpolated bilinearily)
 					// (and remember, x=0,y=0 is SW)
 					var low = terrain.ElevationSWLow * (1f - rowRatio) * (1f - columnRatio) +
@@ -233,19 +237,24 @@ namespace Anaximander {
 
 					Color result;
 					if (heightvalue > terrain.WaterHeight) {
-						HSV hsv;
-						// Above water
-						if (hmod <= low) {
-							hsv = hsv1; // too low
-						}
+						//HSV hsv;
+                        Vector3d output;
+                        // Above water
+                        if (hmod <= low) {
+                            //hsv = hsv1; // too low
+                            output = vecColor1;
+
+                        }
 						else if (hmod >= high) {
-							hsv = hsv4; // too high
-						}
+                            //hsv = hsv4; // too high
+                            output = vecColor4;
+                        }
 						else {
 							// HSV-interpolate along the colors
 							// first, rescale h to 0.0 - 1.0
 							hmod = (hmod - low) / (high - low);
-							// now we have to split: 0.00 => color1, 0.33 => color2, 0.67 => color3, 1.00 => color4
+                            // now we have to split: 0.00 => color1, 0.33 => color2, 0.67 => color3, 1.00 => color4
+                            /*
 							if (hmod < 1d / 3d) {
 								hsv = hsv1.InterpolateHSV(ref hsv2, (float)(hmod * 3d));
 							}
@@ -255,9 +264,24 @@ namespace Anaximander {
 							else {
 								hsv = hsv3.InterpolateHSV(ref hsv4, (float)((hmod * 3d) - 2d));
 							}
-						}
+                            */
 
-						result = hsv.ToColor();
+                            if (hmod <= 1d / 3d)
+                            {
+                                //hsv = hsv2;
+                                output = Vector3d.Lerp(vecColor1, vecColor2, hmod * 3d);
+                            }
+                            else if (hmod <= 2d / 3d)
+                            {
+                                output = Vector3d.Lerp(vecColor2, vecColor3, Math.Max(0, hmod * 3d - 1d));
+                            }
+                            else
+                            {
+                                output = Vector3d.Lerp(vecColor3, vecColor4, Math.Max(0, hmod * 3d - 2d));
+                            }
+                        }
+
+						result = Color.FromArgb((int)(output.X * 255), (int)(output.Y * 255), (int)(output.Z * 255));
 					}
 					else {
 						// Under water.
