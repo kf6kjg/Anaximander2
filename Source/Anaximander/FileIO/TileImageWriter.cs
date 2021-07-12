@@ -194,6 +194,8 @@ namespace Anaximander {
 			}
 
 			LOG.Debug($"Writing image file {filename}.");
+			var encoderParams = new EncoderParameters(1);
+			encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 90L);
 			try {
 				bitmap.Save(Path.Combine(_tileFolder.FullName, filename), format);
 			}

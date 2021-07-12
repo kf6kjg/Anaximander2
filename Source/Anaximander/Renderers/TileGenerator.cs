@@ -49,6 +49,9 @@ namespace Anaximander {
 				case "obbrenderer":
 					_regionRenderer = new OBBRenderer(config);
 					break;
+				case "xfrenderer":
+					_regionRenderer = new XFRenderer(config);
+					break;
 				default:
 					LOG.Error($"Unknown renderer '{rendererName}', defaulting to 'OBBRenderer'.");
 					_regionRenderer = new OBBRenderer(config);
