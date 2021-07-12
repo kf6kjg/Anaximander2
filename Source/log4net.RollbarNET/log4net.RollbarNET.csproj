@@ -1,84 +1,33 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}</ProjectGuid>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>log4net_RollbarNET</RootNamespace>
-    <AssemblyName>log4net.RollbarNET</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
     <OutputPath>..\..\bin</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <LangVersion>Default</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
     <OutputPath>..\..\bin</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <LangVersion>Default</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="log4net">
-      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RollbarAppender.cs" />
-    <Compile Include="RollbarAppenderConfigurator.cs" />
-    <Compile Include="RollbarNET\Serialization\BodyModel.cs" />
-    <Compile Include="RollbarNET\Serialization\DataModel.cs" />
-    <Compile Include="RollbarNET\Serialization\NotifierModel.cs" />
-    <Compile Include="RollbarNET\Serialization\PayloadModel.cs" />
-    <Compile Include="RollbarNET\Serialization\PersonModel.cs" />
-    <Compile Include="RollbarNET\Serialization\RequestModel.cs" />
-    <Compile Include="RollbarNET\Serialization\ServerModel.cs" />
-    <Compile Include="RollbarNET\Builders\DataModelBuilder.cs" />
-    <Compile Include="RollbarNET\Configuration.cs" />
-    <Compile Include="RollbarNET\Builders\BodyModelBuilder.cs" />
-    <Compile Include="RollbarNET\Serialization\ExceptionBodyModel.cs" />
-    <Compile Include="RollbarNET\Serialization\MessageBodyModel.cs" />
-    <Compile Include="RollbarNET\Serialization\TraceModel.cs" />
-    <Compile Include="RollbarNET\Serialization\ExceptionModel.cs" />
-    <Compile Include="RollbarNET\Serialization\FrameModel.cs" />
-    <Compile Include="RollbarNET\Builders\TraceChainModelBuilder.cs" />
-    <Compile Include="RollbarNET\Builders\FrameModelBuilder.cs" />
-    <Compile Include="RollbarNET\Builders\ExceptionModelBuilder.cs" />
-    <Compile Include="RollbarNET\Result.cs" />
-    <Compile Include="RollbarNET\RequestCompletedEventArgs.cs" />
-    <Compile Include="RollbarNET\RequestStartingEventArgs.cs" />
-    <Compile Include="RollbarNET\Builders\NotifierModelBuilder.cs" />
-    <Compile Include="RollbarNET\Builders\PersonModelBuilder.cs" />
-    <Compile Include="RollbarNET\Builders\RequestModelBuilder.cs" />
-    <Compile Include="RollbarNET\RollbarClient.cs" />
-    <Compile Include="RollbarNET\IRollbarClient.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="README.md" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="RollbarNET\" />
     <Folder Include="RollbarNET\Serialization\" />
     <Folder Include="RollbarNET\Builders\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.10" />
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
+    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.2.233001">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>
